@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>客戶清單</title>
+<link href="https://fonts.googleapis.com/css?family=Noto+Sans+TC" rel="stylesheet">
+<link href="/static/imgs/icon.jpg" rel="shortcut icon">
+<link href="/static/css/menu.css" rel="stylesheet"/>  
+<link href="/static/css/main.css" rel="stylesheet"/>      
+</head>
+   
+<body>
+    <div class="container">    
+        <div class="header"></div>        
+        <ul id="navigation">        
+            <li><a href="/">返回主頁</a></li> 
+        </ul>
+        
+        <div class="content">
+            <h2>客戶清單</h2>
+
+            <p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>客戶編號</th>
+                            <th>客戶名稱</th>
+                            <th>地址</th>
+                            <th>電話</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for d in data %}
+                            <tr>
+                                <td>{{d.cusno}}</td>
+                                <td>{{d.cusname}}</td>
+                                <td>{{d.address}}</td>
+                                <td>{{d.tel}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </p>
+
+            <!-- 分頁控制 -->
+            <div class="pagination">
+                {% if page > 1 %}
+                    <a href="{{ url_for('customer_list', page=1) }}">首頁</a>
+                    <a href="{{ url_for('customer_list', page=page-1) }}">上一頁</a>
+                {% endif %}
+                
+                <span>第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+                
+                {% if page < total_pages %}
+                    <a href="{{ url_for('customer_list', page=page+1) }}">下一頁</a>
+                    <a href="{{ url_for('customer_list', page=total_pages) }}">最後一頁</a>
+                {% endif %}
+            </div>
+        </div>  
+        
+        <div class="footer">
+            NTUB imd, 2024.
+        </div>  
+    </div>
+</body>
+</html>
