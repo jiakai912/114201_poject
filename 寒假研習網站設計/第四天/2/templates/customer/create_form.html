@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>北風公司管理系統</title>
+<!-- 連結思源中文及css -->
+<link href="https://fonts.googleapis.com/css?family=Noto+Sans+TC" rel="stylesheet">
+<link href="/static/imgs/icon.jpg" rel="shortcut icon">
+<link href="/static/css/menu.css" rel="stylesheet"/>  
+<link href="/static/css/main.css" rel="stylesheet"/>      
+<!------------------------->
+</head>
+   
+<body>
+    <div class="container">    
+        <!--~~~~~~~~~~~~~~~~~-->
+        <div class="header">           
+        </div>        
+        
+        <!--~~~~~~~~~~~~~~~~~-->        
+        <ul id="navigation">        
+            <li><a href="/">返回主頁</a></li> 
+        </ul>
+        
+        <!--~~~~~~~~~~~~~~~~~--> 
+        <div class="content">
+            <h2>客戶新增</h2>
+
+            <form onsubmit="return checkPW()" action="#" method="GET">
+                <table width="100%">               
+                    <tbody>
+                        <tr>
+                            <td>學號</td>
+                            <td><input name="no" type="text" maxlength="8" pattern="^\d{7,8}$" title="只能輸入7位或8位數字" required></td>                            
+                        </tr>    
+                        <tr>
+                            <td>姓名</td>
+                            <td><input name="stuname" type="text"></td>                            
+                        </tr>  
+                        <tr>
+                            <td>姓別</td>
+                            <td>
+                                男<input type="radio" name="gender" value="M" checked>
+                                女<input type="radio" name="gender" value="F">
+                            </td>                            
+                        </tr>
+                        <tr>
+                            <td>校區</td>
+                            <td>
+                                台北<input type="radio" name="area" value="TA" checked>
+                                桃園<input type="radio" name="area" value="TO">
+                            </td>                            
+                        </tr>
+                        <tr>
+                            <td>科別</td>
+                            <td>
+                                <select name="dept">
+                                    <option value="1">會資系</option>
+                                    <option value="6">資管系</option>
+                                    <option value="7">應外系</option>
+                                </select>
+
+                            </td>                            
+                        </tr>  
+                        <tr>
+                            <td>生日</td>
+                            <td><input name="birthday" type="date"></td>                            
+                        </tr>  
+                        <tr>
+                            <td>密碼</td>
+                            <td><input name="password" type="password" id="pw1"></td>                            
+                        </tr>  
+                        <tr>
+                            <td>確認密碼</td>
+                            <td><input type="password" id="pw2"></td>                            
+                        </tr>      
+                        <tr>
+                            <td>上傳圖片</td>
+                            <td><input name="photo" type="file"></td>                            
+                        </tr>                          
+                        <tr>
+                            <td></td>
+                            <td><input type="submit" value="送出"></td>
+                                                     
+                        </tr>                          
+                    </tbody>                
+                </table>
+            </form>
+               
+        </div>       
+        
+        <!--~~~~~~~~~~~~~~~~~--> 
+        <div class="footer">
+            NTUB imd, 2024.
+        </div>  
+    </div>
+    
+ <!--**************************-->    
+ <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+   
+ <script>
+     function checkPW(){
+         var pw1 = document.getElementById("pw1").value;
+         var pw2 = document.getElementById("pw2").value;
+         
+         if (pw1!=pw2) {
+             swal('輸入錯誤', '[密碼]與[確認密碼]輸入的內容不同!', 'error');
+             return false;
+         }else{
+             return true;	
+         }
+     }
+ </script>    
+<!--**************************-->
+</body>
+   
+</html>

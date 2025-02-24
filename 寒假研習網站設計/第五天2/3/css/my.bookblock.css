@@ -1,0 +1,16 @@
+@charset "utf-8";
+
+.bb-bookblock {	
+    width: 600px;
+    height: 400px;
+    z-index: 15;
+}
+
+.bb-custom-wrapper {
+    width: 600px;
+}
+
+.bb-custom-wrapper nav a {
+    background:#1F2FC2;
+    color: #ff0;
+}

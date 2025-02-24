@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>測試文件</title>
+    <!-- 連結main.css, jquery-ui.css及思源中文 -->
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+TC" rel="stylesheet">
+    <!-- 加入jquery外掛的css -->
+    
+    <link href="css/bookblock.css" rel="stylesheet" />
+    <link href="css/demo1.css" rel="stylesheet" />
+    <link href="css/my.bookblock.css" rel="stylesheet" />
+
+    <link href="css/main.css" rel="stylesheet" type="text/css" />  
+    <!------------------------->
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">             
+        </div> 
+
+        <div class="content">                 
+            <!--~~~~~~~~~~~~~~~~-->
+            <!-- 加入顯示區域   -->
+            <!--~~~~~~~~~~~~~~~~-->
+
+            <p>    
+                <div class="main clearfix">
+                    <div class="bb-custom-wrapper">                        
+                        <div id="bb-bookblock" class="bb-bookblock">
+                            <div class="bb-item">
+                                <a href="#"><img src="imgs/p01-book.jpg" alt="p01"/></a>
+                            </div>
+                            <div class="bb-item">
+                                <a href="#"><img src="imgs/p02-book.jpg" alt="p02"/></a>
+                            </div>
+                            <div class="bb-item">
+                                <a href="#"><img src="imgs/p03-book.jpg" alt="p03"/></a>
+                            </div>
+                            <div class="bb-item">
+                                <a href="#"><img src="imgs/p04-book.jpg" alt="p04"/></a>
+                            </div>
+                        </div>
+                        <nav>
+                            <a id="bb-nav-first" href="#" class="bb-custom-icon bb-custom-icon-first">First page</a>
+                            <a id="bb-nav-prev" href="#" class="bb-custom-icon bb-custom-icon-arrow-left">Previous</a>
+                            <a id="bb-nav-next" href="#" class="bb-custom-icon bb-custom-icon-arrow-right">Next</a>
+                            <a id="bb-nav-last" href="#" class="bb-custom-icon bb-custom-icon-last">Last page</a>
+                        </nav>
+                    </div>
+                </div>
+            </p>
+
+            <!--~~~~~~~~~~~~~~~~-->                     
+        </div>
+
+        <div class="footer">
+            Copyright&copy; 2023, ntubIMD.
+        </div>
+    </div>
+
+    <!--**************************--> 
+    <!-- 載入js                    -->
+    <!--**************************--> 
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>   
+    <!-- 加入jquery外掛的js -->
+    <script src="js/modernizr.custom.js"></script>    
+    <script src="js/jquerypp.custom.js"></script>     
+    <script src="js/jquery.bookblock.js"></script>  
+    <script src="js/my.jquery.bookblock.js"></script> 
+    
+</body>
+
+</html>

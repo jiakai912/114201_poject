@@ -1,0 +1,52 @@
+@charset "utf-8";
+/* CSS Document */
+
+.lxgw-wenkai-mono-tc-regular {
+    font-family: "LXGW WenKai Mono TC", serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+html,body{
+    background-color: #BFCDF1;
+    margin: 0;
+    padding: 0;
+}
+
+div.container{
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: justify;
+    background: #fff;
+    box-shadow: 0 0 5px 5px #666;
+}
+
+div.content{
+    padding:0 30px;
+}
+
+div.content{
+    line-height:  26px;
+}
+
+div.header{
+    height: 160px;
+    background: url("../imgs/header.jpg")
+}
+
+div.navbar{
+    height: 40px;
+    background: #999;
+}
+
+
+
+
+div.footer{
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+    letter-spacing: 2px;
+    background: #FFDABB;
+}
