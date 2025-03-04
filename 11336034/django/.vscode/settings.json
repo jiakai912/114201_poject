@@ -9,10 +9,10 @@
             "server": "localhost",
             "port": 3306,
             "driver": "MySQL",
+            "database": "SimpleStudentDB",
             "name": "11336034",
             "username": "root",
-            "password": "A920912z",
-            "database": "SimpleStudentDB"
+            "password": "123456"
         }
     ]
 }
