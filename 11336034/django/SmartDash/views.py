@@ -16,11 +16,15 @@ def add_kpi(request):
 
 # 這個視圖會返回給定 KPI 名稱的所有數據
 def get_kpi_data(request):
-    kpi_name = request.GET.get('kpi_name')
-    kpi_data = Dashboard.objects.filter(kpi_name=kpi_name).order_by('date')  # 根據日期排序
-    labels = [data.date.strftime('%Y-%m-%d') for data in kpi_data]  # 日期作為 x 軸
-    values = [data.value for data in kpi_data]  # KPI 數值作為 y 軸
-    return JsonResponse({'labels': labels, 'values': values})
+    data = Dashboard.objects.filter(kpi_name="產量達成率").order_by('date')
+    dates = [entry.date.strftime('%Y-%m-%d') for entry in data]  # 格式化日期
+    values = [entry.value for entry in data]
+
+    # 傳遞資料給模板
+    return render(request, "dashboard.html", {
+        'dates': dates,
+        'values': values
+    })
 
 # 定義 dashboard 視圖
 def dashboard(request):

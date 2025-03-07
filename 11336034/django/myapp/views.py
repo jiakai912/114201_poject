@@ -3,7 +3,31 @@ from django.http import JsonResponse
 from .models import Dashboard  # 引入 Dashboard 模型
 
 def home(request):
-    return render(request, "index.html")
+    # 取得所有 KPI 資料，並按日期排序
+    data = Dashboard.objects.all().order_by('date').values('kpi_name', 'date', 'value')
+
+    kpi_data = {
+        "產量達成率": {"dates": [], "values": []},
+        "工時效率": {"dates": [], "values": []},
+        "生產成本偏差率": {"dates": [], "values": []},
+        "銷售退貨率": {"dates": [], "values": []},
+        "進貨單價": {"dates": [], "values": []},
+        "委外加工退貨率": {"dates": [], "values": []},
+        "離職率": {"dates": [], "values": []},
+        "庫存水位": {"dates": [], "values": []}
+    }
+
+    for entry in data:
+        kpi_name = entry['kpi_name']
+        kpi_data[kpi_name]["dates"].append(entry['date'].strftime('%Y-%m-%d'))  # 格式化日期
+        kpi_data[kpi_name]["values"].append(entry['value'])  # KPI 數值
+
+    print("KPI Data:", kpi_data)  # 打印資料來檢查
+
+    return render(request, "index.html", {
+        'kpi_data': kpi_data
+    })
+
 
 def dashboard(request):
     return render(request, "index.html")
