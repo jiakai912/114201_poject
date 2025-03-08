@@ -509,6 +509,7 @@
 
   </aside><!-- End Sidebar-->
 
+
   <main id="main" class="main">
 
     <div class="pagetitle">
@@ -539,37 +540,33 @@
     </section>
     
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // 處理每個 KPI 的資料
-        const kpiData = {{ kpi_data|safe }};  // 確保在模板中正確轉換 kpi_data
+      document.addEventListener("DOMContentLoaded", () => {
+          {% for kpi_name, data in kpi_data.items %}
+              new Chart(document.getElementById("chart-{{ kpi_name }}"), {
+                  type: 'line',  // 你可以根據需要選擇其他圖表類型
+                  data: {
+                      labels: {{ data.dates|safe }},  // 確保 labels 是正確的 JSON 格式
+                      datasets: [{
+                          label: "{{ kpi_name }}",
+                          data: {{ data.values|safe }},  // 確保 values 是正確的 JSON 格式
+                          fill: false,
+                          borderColor: 'rgb(31, 137, 251)',  // 設定藍色外觀
+                          tension: 0.1
+                      }]
+                  },
+                  options: {
+                      scales: {
+                          y: {
+                              beginAtZero: true
+                          }
+                      }
+                  }
+              });
+          {% endfor %}
+      });
+  </script>
     
-        Object.keys(kpiData).forEach(kpiName => {
-            const data = kpiData[kpiName];
-    
-            // 生成每個 KPI 的圖表
-            new Chart(document.querySelector(`#chart-${kpiName}`), {
-                type: 'line',
-                data: {
-                    labels: data.dates,
-                    datasets: [{
-                        label: kpiName,
-                        data: data.values,
-                        fill: false,
-                        borderColor: 'rgb(31, 137, 251)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        });
-    });
-    </script>    
+   
 
   </main><!-- End #main -->
 
