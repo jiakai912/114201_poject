@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import add_kpi, dashboard, get_kpi_data  # 確保導入所需的視圖函數
+from . import views
 
 urlpatterns = [
-    path('add_kpi/', add_kpi, name='add_kpi'),  # 新增 KPI 的路由
-    path('dashboard/', dashboard, name='dashboard'),  # 儀表板的路由
-    path('get_kpi_data/', get_kpi_data, name='get_kpi_data'),  # 處理 KPI 數據的請求
+    path('result/<int:message_id>/', views.result_view, name='result'),  # Include message_id here
+    path('detect_scam/', views.detect_scam, name='detect_scam'),
+    path('dashboard/', views.dashboard, name='dashboard'),
 ]

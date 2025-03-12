@@ -1,116 +1,55 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+
 <!DOCTYPE html>
-<html>
+
+<aside id="sidebar" class="sidebar">
+
+    <ul class="sidebar-nav" id="sidebar-nav">
+
+      <li class="nav-item">
+        <a class="nav-link" href=detect_scam>
+            <i class="bi bi-grid"></i>
+            <span>查看儀表板</span>
+        </a>
+     </li><!-- End Dashboard Nav -->
+
+
+<html lang="zh-Hant">
 <head>
-    <title>儀表板</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詐騙偵測儀表板</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
-<script>
-    function loadKPIData(kpiName, canvasId) {
-        function fetchData() {
-            fetch(`/get_kpi_data?kpi_name=${kpiName}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.labels && data.values) {  // 確保有數據
-                        var ctx = document.getElementById(canvasId).getContext('2d');
-                        new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: data.labels,  // 用日期作為 x 軸
-                                datasets: [{
-                                    label: kpiName,
-                                    data: data.values,  // 用 KPI 數據作為 y 軸
-                                    borderColor: '#36a2eb',
-                                    fill: false,
-                                    borderWidth: 2
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                scales: {
-                                    x: { title: { display: true, text: '日期' } },
-                                    y: { title: { display: true, text: '數值' } }
-                                }
-                            }
-                        });
-                    } else {
-                        console.error('Received data is missing labels or values.');
-                    }
-                })
-                .catch(error => console.error('Error loading KPI data:', error));
-        }
-    
-        fetchData(); // 初次加載數據
-        setInterval(fetchData, 10000); // 每 10 秒自動刷新數據
-    }
-    
-</script>
-
 <body>
-    <h1>儀表板</h1>
+    <div class="container">
+        <h1>詐騙偵測儀表板</h1>
+        
+        <p><strong>平均風險分數：</strong> {{ risk_avg }}</p>
 
-    <div id="kpiCharts">
-        {% for kpi in kpis %}
-            <div style="width: 600px; height: 400px; margin: 20px;">
-                <h3>{{ kpi.kpi_name }}</h3>
-                <canvas id="line-chart-{{ kpi.id }}"></canvas>
-            </div>
+        <h2>詐騙類型統計</h2>
+        <ul>
+            {% for category, count in category_counts.items %}
+                <li>{{ category }}: {{ count }} 條</li>
+            {% endfor %}
+        </ul>
 
-            <script>
-                var ctx = document.getElementById('line-chart-{{ kpi.id }}').getContext('2d');
-                var myChart = new Chart(ctx, {
-                    type: 'line',  // 使用折線圖
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],  // 這裡可以根據你需要的時間範圍設置
-                        datasets: [{
-                            label: '{{ kpi.kpi_name }}',
-                            data: [
-                                {{ kpi.value }},
-                                {{ kpi.value }},
-                                {{ kpi.value }},
-                                {{ kpi.value }},
-                                {{ kpi.value }},
-                                {{ kpi.value }},
-                                {{ kpi.value }}
-                            ],  // 假設你的數據都是相同的，這裡可以改成實際的數據
-                            borderColor: '#36a2eb',
-                            fill: false,  // 不填充顏色
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(tooltipItem) {
-                                        return tooltipItem.label + ': ' + tooltipItem.raw.toFixed(2);
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: '月份'
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: '數值'
-                                }
-                            }
-                        }
-                    }
-                });
-            </script>
-        {% empty %}
-            <p>目前沒有 KPI 數據。</p>
-        {% endfor %}
+        <h2>所有訊息</h2>
+        <table>
+            <tr>
+                <th>訊息內容</th>
+                <th>風險分數</th>
+                <th>檢測結果</th>
+            </tr>
+            {% for message in messages %}
+            <tr>
+                <td>{{ message.text }}</td>
+                <td>{{ message.risk_score }}</td>
+                <td><a href="{% url 'result' message.id %}">查看結果</a></td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
 </body>
 </html>

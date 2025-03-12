@@ -129,7 +129,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/assets-files/
 
 STATIC_URL = 'assets/'
-STATICFILES_DIRS = [BASE_DIR / "myapp/assets"]
+STATICFILES_DIRS = [
+    BASE_DIR / "SmartDash",
+    BASE_DIR / "myapp/assets"
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
