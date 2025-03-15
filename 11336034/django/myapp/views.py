@@ -151,4 +151,3 @@ def tables_data(request):
 
 def student_list(request):
     return render(request, "students.html")
-

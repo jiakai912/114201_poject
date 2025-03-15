@@ -87,3 +87,5 @@ class ResultViewTest(TestCase):
         # 確保返回 200 狀態碼
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This is a test result")
+
+
