@@ -1,0 +1,19 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "11336032",
+            "database": "niceadmin",
+            "username": "root",
+            "password": "ch0912979127",
+            "connectionTimeout": 30
+        }
+    ]
+}
