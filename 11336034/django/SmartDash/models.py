@@ -17,3 +17,16 @@ class ScamMessage(models.Model):
 
     def __str__(self):
         return f"Message ID {self.id} - Risk: {self.risk_score} - Type: {self.category}"
+
+from django.db import models
+
+class CarbonEmission(models.Model):
+    company_name = models.CharField(max_length=255)
+    date = models.DateField()
+    energy_consumption = models.FloatField()  # kWh
+    fuel_consumption = models.FloatField()  # 升
+    transport_emission = models.FloatField()  # kg CO2
+    total_emission = models.FloatField()  # 計算出的總碳排放
+
+    def __str__(self):
+        return f"{self.company_name} - {self.date}"
