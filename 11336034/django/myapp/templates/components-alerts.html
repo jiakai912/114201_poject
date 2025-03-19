@@ -792,6 +792,32 @@
       </div>
     </section>
 
+<h2>新增 KPI 數據</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">提交</button>
+</form>
+
+<hr>
+
+<h2>已儲存的 KPI 數據</h2>
+<table border="1">
+    <tr>
+        <th>KPI 名稱</th>
+        <th>數值</th>
+        <th>日期</th>
+    </tr>
+    {% for item in kpi_data %}
+    <tr>
+        <td>{{ item.kpi_name }}</td>
+        <td>{{ item.value }}</td>
+        <td>{{ item.date }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
   </main><!-- End #main -->
 
   <!-- ======= Footer ======= -->

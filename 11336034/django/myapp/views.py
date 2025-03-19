@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Dashboard  # 引入 Dashboard 模型
+from django.shortcuts import redirect
+from .forms import DashboardForm
 
 def home(request):
     # 取得所有 KPI 資料，並按日期排序
@@ -33,7 +35,18 @@ def dashboard(request):
     return render(request, "index.html")
 
 def components_alerts(request):
-    return render(request, "components-alerts.html")
+    if request.method == "POST":
+        form = DashboardForm(request.POST)
+        if form.is_valid():
+            form.save()  # 儲存到資料庫
+            return redirect('components-alerts.html')  # 儲存後重新導向到 alerts 頁面
+    else:
+        form = DashboardForm()
+
+    # 取得所有 KPI 數據
+    kpi_data = Dashboard.objects.all().order_by('date')
+
+    return render(request, 'components-alerts.html', {'form': form, 'kpi_data': kpi_data})
 
 def components_accordion(request):
     return render(request, "components-accordion.html")

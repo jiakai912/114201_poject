@@ -8,5 +8,4 @@ class Dashboard(models.Model):
     date = models.DateField()
 
     def __str__(self):
-        return self.name
- 
+        return self.name  #用來定義當Dashboard物件轉換為字串時的顯示內容
