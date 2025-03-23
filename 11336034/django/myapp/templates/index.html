@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <title>Dashboard - SmartDash Bootstrap Template</title>
+  <title>Dashboard - DreamEcho AI Bootstrap Template</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -32,7 +32,7 @@
   <link href="assets/css/style.css" rel="stylesheet">
 
   <!-- =======================================================
-  * Template Name: SmartDash
+  * Template Name: DreamEcho AI
   * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
   * Updated: Apr 20 2024 with Bootstrap v5.3.3
   * Author: BootstrapMade.com
@@ -48,7 +48,7 @@
     <div class="d-flex align-items-center justify-content-between">
       <a href="index.html" class="logo d-flex align-items-center">
         <img src="assets/img/favicon.png" alt="">
-        <span class="d-none d-lg-block">SmartDash</span>
+        <span class="d-none d-lg-block">DreamEcho AI</span>
       </a>
       <i class="bi bi-list toggle-sidebar-btn"></i>
     </div><!-- End Logo -->
@@ -279,13 +279,13 @@
       <li class="nav-item">
         <a class="nav-link" href="{% url 'dashboard' %}">
             <i class="bi bi-grid"></i>
-            <span>查看儀表板</span>
+            <span>首頁</span>
         </a>
      </li><!-- End Dashboard Nav -->
 
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#components-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-menu-button-wide"></i><span>新增儀表板</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-menu-button-wide"></i><span>夢境分析數據</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="components-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
@@ -296,7 +296,7 @@
           </li>
           <li>
             <a href="{% url 'accordion' %}">
-              <i class="bi bi-circle"></i><span>工時效率</span>
+              <i class="bi bi-circle"></i><span>情緒指數</span>
             </a>
           </li>
           <li>
@@ -364,7 +364,7 @@
 
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
-            <i class="bi bi-journal-text"></i><span>管理儀表板</span><i class="bi bi-chevron-down ms-auto"></i>
+            <i class="bi bi-journal-text"></i><span>AI 心裡健康建議</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="forms-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
             <li>
@@ -392,7 +392,7 @@
 
     <li class="nav-item">
       <a class="nav-link collapsed" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>新增圖表至儀表板</span><i class="bi bi-chevron-down ms-auto"></i>
+          <i class="bi bi-layout-text-window-reverse"></i><span>社群討論區</span><i class="bi bi-chevron-down ms-auto"></i>
       </a>
       <ul id="tables-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
@@ -410,7 +410,7 @@
 
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#charts-nav" data-bs-toggle="collapse" href="#">
-            <i class="bi bi-bar-chart"></i><span>圖表與資料操作</span><i class="bi bi-chevron-down ms-auto"></i>
+            <i class="bi bi-bar-chart"></i><span>夢境人格分析</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="charts-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
             <li>
@@ -513,67 +513,76 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
+      <h1>Dream Interpretation</h1>
       <nav>
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
+          <li class="breadcrumb-item active">Dream Interpretation</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
 
-    <section class="section">
+
+  <!-- 夢境 NLP 分析 -->
+  <!DOCTYPE html>
+  <html lang="zh-TW">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>DreamEcho AI - 夢境分析</title>
+      <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </head>
+  <body>
+
+  <div class="container mt-4">
       <div class="row">
-        {% for kpi_name, data in kpi_data.items %}
+          <!-- 左側 - 夢境輸入 -->
           <div class="col-lg-6">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title">{{ kpi_name }}</h5>
-    
-                <!-- Line Chart -->
-                <canvas id="chart-{{ kpi_name }}" style="max-height: 400px;"></canvas>
+              <div class="card">
+                  <div class="card-body">
+                      <h5 class="card-title text-center">夢境 NLP 分析</h5>
+                      <form method="POST">
+                          {% csrf_token %}
+                          <textarea id="dream_input" name="dream_input" class="form-control" rows="4" placeholder="請輸入你的夢境內容">{{ dream_text }}</textarea>
+                          <button type="submit" class="btn btn-primary w-100 mt-3">分析夢境</button>
+                      </form>
+                  </div>
               </div>
-            </div>
           </div>
-        {% endfor %}
+  
+          <!-- 右側 - 分析結果 -->
+          <div class="col-lg-6">
+              <div class="card">
+                  <div class="card-body">
+                      <h5 class="card-title text-center">分析結果</h5>
+                      {% if analysis_result %}
+                          <div class="mt-2 p-2 border rounded" style="background:rgb(171, 255, 251);">
+                              <p><strong>關鍵字：</strong> {{ analysis_result.keywords|join:", " }}</p>
+                              <p><strong>情緒類別：</strong> {{ analysis_result.sentiment }}</p>
+                              <p><strong>心理學解析：</strong> {{ analysis_result.interpretation }}</p>
+                          </div>
+                      {% elif error_message %}
+                          <div class="alert alert-danger mt-3">{{ error_message }}</div>
+                      {% endif %}
+                  </div>
+              </div>
+          </div>
       </div>
-    </section>
-    
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-          {% for kpi_name, data in kpi_data.items %}
-              new Chart(document.getElementById("chart-{{ kpi_name }}"), {
-                  type: 'line',  // 你可以根據需要選擇其他圖表類型
-                  data: {
-                      labels: {{ data.dates|safe }},  // 確保 labels 是正確的 JSON 格式
-                      datasets: [{
-                          label: "{{ kpi_name }}",
-                          data: {{ data.values|safe }},  // 確保 values 是正確的 JSON 格式
-                          fill: false,
-                          borderColor: 'rgb(31, 137, 251)',  // 設定藍色外觀
-                          tension: 0.1
-                      }]
-                  },
-                  options: {
-                      scales: {
-                          y: {
-                              beginAtZero: true
-                          }
-                      }
-                  }
-              });
-          {% endfor %}
-      });
-  </script>
-    
-   
+  </div>
+  
+  </body>
+  </html>
+  
+<!-- 結束-->
 
   </main><!-- End #main -->
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">
     <div class="copyright">
-      &copy; Copyright <strong><span>SmartDash</span></strong>. All Rights Reserved
+      &copy; Copyright <strong><span>DreamEcho AI</span></strong>. All Rights Reserved
     </div>
     <div class="credits">
       <!-- All the links in the footer should remain intact. -->

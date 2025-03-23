@@ -5,31 +5,32 @@ from django.shortcuts import redirect
 from .forms import DashboardForm
 
 def home(request):
-    # 取得所有 KPI 資料，並按日期排序
-    data = Dashboard.objects.all().order_by('date').values('kpi_name', 'date', 'value')
+    analysis_result = None
+    error_message = None
+    dream_text = ""  # 新增變數來保存使用者輸入的文字
 
-    kpi_data = {
-        "產量達成率": {"dates": [], "values": []},
-        "工時效率": {"dates": [], "values": []},
-        "生產成本偏差率": {"dates": [], "values": []},
-        "銷售退貨率": {"dates": [], "values": []},
-        "進貨單價": {"dates": [], "values": []},
-        "委外加工退貨率": {"dates": [], "values": []},
-        "離職率": {"dates": [], "values": []},
-        "庫存水位": {"dates": [], "values": []}
+    keywords_set = {
+        "掉牙": {"keywords": ["掉牙", "變化", "焦慮"], "sentiment": "焦慮", "interpretation": "掉牙夢境可能代表焦慮或即將發生的變化。"},
+        "飛行": {"keywords": ["飛行", "自由", "快樂"], "sentiment": "興奮", "interpretation": "飛行夢境通常象徵自由與掌控能力的提升。\
+               處於成長階段時，夢見自己飛翔是正在長高這種生理現象的反映。成人夢見飛上天空則大多象徵著自由和成功，是自信的表現。\
+               如果夢見自己飛起來的時候心情是愉快的，應該是近期在生活中有很多收穫，如果夢見自己飛翔時心情是緊張的或憂鬱的，\
+               那麼應該是在潛意識裡對現實的一種逃避。另外印度古人認為效能量沿通道到達頭頂就會夢見飛，中國古人認為“上盛則夢飛”。\
+               中醫認為上焦即頭到胃口這一部位，包括胸、頭、心肺處有病，病屬於實癥，則容易夢見飛。"},
+        "蛇": {"keywords": ["蛇", "恐懼", "潛在危險"], "sentiment": "恐懼", "interpretation": "夢見蛇可能象徵潛在的威脅或內心的恐懼。"}
     }
 
-    for entry in data:
-        kpi_name = entry['kpi_name']
-        kpi_data[kpi_name]["dates"].append(entry['date'].strftime('%Y-%m-%d'))  # 格式化日期
-        kpi_data[kpi_name]["values"].append(entry['value'])  # KPI 數值
+    if request.method == 'POST':
+        dream_text = request.POST.get('dream_input', '').strip()  # 取得使用者輸入的夢境內容
 
-    print("KPI Data:", kpi_data)  # 打印資料來檢查
+        if dream_text:
+            for key, result in keywords_set.items():
+                if key in dream_text:
+                    analysis_result = result
+                    break
 
-    return render(request, "index.html", {
-        'kpi_data': kpi_data
-    })
-
+            if not analysis_result:
+                error_message = "未找到相關夢境分析結果。"
+    return render(request, 'index.html', {'analysis_result': analysis_result, 'error_message': error_message, 'dream_text': dream_text})
 
 def dashboard(request):
     return render(request, "index.html")
@@ -50,6 +51,7 @@ def components_alerts(request):
 
 def components_accordion(request):
     return render(request, "components-accordion.html")
+
 def components_badges(request):
     return render(request, "components-badges.html")
 
@@ -84,7 +86,30 @@ def components_spinners(request):
     return render(request, "components-spinners.html")
 
 def components_tooltips(request):
-    return render(request, "components-tooltips.html")
+    # 取得所有 KPI 資料，並按日期排序
+    data = Dashboard.objects.all().order_by('date').values('kpi_name', 'date', 'value')
+
+    kpi_data = {
+        "產量達成率": {"dates": [], "values": []},
+        "工時效率": {"dates": [], "values": []},
+        "生產成本偏差率": {"dates": [], "values": []},
+        "銷售退貨率": {"dates": [], "values": []},
+        "進貨單價": {"dates": [], "values": []},
+        "委外加工退貨率": {"dates": [], "values": []},
+        "離職率": {"dates": [], "values": []},
+        "庫存水位": {"dates": [], "values": []}
+    }
+
+    for entry in data:
+        kpi_name = entry['kpi_name']
+        kpi_data[kpi_name]["dates"].append(entry['date'].strftime('%Y-%m-%d'))  # 格式化日期
+        kpi_data[kpi_name]["values"].append(entry['value'])  # KPI 數值
+
+    print("KPI Data:", kpi_data)  # 打印資料來檢查
+
+    return render(request, "components-tooltips.html", {
+        'kpi_data': kpi_data
+    })
 
 def users_profile(request):
     return render(request, "users-profile.html")
