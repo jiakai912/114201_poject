@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import pymysql
+pymysql.install_as_MySQLdb()
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -81,6 +82,20 @@ DATABASES = {
     }
 }
 
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',  # ✅ 使用 MySQL
+        'NAME': 'DreamEcho',            # ✅ 你的資料庫名稱
+        'USER': 'root',                        # ✅ 你的 MySQL 帳號
+        'PASSWORD': '123456',                # ✅ 你的 MySQL 密碼
+        'HOST': 'localhost',                   # ✅ 伺服器名稱
+        'PORT': '3306',                         # ✅ MySQL 預設的 Port
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
