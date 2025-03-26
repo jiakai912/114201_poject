@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamEcho AI</title>
+    <link rel="stylesheet" href="{% static 'css/welcome.css' %}">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            background-size: 400% 400%;
+            animation: gradientBackground 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        @keyframes gradientBackground {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .lightbox {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 50px 60px;
+            text-align: center;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 450px;
+            width: 100%;
+            transition: transform 0.4s ease-out;
+        }
+
+        .lightbox h1 {
+            font-size: 3rem;
+            color: #5d4d9a;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .lightbox p {
+            font-size: 1.25rem;
+            color: #555;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            opacity: 0.85;
+        }
+
+        .enter-btn {
+            background-color: #ff79c6;
+            color: white;
+            font-size: 1.4rem;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(255, 121, 198, 0.3);
+        }
+
+        .enter-btn:hover {
+            background-color: #ff4f9b;
+            transform: scale(1.1);
+            box-shadow: 0 12px 25px rgba(255, 79, 155, 0.4);
+        }
+
+        .enter-btn:active {
+            background-color: #ff3b8d;
+            transform: scale(1);
+            box-shadow: 0 8px 15px rgba(255, 79, 155, 0.2);
+        }
+
+        .lightbox:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 600px) {
+            .lightbox {
+                padding: 30px 40px;
+            }
+
+            .lightbox h1 {
+                font-size: 2.2rem;
+            }
+
+            .lightbox p {
+                font-size: 1rem;
+            }
+
+            .enter-btn {
+                font-size: 1.2rem;
+                padding: 12px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lightbox">
+        <h1>DreamEcho AI</h1>
+        <p>探索你的夢境，解析內心的世界</p>
+        <a href="login">
+            <button class="enter-btn">進入</button>
+        </a>
+    </div>
+    <script src="{% static 'js/welcome.js' %}"></script>
+</body>
+</html>
