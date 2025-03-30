@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login,logout
 from openai import OpenAI  # 導入 OpenAI SDK
-from .models import Dream
 from .forms import DreamForm, UserRegisterForm
 import logging
 from django.http import HttpResponse
@@ -14,6 +13,14 @@ from django.http import JsonResponse
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponseForbidden
+from .models import Dream,DreamPost,DreamComment,DreamTag,DreamPost,DreamTrend,DreamRecommendation
+from django.db.models import Count,Q
+from django.utils import timezone
+import jieba  # 中文分詞庫
+from collections import Counter
+import nltk
+from nltk.tokenize import word_tokenize
+
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -303,3 +310,178 @@ def get_mental_health_suggestions(request, dream_id):
         return JsonResponse({"error": "夢境不存在"}, status=404)
 
 
+
+# 1. 社群主頁和全球夢境趨勢
+def community(request):
+    """夢境社群主頁"""
+    # 獲取熱門夢境
+    popular_dreams = DreamPost.objects.order_by('-view_count')[:10]
+    
+    # 獲取最新夢境趨勢
+    try:
+        latest_trend = DreamTrend.objects.latest('date')
+        trend_data = latest_trend.trend_data
+    except DreamTrend.DoesNotExist:
+        trend_data = {}
+    
+    return render(request, 'dreams/community.html', {
+        'popular_dreams': popular_dreams,
+        'trend_data': trend_data
+    })
+
+def dream_community(request):
+    # 獲取今日熱門夢境趨勢
+    trend_data = DreamTrend.objects.filter(date=timezone.now().date()).first()
+    if trend_data:
+        trend_data = json.loads(trend_data.trend_data)  # 將 JSON 字符串解析為字典
+    else:
+        trend_data = {}
+
+    # 按次數降序排序，並且只取前 8 個
+    top_8_trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
+
+    # 將資料傳遞給模板
+    context = {
+        'trend_data': top_8_trend_data,  # 傳遞已排序並限制為 8 條的資料
+    }
+
+    return render(request, 'dreams/community.html', context)
+
+# 2. 匿名夢境分享
+@login_required
+def share_dream(request):
+    """分享夢境到社群"""
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        title = request.POST.get('title')
+        is_anonymous = request.POST.get('is_anonymous', False) == 'on'
+        tags = request.POST.getlist('tags')
+        
+        # 創建夢境貼文
+        dream_post = DreamPost(
+            user=request.user if not is_anonymous else None,
+            content=content,
+            title=title,
+            is_anonymous=is_anonymous,
+        )
+        dream_post.save()
+        
+        # 添加標籤
+        for tag_name in tags:
+            tag, created = DreamTag.objects.get_or_create(name=tag_name)
+            dream_post.tags.add(tag)
+        
+        messages.success(request, '夢境已成功分享到社群！')
+        return redirect('dream_post_detail', post_id=dream_post.id)
+    
+    # 獲取常用標籤供選擇
+    popular_tags = DreamTag.objects.annotate(
+        usage_count=Count('dreampost')
+    ).order_by('-usage_count')[:20]
+    
+    return render(request, 'dreams/share_dream.html', {
+        'popular_tags': popular_tags
+    })
+
+# 3. 夢境搜索功能
+def search_dreams(request):
+    """搜索夢境"""
+    query = request.GET.get('q', '')
+    tag = request.GET.get('tag', '')
+    
+    dreams = DreamPost.objects.all()
+    
+    if query:
+        dreams = dreams.filter(
+            Q(content__icontains=query) | 
+            Q(title__icontains=query)
+        )
+    
+    if tag:
+        dreams = dreams.filter(tags__name=tag)
+    
+    return render(request, 'dreams/search_results.html', {
+        'dreams': dreams,
+        'query': query,
+        'tag': tag
+    })
+
+# 4. 夢境詳情頁與評論功能
+def dream_post_detail(request, post_id):
+    """夢境貼文詳情頁"""
+    dream_post = get_object_or_404(DreamPost, id=post_id)
+    
+    # 增加瀏覽次數
+    dream_post.increase_view_count()
+    
+    # 獲取評論
+    comments = dream_post.comments.all()
+    
+    # 獲取相似夢境推薦
+    similar_dreams = get_similar_dreams(dream_post)
+    
+    # 處理評論提交
+    if request.method == 'POST' and request.user.is_authenticated:
+        comment_content = request.POST.get('comment')
+        if comment_content:
+            DreamComment.objects.create(
+                dream_post=dream_post,
+                user=request.user,
+                content=comment_content
+            )
+            messages.success(request, '評論已提交！')
+            return redirect('dream_post_detail', post_id=post_id)
+    
+    return render(request, 'dreams/dream_post_detail.html', {
+        'dream': dream_post,
+        'comments': comments,
+        'similar_dreams': similar_dreams
+    })
+
+# 5. 夢境推薦系統
+def get_similar_dreams(dream_post, limit=5):
+    """獲取相似夢境推薦"""
+    # 基於標籤的推薦
+    if dream_post.tags.exists():
+        tag_based = DreamPost.objects.filter(
+            tags__in=dream_post.tags.all()
+        ).exclude(id=dream_post.id).distinct()[:limit]
+        return tag_based
+    
+    # 如果沒有標籤，返回熱門夢境
+    return DreamPost.objects.exclude(id=dream_post.id).order_by('-view_count')[:limit]
+
+
+# 6. 生成並更新全球夢境趨勢
+def update_dream_trends():
+    """更新夢境趨勢數據 (建議通過定時任務每天運行)"""    
+    today = timezone.now().date()
+    
+    # 獲取過去24小時的夢境
+    time_threshold = timezone.now() - timezone.timedelta(hours=24)
+    recent_dreams = DreamPost.objects.filter(created_at__gte=time_threshold)
+    
+    # 提取關鍵詞 (這裡使用簡單的分詞和計數，可以替換為更複雜的關鍵詞提取算法)
+    all_words = []
+    for dream in recent_dreams:
+        # 中文分詞
+        words = jieba.cut(dream.content)
+        all_words.extend(list(words))
+    
+    # 過濾停用詞 (需要自定義停用詞表)
+    stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
+    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
+    
+    # 統計詞頻
+    word_counts = Counter(filtered_words)
+    top_keywords = dict(word_counts.most_common(20))
+    
+    # 保存趨勢數據
+    trend, created = DreamTrend.objects.get_or_create(
+        date=today,
+        defaults={'trend_data': top_keywords}
+    )
+    
+    if not created:
+        trend.trend_data = top_keywords
+        trend.save()

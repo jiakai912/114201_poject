@@ -1,0 +1,106 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 夢境搜尋結果{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="page-header text-center mb-4">
+        <div class="dream-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h1>夢境搜尋結果</h1>
+        <p class="text-muted">根據您的搜尋條件，以下是與您夢境相關的結果。</p>
+    </div>
+    <div class="row">
+        <!-- 左側導覽列 -->
+        <nav class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-comments me-2"></i>夢境社群
+                </a>
+                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-share-alt me-2"></i>分享夢境
+                </a>
+                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-search me-2"></i>搜尋夢境
+                </a>
+                <a href="{% url 'dream_history' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-history me-2"></i>夢境歷史
+                </a>
+                <a href="{% url 'dream_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-chart-line me-2"></i>夢境分析儀表板
+                </a>
+                <a href="{% url 'mental_health_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heartbeat me-2"></i>心理健康儀表板
+                </a>
+            </div>
+        </nav>
+
+        <!-- 主要內容 -->
+        <main class="col-md-9">
+            <form method="get" class="search-form mb-4">
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="搜尋夢境" />
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search"></i> 搜尋
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <label for="tag" class="form-label">標籤篩選：</label>
+                    <select name="tag" id="tag" class="form-select w-auto">
+                        <option value="">全部標籤</option>
+                        {% for tag in tags %}
+                            <option value="{{ tag.name }}" {% if tag.name == selected_tag %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+
+            {% if dreams %}
+                <ul class="list-group">
+                    {% for dream in dreams %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="text-decoration-none text-dark">
+                                <h4>
+                                    <i class="fas fa-moon me-2 text-primary"></i>{{ dream.title }}
+                                </h4>
+                                <p>{{ dream.content|truncatewords:30 }}</p>
+                            </a>
+                            <div class="text-end">
+                                <small class="text-muted">
+                                    發布者: {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}<br>
+                                    日期: {{ dream.created_at|date:"Y-m-d H:i" }}
+                                </small>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="alert alert-warning" role="alert">
+                    沒有找到相關夢境。
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+<script>
+    // 添加動畫效果
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animation-fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
+{% endblock %}

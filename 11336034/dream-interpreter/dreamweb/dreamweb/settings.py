@@ -16,7 +16,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'dreams'
+    'dreams',
+    'django_crontab',  # 添加 crontab 支持
+]
+
+CRONJOBS = [
+    ('0 0 * * *', 'dreams.cron.update_dream_trends'),  # 每天午夜執行趨勢更新
 ]
 
 MIDDLEWARE = [
@@ -79,7 +84,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Taipei'
+
 USE_I18N = True
 USE_TZ = True
 

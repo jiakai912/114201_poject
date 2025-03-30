@@ -17,7 +17,10 @@ urlpatterns = [
     path('api/mental-health-suggestions/<int:dream_id>/', views.get_mental_health_suggestions, name='mental_health_suggestions'),
     path('get_dream_detail/<int:dream_id>/', views.get_dream_detail, name='get_dream_detail'),
     path('logout_success/', views.logout_success, name='logout_success'), 
+    path('community/', views.community, name='dream_community'),
+    path('share/', views.share_dream, name='share_dream'),
+    path('search/', views.search_dreams, name='search_dreams'),
+    path('post/<int:post_id>/', views.dream_post_detail, name='dream_post_detail'),
 ]
-
 
     
