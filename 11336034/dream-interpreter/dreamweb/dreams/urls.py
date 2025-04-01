@@ -21,6 +21,9 @@ urlpatterns = [
     path('share/', views.share_dream, name='share_dream'),
     path('search/', views.search_dreams, name='search_dreams'),
     path('post/<int:post_id>/', views.dream_post_detail, name='dream_post_detail'),
+    path('my_posts/', views.my_posts, name='my_posts'),
+    path('post/<int:post_id>/edit/', views.edit_dream_post, name='edit_dream_post'),
+    path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
 ]
 
     

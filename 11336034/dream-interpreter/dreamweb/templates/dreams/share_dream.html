@@ -13,6 +13,9 @@
         <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4">
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-pencil-alt me-2"></i>我的夢境貼文
+                </a>
                 <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action">
                     <i class="fas fa-comments me-2"></i>夢境社群
                 </a>
@@ -22,15 +25,6 @@
                 <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action">
                     <i class="fas fa-search me-2"></i>搜尋夢境
                 </a>
-                <a href="{% url 'dream_history' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-history me-2"></i>夢境歷史
-                </a>
-                <a href="{% url 'dream_dashboard' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-chart-line me-2"></i>夢境分析儀表板
-                </a>
-                <a href="{% url 'mental_health_dashboard' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-heartbeat me-2"></i>心理健康儀表板
-                </a>
             </div>
         </nav>
 
@@ -38,7 +32,7 @@
         <main class="col-md-9">
 
             <div class="card">
-                <div class="card-header bg-info text-white">
+                <div class="card-header text-white">
                     <h2 class="h5 mb-0">夢境投稿</h2>
                 </div>
                 <div class="card-body">

@@ -1,0 +1,83 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %}我的夢境貼文{% endblock %}
+
+{% block content %}
+<div class="container mt-5 animation-fade-in">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-pencil-alt"></i>
+        </div>
+        <h1>我的夢境貼文</h1>
+        <p class="text-muted">與其他用戶分享夢境、交流分析，並尋找相似的夢境經歷。</p>
+    </div>
+    <div class="row">
+        <!-- 左側導覽列 -->
+        <nav class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-pencil-alt me-2"></i>我的夢境貼文
+                </a>
+                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-comments me-2"></i>夢境社群
+                </a>
+                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-share-alt me-2"></i>分享夢境
+                </a>
+                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-search me-2"></i>搜尋夢境
+                </a>
+            </div>
+        </nav>
+        
+        <!-- 主要內容 -->
+        <main class="col-md-9">
+            {% if my_posts %}
+                <div class="row">
+                    {% for post in my_posts %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card dream-card shadow-sm">
+                                <div class="card-header text-white">
+                                    <h5 class="card-title">
+                                        <a href="{% url 'dream_post_detail' post_id=post.id %}" class="text-decoration-none text-white">
+                                            {{ post.title }}
+                                        </a>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>{{ post.content|truncatewords:20 }}</p>
+                                    <small class="text-muted">
+                                        發佈時間：{{ post.created_at|date:"Y-m-d H:i" }} |
+                                        {% if post.is_anonymous %}
+                                            <span class="badge bg-secondary">匿名發佈</span>
+                                        {% else %}
+                                            <span class="badge bg-success">公開發佈</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="card-footer d-flex justify-content-end">
+                                    <!-- 編輯按鈕 -->
+                                    <a href="{% url 'edit_dream_post' post_id=post.id %}" class="btn btn-sm" style="background-color: #6a5acd; color: white; border: none; margin-right: 50px;">編輯</a>
+                                    <!-- 刪除按鈕 -->
+                                    <form action="{% url 'delete_dream_post' post_id=post.id %}" method="post" style="display:inline;" onsubmit="return confirmDelete();">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">刪除</button>
+                                    </form>
+                                </div>
+                                
+                                <script>
+                                    function confirmDelete() {
+                                        return confirm("您確定要刪除這篇夢境貼文嗎？這個操作無法撤回。");
+                                    }
+                                </script>                                
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">您尚未發佈任何夢境。</div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

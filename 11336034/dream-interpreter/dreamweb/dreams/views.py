@@ -347,6 +347,7 @@ def dream_community(request):
 
     return render(request, 'dreams/community.html', context)
 
+
 # 2. 匿名夢境分享
 @login_required
 def share_dream(request):
@@ -382,6 +383,75 @@ def share_dream(request):
     return render(request, 'dreams/share_dream.html', {
         'popular_tags': popular_tags
     })
+
+#查看貼文功能
+@login_required
+def my_posts(request):
+    """顯示用戶自己發佈的夢境貼文，包括匿名貼文"""
+    my_posts = DreamPost.objects.filter(
+        Q(user=request.user) | Q(is_anonymous=True, user__isnull=True)
+    ).order_by('-created_at')
+
+    return render(request, 'dreams/my_posts.html', {'my_posts': my_posts})
+
+
+#編輯貼文功能
+@login_required
+def edit_dream_post(request, post_id):
+    """編輯夢境貼文"""
+    dream_post = get_object_or_404(DreamPost, id=post_id)
+
+    # 確保只有原作者或該貼文擁有者（匿名也算）才能編輯
+    if dream_post.user != request.user and not dream_post.is_anonymous:
+        messages.error(request, "你沒有權限編輯這篇貼文。")
+        return redirect('dream_post_detail', post_id=post_id)
+
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        is_anonymous = request.POST.get('is_anonymous', False) == 'on'
+        tags = request.POST.getlist('tags')
+
+        # 更新貼文內容
+        dream_post.title = title
+        dream_post.content = content
+        dream_post.is_anonymous = is_anonymous
+        dream_post.user = None if is_anonymous else request.user  # 根據匿名狀態變更使用者
+        dream_post.save()
+
+        # 更新標籤
+        dream_post.tags.clear()
+        for tag_name in tags:
+            tag, created = DreamTag.objects.get_or_create(name=tag_name)
+            dream_post.tags.add(tag)
+
+        messages.success(request, "貼文已更新！")
+        return redirect('dream_post_detail', post_id=dream_post.id)
+
+    # 取得現有標籤
+    popular_tags = DreamTag.objects.annotate(
+        usage_count=Count('dreampost')
+    ).order_by('-usage_count')[:20]
+
+    return render(request, 'dreams/edit_dream_post.html', {
+        'dream_post': dream_post,
+        'popular_tags': popular_tags
+    })
+
+#刪除貼文功能
+@login_required
+def delete_dream_post(request, post_id):
+    # 確保獲取到該貼文
+    post = get_object_or_404(DreamPost, id=post_id)
+    
+    # 如果是 POST 請求才進行刪除
+    if request.method == 'POST':
+        post.delete()  # 刪除該貼文
+        return redirect('my_posts')  # 重定向到「我的夢境貼文」頁面
+
+    # 如果不是 POST 請求，重定向回列表頁（防止未經授權的請求）
+    return redirect('my_posts')
+
 
 # 3. 夢境搜索功能
 def search_dreams(request):
@@ -485,3 +555,4 @@ def update_dream_trends():
     if not created:
         trend.trend_data = top_keywords
         trend.save()
+
