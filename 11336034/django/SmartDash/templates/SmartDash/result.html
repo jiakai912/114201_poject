@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢測結果</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>檢測結果</h1>
+        <p><strong>檢測訊息：</strong></p>
+        <p>{{ message.text }}</p>
+
+        <p><strong>風險分數：</strong>
+            <span class="risk-score {% if message.risk_score > 0.7 %}high-risk{% elif message.risk_score > 0.3 %}medium-risk{% else %}low-risk{% endif %}">
+                {{ message.risk_score }}
+            </span>
+        </p>
+
+        <p><strong>檢測到的關鍵字：</strong></p>
+        <ul>
+            {% for keyword in keywords %}
+                <li>{{ keyword }}</li>
+            {% endfor %}
+        </ul>
+        
+        <p><strong>詐騙類型：</strong> {{ message.category }}</p>
+    </div>
+
+    <a href="{% url 'result' message_id=message_id %}">查看结果</a>
+</body>
+</html>

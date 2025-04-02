@@ -1,0 +1,6 @@
+<h1>夢境 NLP 分析</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.dream_content }}
+    <button type="submit">分析夢境</button>
+</form>

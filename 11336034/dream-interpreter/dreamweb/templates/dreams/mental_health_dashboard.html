@@ -1,0 +1,136 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 心理健康儀表板{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="dream-icon">
+        <i class="fas fa-heartbeat"></i>
+    </div>
+    <h1>夢境心理診斷</h1>
+    <p class="text-muted">分析您的夢境並獲取心理健康建議</p>
+</div>
+
+<!-- 夢境歷史區塊（長方形） -->
+<div class="col-lg-12">  <!-- 調整為 col-lg-12 讓它佔滿一整行 -->
+    <div class="card" style="width: 100%; height: 260px;"> <!-- 設定長方形大小 -->
+        <div class="card-header">
+            <h2><i class="fas fa-history me-2"></i> 夢境歷史</h2>
+        </div>
+        <div class="card-body" style="overflow-y: auto; max-height: 200px;"> <!-- 增加滾動條並設定最大高度 -->
+            {% if dreams %}
+                <ul id="dream-list">
+                    {% for dream in dreams %}
+                        <li>
+                            <a href="#" class="dream-item" data-dream-id="{{ dream.id }}">
+                                <strong>{{ dream.created_at|date:"Y-m-d H:i" }}</strong>: 
+                                {{ dream.dream_content|truncatechars:68 }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>您尚未有任何夢境記錄。</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <!-- 夢境詳情區塊 -->
+    <div class="col-lg-6" id="dream-detail-container" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-book-open me-2"></i> 夢境詳情</h2>
+                <p class="dream-date">解析時間: <span id="dream-time"></span></p>
+            </div>
+            <div class="card-body">
+                <h3><i class="fas fa-moon me-2"></i> 夢境內容</h3>
+                <p id="dream-content"></p>
+                
+                <div class="interpretation">
+                    <h3><i class="fas fa-brain me-2"></i> 解析結果</h3>
+                    <p id="dream-interpretation"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 心理診斷區塊 -->
+    <div class="col-lg-6" id="mental-suggestions-container" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-user-md me-2"></i> 心理診斷個人化建議</h2>
+            </div>
+            <div class="card-body">
+                <p id="mental-suggestions">請選擇夢境以獲取心理診斷建議。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".dream-item").forEach(function (item) {
+            item.addEventListener("click", function (event) {
+                event.preventDefault(); // 防止超連結刷新頁面
+    
+                let dreamId = this.getAttribute("data-dream-id"); // 取得夢境 ID
+    
+                // 使用 Fetch API 取得夢境詳細資料
+                fetch(`/get_dream_detail/${dreamId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 更新夢境詳情區塊的內容
+                        document.getElementById("dream-time").innerText = data.created_at;
+                        document.getElementById("dream-content").innerText = data.dream_content;
+                        document.getElementById("dream-interpretation").innerHTML = data.interpretation.replace(/\n/g, "<br>");
+    
+                        // 顯示夢境詳情區塊
+                        document.getElementById("dream-detail-container").style.display = "block";
+                    })
+                    .catch(error => console.error("Error fetching dream details:", error));
+            });
+        });
+    });
+</script>
+
+    
+<script>
+   document.addEventListener("DOMContentLoaded", function () {
+    // 選取所有夢境項目
+    const dreamItems = document.querySelectorAll(".dream-item");
+    const suggestionsContainer = document.getElementById("mental-suggestions");
+    const suggestionsContainerBlock = document.getElementById("mental-suggestions-container");  // 新增選擇容器
+
+    dreamItems.forEach(item => {
+        item.addEventListener("click", async function (event) {
+            event.preventDefault();  // 阻止預設行為（例如跳轉）
+
+            const dreamId = this.dataset.dreamId;  // 獲取夢境 ID
+
+            // 顯示心理診斷區塊
+            suggestionsContainerBlock.style.display = "block";
+
+            try {
+                let response = await fetch(`/api/mental-health-suggestions/${dreamId}/`);
+                let data = await response.json();
+                
+                if (data.suggestions) {
+                    suggestionsContainer.innerHTML = `<p>${data.suggestions}</p>`;
+                } else {
+                    suggestionsContainer.innerHTML = `<p>無法獲取建議，請稍後再試。</p>`;
+                }
+            } catch (error) {
+                console.error("獲取心理建議失敗:", error);
+                suggestionsContainer.innerHTML = `<p>請求失敗，請檢查網路連線。</p>`;
+            }
+        });
+    });
+});
+
+</script>
+
+{% endblock %}

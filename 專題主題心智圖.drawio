@@ -1,0 +1,204 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0.1 Safari/605.1.15" version="26.1.1">
+  <diagram name="第 1 页" id="HICE_hcy1wWhNtNpmoTN">
+    <mxGraphModel dx="3689" dy="25" grid="0" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="VKPHAanCQoXM37jonw8N-6" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-1" target="VKPHAanCQoXM37jonw8N-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-1" target="VKPHAanCQoXM37jonw8N-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-1" target="VKPHAanCQoXM37jonw8N-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-1" target="VKPHAanCQoXM37jonw8N-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-1" value="AI夢境分析" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="-930" y="1456" width="120" height="79" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-71" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-4" target="VKPHAanCQoXM37jonw8N-70">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-4" value="&lt;strong style=&quot;text-align: start;&quot; data-end=&quot;416&quot; data-start=&quot;403&quot;&gt;夢境 NLP 解析&lt;/strong&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-929" y="1330" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-19" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-8" target="VKPHAanCQoXM37jonw8N-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-20" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-8" target="VKPHAanCQoXM37jonw8N-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-23" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=classic;startFill=0;endFill=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-8" target="VKPHAanCQoXM37jonw8N-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-8" value="&lt;strong style=&quot;text-align: start;&quot; data-end=&quot;455&quot; data-start=&quot;446&quot;&gt;夢境儀表板&lt;/strong&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-780" y="1455" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-25" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-9" target="VKPHAanCQoXM37jonw8N-24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-82" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-9" target="VKPHAanCQoXM37jonw8N-53">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-91" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-9" target="VKPHAanCQoXM37jonw8N-90">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-95" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-9" target="VKPHAanCQoXM37jonw8N-94">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-9" value="&lt;div&gt;&lt;strong style=&quot;text-align: start;&quot; data-end=&quot;495&quot; data-start=&quot;482&quot;&gt;&lt;strong data-end=&quot;540&quot; data-start=&quot;530&quot;&gt;夢境社群討論區&lt;/strong&gt;&lt;br&gt;&lt;/strong&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-930" y="1568" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-57" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-10" target="VKPHAanCQoXM37jonw8N-56">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-59" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-10" target="VKPHAanCQoXM37jonw8N-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-10" value="&lt;div&gt;&lt;strong style=&quot;text-align: start;&quot; data-end=&quot;495&quot; data-start=&quot;482&quot;&gt;&lt;strong data-end=&quot;495&quot; data-start=&quot;482&quot;&gt;AI 健康建議&lt;/strong&gt;&lt;/strong&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1127" y="1455" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-14" target="VKPHAanCQoXM37jonw8N-30">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-14" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;夢境心理分析數據&lt;/font&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-603" y="1420" width="102" height="71" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-17" target="VKPHAanCQoXM37jonw8N-34">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-17" value="&lt;span style=&quot;text-align: start; line-height: 18.4px; font-family: 新細明體, serif;&quot;&gt;&lt;font&gt;個人關鍵字雲圖&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium; text-align: start;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-603" y="1508" width="102" height="71" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-22" target="VKPHAanCQoXM37jonw8N-38">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-22" value="&lt;font&gt;&lt;span style=&quot;text-align: start;&quot;&gt;全球夢境趨勢分析&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium; text-align: start;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-603" y="1595" width="102" height="61" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-84" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-24" target="VKPHAanCQoXM37jonw8N-83">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-24" value="&lt;font&gt;&lt;span style=&quot;text-align: start;&quot;&gt;全球夢境熱門排行&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium; text-align: start;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1002" y="1685" width="102" height="61" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-33" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-30" target="VKPHAanCQoXM37jonw8N-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-30" value="&lt;span style=&quot;caret-color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; line-height: 18.4px; font-family: 新細明體, serif; color: rgb(0, 0, 0);&quot;&gt;&lt;font&gt;可視化分析一段時間內的夢境情緒變化（&lt;span&gt;焦慮、快樂、壓力指數&lt;/span&gt;&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: -webkit-standard; font-size: medium; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; float: none; display: inline !important;&quot;&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="-430" y="1425.5" width="132" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-32" value="&lt;font&gt;&lt;span style=&quot;text-align: start;&quot;&gt;「你的焦慮夢境比例近 7 天內上升了 20%。」&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: -webkit-standard; font-size: medium; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; float: none; display: inline !important;&quot;&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-218" y="1425.5" width="149" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-34" target="VKPHAanCQoXM37jonw8N-36">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-34" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;&lt;span style=&quot;font-family: 新細明體, serif;&quot;&gt;顯示使用者近期夢近&lt;/span&gt;&lt;span style=&quot;font-family: 新細明體, serif;&quot;&gt;最常出現的詞&lt;/span&gt;&lt;span style=&quot;font-family: 新細明體, serif;&quot;&gt;，幫助用戶理解長期的夢境趨勢&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: -webkit-standard; font-size: medium; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; float: none; display: inline !important;&quot;&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="-430" y="1513.5" width="135" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-36" value="&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;新細明體, serif&quot;&gt;『鬼』這個關鍵字出現5次&lt;/font&gt;&lt;/div&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: -webkit-standard; font-size: medium; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; float: none; display: inline !important;&quot;&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-215" y="1513.5" width="147" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-41" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-38" target="VKPHAanCQoXM37jonw8N-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-38" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;AI 統計全球使用者的夢境數據，顯示「本週最多人夢見的內容」。&lt;/font&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-430" y="1595.5" width="133" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-40">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-85.69696969696952" y="1625.4242424242425" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-40" value="&lt;font&gt;&lt;span style=&quot;&quot;&gt;「最近 40% 的用戶夢到『迷路』，這可能與焦慮感增加有關。」&lt;/span&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="-217" y="1595.5" width="148" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-87" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-53" target="VKPHAanCQoXM37jonw8N-86">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-53" value="&lt;p style=&quot;margin: 0cm 0cm 8pt; line-height: 18.4px; font-family: Calibri, sans-serif;&quot; class=&quot;MsoNormal&quot;&gt;&lt;span style=&quot;font-family: 新細明體, serif;&quot;&gt;查詢夢境&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0cm 0cm 8pt; line-height: 18.4px; font-family: Calibri, sans-serif;&quot; class=&quot;MsoNormal&quot;&gt;&lt;span style=&quot;font-size: medium;&quot; lang=&quot;EN-US&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="-890" y="1705" width="92" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-63" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-56" target="VKPHAanCQoXM37jonw8N-62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-56" value="&lt;div style=&quot;text-align: start;&quot;&gt;&lt;font&gt;AI 夢境診斷報告&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1327" y="1455" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-67" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-58" target="VKPHAanCQoXM37jonw8N-66">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-58" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;AI 夢境情緒警報&lt;/font&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1327" y="1557" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-65" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-62" target="VKPHAanCQoXM37jonw8N-64">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-62" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;AI 每週/每月生成「夢境心理健康報告」，提供個性化建議。&lt;/font&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1527" y="1465" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-64" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;「你的夢境顯示壓力增加，建議嘗試『冥想+早睡』策略。」&lt;/font&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1727" y="1465" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-69" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-66" target="VKPHAanCQoXM37jonw8N-68">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-66" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;當 AI 偵測到用戶夢境情緒異常時，可提醒用戶尋求支持&lt;/font&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1527" y="1567" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-68" value="&lt;span style=&quot;text-align: start;&quot;&gt;&lt;font&gt;「你的夢境顯示連續 7 天焦慮指數偏高，是否需要與朋友聊聊？」&lt;/font&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1733" y="1567" width="126" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-73" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-70" target="VKPHAanCQoXM37jonw8N-72">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-81" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-70" target="VKPHAanCQoXM37jonw8N-78">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-70" value="&lt;span style=&quot;text-align: start; line-height: 18.4px; font-family: 新細明體, serif;&quot;&gt;&lt;font&gt;用戶輸入夢境內容&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium; text-align: start;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-928" y="1216" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-72" value="我夢到我在夢裡做夢" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1024" y="1071" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-78" value="&lt;font&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; line-height: 18.4px; font-family: Calibri, sans-serif;&quot; lang=&quot;EN-US&quot;&gt;AI&lt;span class=&quot;Apple-converted-space&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; line-height: 18.4px; font-family: 新細明體, serif;&quot;&gt;解析關鍵字、情緒、心理狀態，&lt;/span&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; line-height: 18.4px; font-family: 新細明體, serif;&quot;&gt;結合心理學理論，提供夢境的可能象徵意義。&lt;/span&gt;&lt;/font&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: -webkit-standard; font-size: medium; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; float: none; display: inline !important;&quot;&gt;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-823" y="1058" width="146" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-83" value="顯示近期熱門的關鍵字查詢" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1075" y="1808" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-86" value="&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-size: 12px; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: center; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; font-family: 新細明體, serif;&quot;&gt;&lt;font&gt;查詢關鍵字，&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-size: 12px; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: center; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; font-family: 新細明體, serif;&quot;&gt;觀看其他使&lt;/span&gt;&lt;span style=&quot;caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-size: 12px; font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: center; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: none; font-family: 新細明體, serif;&quot;&gt;用者的夢境&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-903" y="1823" width="119" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-93" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-90" target="VKPHAanCQoXM37jonw8N-92">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-90" value="&lt;p style=&quot;margin: 0cm 0cm 8pt; line-height: 18.4px; font-family: Calibri, sans-serif;&quot; class=&quot;MsoNormal&quot;&gt;&lt;span style=&quot;font-family: 新細明體, serif;&quot;&gt;推薦夢境&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0cm 0cm 8pt; line-height: 18.4px; font-family: Calibri, sans-serif;&quot; class=&quot;MsoNormal&quot;&gt;&lt;span style=&quot;font-size: medium;&quot; lang=&quot;EN-US&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="-776" y="1700" width="92" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-92" value="使用者可以在夢境留言區下方看到推薦的夢境" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-763" y="1824" width="128" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-98" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="VKPHAanCQoXM37jonw8N-94" target="VKPHAanCQoXM37jonw8N-97">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-94" value="&lt;p style=&quot;margin: 0cm 0cm 8pt; line-height: 18.4px;&quot; class=&quot;MsoNormal&quot;&gt;&lt;font face=&quot;新細明體, serif&quot;&gt;留言區&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0cm 0cm 8pt; line-height: 18.4px; font-family: Calibri, sans-serif;&quot; class=&quot;MsoNormal&quot;&gt;&lt;span style=&quot;font-size: medium;&quot; lang=&quot;EN-US&quot;&gt;&lt;/span&gt;&lt;/p&gt;&lt;span style=&quot;font-family: -webkit-standard; font-size: medium;&quot;&gt;&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="-1142" y="1690" width="92" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-97" value="&lt;font style=&quot;color: rgb(0, 0, 0);&quot; face=&quot;新細明體, serif&quot;&gt;使用者可以在留言區中進行留言討論&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-1232" y="1785" width="119" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-99" value="&lt;div&gt;解決什麼問題？&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;許多人對夢境感到好奇，並希望了解夢境是否反映了潛在的心理狀態，但市面上現有的夢境解析工具大多是 靜態字典式解釋，缺乏個人化、AI 分析與數據科學支撐。&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;❌ 夢境解析不精準 → 現有解夢工具缺乏 AI 分析，只提供表面解釋&lt;/div&gt;&lt;div&gt;❌ 心理壓力無法量化 → 一般人難以追蹤自己的情緒變化與夢境關聯&lt;/div&gt;&lt;div&gt;❌ 缺乏夢境社群支持 → 夢境是一種個人化體驗，但沒有平台可與他人交流&lt;/div&gt;&lt;div&gt;✅ 本產品提供 AI 解析、壓力指數追蹤、社群互動，幫助用戶提升心理健康意識&lt;/div&gt;" style="whiteSpace=wrap;html=1;aspect=fixed;align=left;" vertex="1" parent="1">
+          <mxGeometry x="-1366" y="1067" width="231" height="231" as="geometry" />
+        </mxCell>
+        <mxCell id="VKPHAanCQoXM37jonw8N-100" value="&lt;h3 data-end=&quot;950&quot; data-start=&quot;930&quot;&gt;&lt;strong data-end=&quot;948&quot; data-start=&quot;934&quot;&gt;主要的使用對象&lt;/strong&gt;&lt;/h3&gt;&lt;h3 data-end=&quot;950&quot; data-start=&quot;930&quot;&gt;&lt;span style=&quot;font-size: 12px; font-weight: normal;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;strong style=&quot;font-size: 12px;&quot; data-end=&quot;963&quot; data-start=&quot;954&quot;&gt;一般使用者&lt;/strong&gt;&lt;span style=&quot;font-size: 12px; font-weight: normal;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-size: 12px; font-weight: normal;&quot;&gt;→ 想了解夢境與心理健康關聯的人&lt;/span&gt;&lt;/h3&gt;&lt;p data-end=&quot;1081&quot; data-start=&quot;951&quot;&gt;&lt;strong data-end=&quot;996&quot; data-start=&quot;986&quot;&gt;心理學愛好者&lt;/strong&gt;&amp;nbsp;→ 對夢境研究感興趣的人&lt;/p&gt;&lt;p data-end=&quot;1081&quot; data-start=&quot;951&quot;&gt;&lt;span data-end=&quot;1062&quot; data-start=&quot;1046&quot;&gt;心理學專家 &amp;amp; 研究機構&lt;/span&gt;&amp;nbsp;→ 可用於夢境與心理健康數據研究&lt;br data-end=&quot;1012&quot; data-start=&quot;1009&quot;&gt;&lt;/p&gt;" style="whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="-1720" y="1070" width="320" height="153" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,55 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}">
+
+<!DOCTYPE html>
+
+<aside id="sidebar" class="sidebar">
+
+    <ul class="sidebar-nav" id="sidebar-nav">
+
+      <li class="nav-item">
+        <a class="nav-link" href=detect_scam>
+            <i class="bi bi-grid"></i>
+            <span>查看儀表板</span>
+        </a>
+     </li><!-- End Dashboard Nav -->
+
+
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詐騙偵測儀表板</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>詐騙偵測儀表板</h1>
+        
+        <p><strong>平均風險分數：</strong> {{ risk_avg }}</p>
+
+        <h2>詐騙類型統計</h2>
+        <ul>
+            {% for category, count in category_counts.items %}
+                <li>{{ category }}: {{ count }} 條</li>
+            {% endfor %}
+        </ul>
+
+        <h2>所有訊息</h2>
+        <table>
+            <tr>
+                <th>訊息內容</th>
+                <th>風險分數</th>
+                <th>檢測結果</th>
+            </tr>
+            {% for message in messages %}
+            <tr>
+                <td>{{ message.text }}</td>
+                <td>{{ message.risk_score }}</td>
+                <td><a href="{% url 'result' message.id %}">查看結果</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

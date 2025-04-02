@@ -1,0 +1,112 @@
+{% extends 'dreams/base.html' %}
+{% block title %} - 夢境社群討論區{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-comments"></i>
+        </div>
+        <h1>夢境社群討論區</h1>
+        <p class="text-muted">與其他用戶分享夢境、交流分析，並尋找相似的夢境經歷。</p>
+    </div>
+    
+    <div class="row">
+        <!-- 左側導覽列 -->
+        <nav class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-pencil-alt me-2"></i>我的夢境貼文
+                </a>
+                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-comments me-2"></i>夢境社群
+                </a>
+                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-share-alt me-2"></i>分享夢境
+                </a>
+                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-search me-2"></i>搜尋夢境
+                </a>
+            </div>
+        </nav>
+
+        <!-- 主要內容 -->
+        <main class="col-md-9">
+            <!-- 全球夢境趨勢 -->
+            <div class="card mb-4">
+                <div class="card-header  text-white">
+                    <h2 class="h5 mb-0">今日熱門夢境主題</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if trend_data %}
+                            {% for keyword, count in trend_data.items %}
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'search_dreams' %}?q={{ keyword }}" class="btn btn-outline-primary btn-sm w-100">
+                                        {{ keyword }} ({{ count }})
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-12">
+                                <p class="text-muted">今天還沒有熱門趨勢數據</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+           
+            <!-- 熱門夢境分析 -->
+            <div class="card mb-4">
+                <div class="card-header text-white">
+                    <h2 class="h5 mb-0">熱門夢境分析</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">這裡展示的是使用者分享的熱門夢境。點擊查看詳細分析。</p>
+                    <ul class="list-group">
+                        {% for dream in popular_dreams %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
+                                <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="d-flex align-items-center text-decoration-none">
+                                    <div class="dream-icon me-3">
+                                        <i class="fas fa-bed"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="dream-title text-dark">{{ dream.title }}</h5>
+                                        <p class="text-muted mb-0">{{ dream.view_count }} 次觀看</p>
+                                    </div>
+                                </a>
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        發布者: {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}<br>
+                                        日期: {{ dream.created_at|date:"Y-m-d H:i" }}
+                                    </small>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    // 添加動畫效果
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animation-fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
+{% endblock %}
