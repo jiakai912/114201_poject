@@ -369,27 +369,36 @@ def mental_health_dashboard(request):
 
     selected_dream = None
     mental_health_advice = None
+    emotion_alert = None  # 新增：情緒警報訊息
 
     if request.method == 'POST':
         dream_id = request.POST.get('dream_id')
         selected_dream = Dream.objects.get(id=dream_id, user=request.user)
 
-        # 透過 AI 生成個性化心理健康建議
+        # AI 心理健康建議
         mental_health_advice = generate_mental_health_advice(
-            selected_dream.dream_content, 
-            selected_dream.emotion_score,  # 快樂（或綜合情緒分數）
-            selected_dream.Happiness, 
-            selected_dream.Anxiety, 
+            selected_dream.dream_content,
+            selected_dream.emotion_score,
+            selected_dream.Happiness,
+            selected_dream.Anxiety,
             selected_dream.Fear,
             selected_dream.Excitement,
             selected_dream.Sadness
         )
 
+        # 新增：偵測異常情緒並觸發警報
+        if (selected_dream.Anxiety >= 70 or 
+            selected_dream.Fear >= 70 or 
+            selected_dream.Sadness >= 70):
+            emotion_alert = "🚨 <strong>情緒警報：</strong> 您的夢境顯示 <strong>焦慮、恐懼或悲傷</strong> 指數偏高，建議您多關注自己的心理健康，必要時可尋求專業協助。"
+
     return render(request, 'dreams/mental_health_dashboard.html', {
         'dreams': dreams,
         'selected_dream': selected_dream,
-        'mental_health_advice': mental_health_advice
+        'mental_health_advice': mental_health_advice,
+        'emotion_alert': emotion_alert  # 傳送至模板
     })
+
 
 def generate_mental_health_advice(dream_content, emotion_score, happiness, anxiety, fear, excitement, sadness):
     """根據夢境內容與最高情緒指數，提供個性化的心理健康建議"""

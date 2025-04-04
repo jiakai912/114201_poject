@@ -52,6 +52,24 @@
         </div>
     </div>
 
+    <!-- 顯示 AI 夢境情緒警報 -->
+    <div class="modal fade" id="emotionAlertModal" tabindex="-1" aria-labelledby="emotionAlertLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="emotionAlertLabel">⚠️ AI 情緒警報</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+            {{ emotion_alert|safe }}
+            </div>
+            <div class="modal-footer d-flex justify-content-center w-100">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-dismiss="modal">我知道了</button>
+            </div>                    
+        </div>
+        </div>
+    </div>
+
     <!-- 顯示 AI 產生的心理健康建議 -->
     <div class="card mt-4">
         <div class="card-header bg-success text-white">
@@ -66,6 +84,31 @@
 </div>
 
 <!-- 動畫效果 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if emotion_alert %}
+        // 確保在 Modal 相關的元素完全加載後顯示
+        const modalElement = document.getElementById('emotionAlertModal');
+        const modal = new bootstrap.Modal(modalElement, {
+            backdrop: false,  // 禁止點擊背景關閉 Modal
+            keyboard: false      // 禁止按鍵關閉 Modal
+        });
+        setTimeout(function () {
+            modal.show(); // 延遲顯示 Modal
+        }, 500); // 延遲 0.5 秒來保證 DOM 完全加載
+        {% endif %}
+    });
+</script>
+
+<style>
+    /* 确保 Modal 在页面中央显示 */
+    .modal-dialog {
+        position: fixed;        /* 使用固定定位 */
+        top: -41.4%;               /* 设置垂直居中 */
+        left: 32%;              /* 设置水平居中 */
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.card');
@@ -85,4 +128,5 @@
         });
     });
 </script>
+
 {% endblock %}
