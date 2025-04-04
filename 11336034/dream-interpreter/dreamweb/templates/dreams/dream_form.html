@@ -18,26 +18,50 @@
                 <h2><i class="fas fa-feather-alt me-2"></i>輸入您的夢境</h2>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <!-- 這裡合併成一個表單 -->
+                <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
+                    
+                    <!-- 夢境描述欄位 -->
                     <div class="mb-4">
-                        <label for="{{ form.dream_content.id_for_label }}" class="form-label">
+                        <label for="dream_content" class="form-label">
                             <i class="fas fa-comment-dots me-2"></i>夢境描述
                         </label>
-                        {{ form.dream_content }}
+                        <textarea id="dream_content" name="dream_content" class="form-control" rows="4">{{ dream_content }}</textarea>
                         <div class="form-text">請盡可能詳細地描述您的夢境，包括場景、人物、情緒和感受。</div>
-                        {% if form.dream_content.errors %}
-                            <div class="text-danger mt-2">{{ form.dream_content.errors }}</div>
-                        {% endif %}
                     </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary btn-lg">
+                    
+                    <!-- 音檔上傳欄位 -->
+                    <div class="mb-4">
+                        <label for="audio_file" class="form-label">
+                            <i class="fas fa-microphone-alt me-2"></i> 上傳並轉換音檔
+                        </label>
+
+                        <div class="d-flex">
+                            <!-- 上傳音檔輸入框 -->
+                            <input type="file" id="audio_file" name="audio_file" accept="audio/*" class="form-control" style="width: 80%; padding-left: 20px;">
+                            <!-- 音檔轉換按鈕 -->
+                            <button type="button" class="btn btn-danger" id="upload_audio_button" style="width: 20%; margin-left: 10px;">
+                                <i class="fas fa-upload me-2"></i>音檔轉文字
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center">
+                        <!-- 提交按鈕 -->
+                        <button type="submit" class="btn btn-primary " name="submit_dream">
                             <i class="fas fa-magic me-2"></i>解析夢境
                         </button>
                     </div>
-                </form>
+
+                    <!-- 錯誤訊息 -->
+                    {% if error_message %}
+                        <p class="text-danger">{{ error_message }}</p>
+                    {% endif %}
+                </form>                                  
             </div>
         </div>
+        
         
         <div class="card mt-4">
             <div class="card-header">
@@ -74,11 +98,11 @@
             <div class="card-body">
                 {% if dreams %}
                     <div class="list-group">
-                        {% for dream in dreams|slice:":5" %}
+                        {% for dream in dreams|slice:":7" %}
                             <a href="{% url 'dream_detail' dream.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                 <span>
                                     <i class="fas fa-moon me-2 text-primary"></i>
-                                    {{ dream.dream_content|truncatechars:30 }}
+                                    {{ dream.dream_content|truncatechars:15 }}
                                 </span>
                                 <span class="badge bg-primary rounded-pill">{{ dream.created_at|date:"m/d" }}</span>
                             </a>
@@ -147,4 +171,52 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const audioInput = document.getElementById("audio_file");
+        const dreamTextarea = document.getElementById("dream_content");
+        const uploadButton = document.getElementById("upload_audio_button");
+    
+        // 取得 CSRF Token
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+    
+        if (audioInput && uploadButton) {
+            uploadButton.addEventListener("click", function (e) {
+                e.preventDefault(); // 防止表單直接提交
+    
+                let formData = new FormData();
+                let file = audioInput.files[0];
+    
+                if (!file) {
+                    alert("請選擇一個音檔");
+                    return;
+                }
+    
+                formData.append("audio_file", file);
+    
+                fetch("{% url 'upload_audio' %}", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(),  // 取得 CSRF Token
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        dreamTextarea.value = data.dream_content; // 把結果填入輸入框
+                    } else {
+                        alert("轉換失敗：" + data.error);
+                    }
+                })
+                .catch(error => console.error("音檔上傳錯誤:", error));
+            });
+        }
+    });
+    </script>
+
 {% endblock %}

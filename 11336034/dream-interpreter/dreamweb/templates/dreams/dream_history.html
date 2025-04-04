@@ -29,7 +29,7 @@
     </div>
 
     <div class="row" id="dreamsList">
-        {% for dream in dreams %}
+        {% for dream in dreams|slice:":6" %}
             <div class="col-lg-6 mb-4 dream-item">
                 <div class="dream-card h-100">
                     <div class="d-flex justify-content-between mb-3">

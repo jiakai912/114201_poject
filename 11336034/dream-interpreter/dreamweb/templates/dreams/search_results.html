@@ -15,11 +15,11 @@
         <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4">
-                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-pencil-alt me-2"></i>我的夢境貼文
-                </a>
                 <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action">
                     <i class="fas fa-comments me-2"></i>夢境社群
+                </a>
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
+                    <i class="fa-solid fa-pen-to-square me-2"></i>我的夢境貼文
                 </a>
                 <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action">
                     <i class="fas fa-share-alt me-2"></i>分享夢境
@@ -38,15 +38,6 @@
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="fas fa-search"></i> 搜尋
                     </button>
-                </div>
-                <div class="mt-2">
-                    <label for="tag" class="form-label">標籤篩選：</label>
-                    <select name="tag" id="tag" class="form-select w-auto">
-                        <option value="">全部標籤</option>
-                        {% for tag in tags %}
-                            <option value="{{ tag.name }}" {% if tag.name == selected_tag %}selected{% endif %}>{{ tag.name }}</option>
-                        {% endfor %}
-                    </select>
                 </div>
             </form>
 

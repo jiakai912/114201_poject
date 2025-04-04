@@ -1,6 +1,7 @@
 {% extends 'dreams/base.html' %}
 {% block title %} - 分享您的夢境{% endblock %}
 {% block content %}
+
 <div class="container mt-5">
     <div class="page-header">
         <div class="dream-icon">
@@ -13,11 +14,11 @@
         <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4">
-                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-pencil-alt me-2"></i>我的夢境貼文
-                </a>
                 <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action">
                     <i class="fas fa-comments me-2"></i>夢境社群
+                </a>
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
+                    <i class="fa-solid fa-pen-to-square me-2"></i>我的夢境貼文
                 </a>
                 <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action active">
                     <i class="fas fa-share-alt me-2"></i>分享夢境
@@ -56,18 +57,42 @@
                         
                         <div class="mb-3">
                             <label for="tags" class="form-label">標籤（選擇或新增）：</label>
-                            <select multiple name="tags" id="tags" class="form-select">
-                                {% for tag in popular_tags %}
-                                    <option value="{{ tag.name }}">{{ tag.name }}</option>
-                                {% endfor %}
-                            </select>
+                            <input id="tags" name="tags" class="form-control" placeholder="輸入或選擇標籤" />
                         </div>
+                        
+                        <!-- 在這裡將標籤從 Django 傳遞到 JavaScript -->
+                        <script>
+                            var input = document.querySelector('input[name=tags]');
+                            var tagify = new Tagify(input, {
+                                whitelist: popularTags, // 這裡從後端傳過來的標籤
+                                placeholder: "選擇或輸入標籤",
+                                maxTags: 5,  // 最多選擇標籤數量
+                                dropdown: {
+                                    maxItems: 10,
+                                    classname: "tags-look",
+                                    enabled: 0, // 點擊時才顯示下拉選項
+                                    closeOnSelect: false
+                                },
+                                enforceWhitelist: true, // 僅允許白名單中的標籤
+                            });
+                        
+                            // 自定義下拉選單
+                            tagify.on('dropdown:show', function() {
+                                document.querySelector('.tagify').style.borderColor = '#007bff';
+                            });
+                        
+                            tagify.on('dropdown:hide', function() {
+                                document.querySelector('.tagify').style.borderColor = '#ccc';
+                            });
+                        </script>
                         
                         <button type="submit" class="btn btn-primary w-100">發布</button>
                     </form>
+                    
                 </div>
             </div>
         </main>
     </div>
 </div>
+
 {% endblock %}

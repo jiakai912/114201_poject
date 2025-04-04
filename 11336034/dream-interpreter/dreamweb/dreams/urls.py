@@ -24,6 +24,8 @@ urlpatterns = [
     path('my_posts/', views.my_posts, name='my_posts'),
     path('post/<int:post_id>/edit/', views.edit_dream_post, name='edit_dream_post'),
     path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
+    path('dream_news/', views.dream_news, name='dream_news'),
+     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
 ]
 
     
