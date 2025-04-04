@@ -14,19 +14,23 @@
     <div class="row">
         <!-- 左側導覽列 -->
         <nav class="col-md-3">
-            <div class="list-group mb-4">
-                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action active">
-                    <i class="fas fa-comments me-2"></i>夢境社群
-                </a>
-                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action">
-                    <i class="fa-solid fa-pen-to-square me-2"></i>我的夢境貼文
-                </a>
-                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-share-alt me-2"></i>分享夢境
-                </a>
-                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-search me-2"></i>搜尋夢境
-                </a>
+            <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
+              <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action card-header d-flex align-items-center py-3 border-0 transition">
+                <i class="fas fa-comments me-3 nav-icon"></i>
+                <span class="fw-medium">夢境社群</span>
+              </a>
+              <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                <i class="fa-solid fa-pen-to-square me-3 nav-icon"></i>
+                <span class="fw-medium">我的夢境貼文</span>
+              </a>
+              <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                <i class="fas fa-share-alt me-3 nav-icon"></i>
+                <span class="fw-medium">分享夢境</span>
+              </a>
+              <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                <i class="fas fa-search me-3 nav-icon"></i>
+                <span class="fw-medium">搜尋夢境</span>
+              </a>
             </div>
         </nav>
 

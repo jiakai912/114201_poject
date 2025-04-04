@@ -49,9 +49,8 @@ class DreamPost(models.Model):
         return f"夢境貼文: {'匿名' if self.is_anonymous else self.user.username} - {self.created_at.strftime('%Y-%m-%d')}"
 
     def increase_view_count(self):
-        """原子增加瀏覽次數，避免競態條件"""
-        self.view_count = F('view_count') + 1
-        self.save(update_fields=['view_count'])
+        DreamPost.objects.filter(id=self.id).update(view_count=F('view_count') + 1)
+        self.refresh_from_db(fields=['view_count'])  # 讓 self.view_count 拿到更新後的實際值
 
 
 class DreamComment(models.Model):

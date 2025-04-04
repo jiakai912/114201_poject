@@ -20,6 +20,8 @@ import jieba  # 中文分詞庫
 from collections import Counter
 import nltk
 from nltk.tokenize import word_tokenize
+# 歷史分頁
+from django.core.paginator import Paginator
 # 新聞相關
 import time
 import re
@@ -116,10 +118,9 @@ def dream_form(request):
             except Exception as e:
                 error_message = f"音檔處理錯誤: {e}"
 
-        # 如果使用者手動輸入夢境或語音轉換後內容可用
-        if form.is_valid() or dream_content:
-            if not dream_content:
-                dream_content = form.cleaned_data.get('dream_content', '')
+        # 使用者可以修改夢境內容
+        if form.is_valid():
+            dream_content = form.cleaned_data.get('dream_content', dream_content)  # 確保語音識別後的內容能顯示在表單中
 
             # 進行夢境解析
             interpretation, emotions, mental_health_advice = interpret_dream(dream_content)
@@ -195,9 +196,9 @@ def interpret_dream(dream_content, max_retries=3):
                                                   "3. 恐懼 Z%\n"
                                                   "4. 興奮 A%\n"
                                                   "5. 悲傷 B%\n"
-                                                  "夢境關鍵字\n"
-                                                  "夢境象徵的意義請以專業且具深度的方式解析\n"
-                                                  "解析裡不要出現＊，且不用給我建議"},
+                                                  "夢境關鍵字:\n"
+                                                  "夢境象徵的意義請以專業且具深度的方式詳細解析\n"
+                                                  "以上解析裡不要出現＊或**符號，且不用給我建議"},
                     {"role": "user", "content": dream_content}
                 ],
                 temperature=0.7,
@@ -235,8 +236,70 @@ def interpret_dream(dream_content, max_retries=3):
     return interpretation, emotions, mental_health_advice
 
 
-# 最近 7 筆夢境數據
+
+# 夢境儀表板
 @login_required
+def dream_dashboard(request):
+    dreams = Dream.objects.filter(user=request.user)
+    analyzer = EmotionAnalyzer(dreams)
+    stress_index = analyzer.calculate_stress_index()
+    recommendations = analyzer.generate_health_recommendations(stress_index)
+    
+    return render(request, 'dreams/dream_dashboard.html', {
+        'dreams': dreams,
+        'stress_index': stress_index,
+        'recommendations': recommendations
+    })
+
+# 個人關鍵字
+def get_user_keywords(request):
+    user = request.user  # 獲取當前登錄的用戶
+    dreams = Dream.objects.filter(user=user)  # 獲取該用戶的所有夢境
+    all_words = []
+
+    # 中文分詞處理夢境內容
+    for dream in dreams:
+        content = dream.dream_content
+        words = jieba.cut(content)  # 用 jieba 分詞
+        all_words.extend(list(words))  # 收集所有分詞
+
+    # 過濾停用詞
+    stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
+    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]  # 過濾停用詞及過短的字
+
+    # 統計詞頻
+    word_counts = Counter(filtered_words)  # 計算每個詞出現的頻率
+    top_keywords = dict(word_counts.most_common(8))  # 取前8個最常出現的詞
+
+    # 返回JSON數據，包含關鍵字及其頻率
+    result = [{"keyword": key, "count": value} for key, value in top_keywords.items()]
+    return JsonResponse(result, safe=False)  # 返回 JSON 格式的結果
+
+# 熱門關鍵字
+def get_global_trends_data(request):
+    """返回所有過去的夢境趨勢資料，並合併成一個總圖"""
+    trend_entries = DreamTrend.objects.all()  # 獲取所有趨勢資料
+
+    if trend_entries:
+        all_trends = {}
+        for trend_entry in trend_entries:
+            trend_dict = trend_entry.trend_data  # 假設 trend_data 是字典
+            # 將每一天的趨勢數據合併
+            for keyword, percentage in trend_dict.items():
+                if keyword in all_trends:
+                    all_trends[keyword] += percentage
+                else:
+                    all_trends[keyword] = percentage
+
+        # 將合併後的數據按比例排序，並取前 8 條
+        top_8 = sorted(all_trends.items(), key=lambda x: x[1], reverse=True)[:8]
+        trend_data = [{'text': k, 'percentage': v} for k, v in top_8]
+    else:
+        trend_data = []
+
+    return JsonResponse(trend_data, safe=False)
+
+# 最近 7 筆夢境數據
 def get_emotion_data(request):
     # 取得當前登入用戶的最近 7 筆夢境數據
     dreams = Dream.objects.filter(user=request.user).order_by('-created_at')[:7]
@@ -260,19 +323,6 @@ def get_emotion_data(request):
     }
     return JsonResponse(data)
 
-
-# 夢境儀表板
-def dream_dashboard(request):
-    dreams = Dream.objects.filter(user=request.user)
-    analyzer = EmotionAnalyzer(dreams)
-    stress_index = analyzer.calculate_stress_index()
-    recommendations = analyzer.generate_health_recommendations(stress_index)
-    
-    return render(request, 'dreams/dream_dashboard.html', {
-        'dreams': dreams,
-        'stress_index': stress_index,
-        'recommendations': recommendations
-    })
 
 class EmotionAnalyzer:
     def __init__(self, dreams):
@@ -337,8 +387,20 @@ class EmotionAnalyzer:
 # 夢境歷史
 @login_required
 def dream_history(request):
+    query = request.GET.get('q')  # 取得搜尋文字
     dreams = Dream.objects.filter(user=request.user)
-    return render(request, 'dreams/dream_history.html', {'dreams': dreams})
+
+    if query:
+        dreams = dreams.filter(Q(dream_content__icontains=query) | Q(interpretation__icontains=query))
+
+    paginator = Paginator(dreams.order_by('-created_at'), 6)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/dream_history.html', {
+        'page_obj': page_obj,
+        'query': query,  # 回傳到前端顯示搜尋欄的值
+    })
 
 # 夢境詳情
 @login_required
@@ -486,12 +548,17 @@ def community(request):
         trend_data = latest_trend.trend_data
     except DreamTrend.DoesNotExist:
         trend_data = {}
-    
+
+    # 把字典轉換成列表並排序，只取前 8 條
+    if trend_data:
+        trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
+
     return render(request, 'dreams/community.html', {
         'popular_dreams': popular_dreams,
         'trend_data': trend_data
     })
 
+# 用這個來獲取當天的熱門趨勢
 def dream_community(request):
     # 獲取今日熱門夢境趨勢
     trend_data = DreamTrend.objects.filter(date=timezone.now().date()).first()
