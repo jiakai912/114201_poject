@@ -13,6 +13,8 @@ urlpatterns = [
     path('api/emotion-data/', views.get_emotion_data, name='emotion_data'),
     path('dream/<int:dream_id>/', views.dream_detail, name='dream_detail'),
     path('dashboard/', views.dream_dashboard, name='dream_dashboard'),
+    path('api/global-trends/', views.get_global_trends_data, name='global-trends'), # ✅ 熱門夢境
+    path('api/user-keywords/', views.get_user_keywords, name='get_user_keywords'),# ✅ 個人關鍵字
     path('mental_health_dashboard/', views.mental_health_dashboard, name='mental_health_dashboard'),  # ✅ 修正
     path('api/mental-health-suggestions/<int:dream_id>/', views.get_mental_health_suggestions, name='mental_health_suggestions'),
     path('get_dream_detail/<int:dream_id>/', views.get_dream_detail, name='get_dream_detail'),
@@ -24,6 +26,8 @@ urlpatterns = [
     path('my_posts/', views.my_posts, name='my_posts'),
     path('post/<int:post_id>/edit/', views.edit_dream_post, name='edit_dream_post'),
     path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
+    path('dream_news/', views.dream_news, name='dream_news'),
+     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
 ]
 
     
