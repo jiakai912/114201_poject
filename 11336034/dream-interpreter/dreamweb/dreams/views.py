@@ -539,9 +539,13 @@ def get_mental_health_suggestions(request, dream_id):
 # 1. 社群主頁和全球夢境趨勢
 def community(request):
     """夢境社群主頁"""
-    # 獲取熱門夢境
-    popular_dreams = DreamPost.objects.order_by('-view_count')[:10]
-    
+    sort_type = request.GET.get('sort', 'popular')  # 預設為 popular
+
+    if sort_type == 'latest':
+        dream_posts = DreamPost.objects.order_by('-created_at')[:10]
+    else:
+        dream_posts = DreamPost.objects.order_by('-view_count')[:10]
+
     # 獲取最新夢境趨勢
     try:
         latest_trend = DreamTrend.objects.latest('date')
@@ -549,14 +553,16 @@ def community(request):
     except DreamTrend.DoesNotExist:
         trend_data = {}
 
-    # 把字典轉換成列表並排序，只取前 8 條
+    # 處理熱門主題趨勢
     if trend_data:
         trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
 
     return render(request, 'dreams/community.html', {
-        'popular_dreams': popular_dreams,
-        'trend_data': trend_data
+        'dream_posts': dream_posts,
+        'trend_data': trend_data,
+        'sort_type': sort_type,  # 傳入目前排序類型
     })
+
 
 # 用這個來獲取當天的熱門趨勢
 def dream_community(request):
@@ -790,7 +796,7 @@ def dream_news(request):
         dream_input = request.POST.get('dream_input')
 
         # 1. 抓取新聞資料
-        news_api_url = f'https://newsapi.org/v2/everything?q={dream_input}&apiKey=44c026b581564a6f9d55df137196c6f4'
+        news_api_url = f'https://newsapi.org/v2/everything?q={dream_input}&language=zh&apiKey=44c026b581564a6f9d55df137196c6f4'
         response = requests.get(news_api_url)
         news_data = response.json()
 

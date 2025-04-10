@@ -60,15 +60,18 @@
                 </div>
             </div>
            
-            <!-- 熱門夢境分析 -->
+            <!-- 夢境貼文區塊 -->
             <div class="card mb-4">
-                <div class="card-header text-white">
-                    <h2 class="h5 mb-0">熱門夢境分析</h2>
+                <div class="card-header text-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">夢境貼文</h2>
+                    <div>
+                        <a href="?sort=popular" class="btn btn-sm {% if sort_type == 'popular' %}btn-light{% else %}btn-outline-light{% endif %} me-2">熱門</a>
+                        <a href="?sort=latest" class="btn btn-sm {% if sort_type == 'latest' %}btn-light{% else %}btn-outline-light{% endif %}">最新</a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">這裡展示的是使用者分享的熱門夢境。點擊查看詳細分析。</p>
                     <ul class="list-group">
-                        {% for dream in popular_dreams %}
+                        {% for dream in dream_posts %}
                             <li class="list-group-item d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
                                 <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="d-flex align-items-center text-decoration-none">
                                     <div class="dream-icon me-3">
@@ -76,13 +79,18 @@
                                     </div>
                                     <div>
                                         <h5 class="dream-title text-dark">{{ dream.title }}</h5>
-                                        <p class="text-muted mb-0">{{ dream.view_count }} 次觀看</p>
+                                        <p class="text-muted mb-0">
+                                            {% if sort_type == 'popular' %}
+                                                {{ dream.view_count }} 次觀看
+                                            {% else %}
+                                                發布於 {{ dream.created_at|date:"Y-m-d H:i" }}
+                                            {% endif %}
+                                        </p>
                                     </div>
                                 </a>
                                 <div class="text-end">
                                     <small class="text-muted">
-                                        發布者: {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}<br>
-                                        日期: {{ dream.created_at|date:"Y-m-d H:i" }}
+                                        發布者: {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}
                                     </small>
                                 </div>
                             </li>
