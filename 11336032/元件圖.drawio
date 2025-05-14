@@ -1,0 +1,144 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" version="27.0.2" pages="2">
+  <diagram name="第1頁" id="fqpVkU4v0Fdl_HsKLIoa">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1169" pageHeight="827" background="none" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-5" value="&lt;font face=&quot;Helvetica&quot; style=&quot;font-size: 14px;&quot;&gt;«Component»&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot; face=&quot;Helvetica&quot;&gt;DreamEcho AI 系統&amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;align=center;" vertex="1" parent="1">
+          <mxGeometry x="450" y="205" width="260" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-6" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="S_nrsH5fP5m5aPKsDpfG-5">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-19" value="&lt;font face=&quot;Helvetica&quot; style=&quot;font-size: 14px;&quot;&gt;«Component»&lt;/font&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;Admin Tools（系統管理模組）&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Admin Dashboard（系統管理介面）&lt;/span&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;align=center;" vertex="1" parent="1">
+          <mxGeometry x="615" y="450" width="240" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-20" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="S_nrsH5fP5m5aPKsDpfG-19">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-23" value="" style="ellipse;whiteSpace=wrap;html=1;align=center;aspect=fixed;fillColor=none;strokeColor=none;resizable=0;perimeter=centerPerimeter;rotatable=0;allowArrows=0;points=[];outlineConnect=1;" vertex="1" parent="1">
+          <mxGeometry x="605" y="270" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-26" value="&lt;font face=&quot;Helvetica&quot; style=&quot;font-size: 14px;&quot;&gt;«Component»&lt;/font&gt;&lt;div&gt;&lt;font size=&quot;3&quot; face=&quot;monospace&quot;&gt;&amp;nbsp;&lt;/font&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;Web UI (前端畫面元件)&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Dream Input UI&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;History Viewer UI&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Forum UI&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Hot Search UI&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;align=center;" vertex="1" parent="1">
+          <mxGeometry y="450" width="240" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-27" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="S_nrsH5fP5m5aPKsDpfG-26">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-28" value="&lt;span style=&quot;font-size: 14px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;«Component»&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;AI / Database / Security&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;AI NLP 模組（如 GPT）&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Database（夢境紀錄與用戶資料）&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Security Module（OAuth、加密等）&lt;/span&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;align=center;" vertex="1" parent="1">
+          <mxGeometry x="920" y="450" width="240" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-29" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="S_nrsH5fP5m5aPKsDpfG-28">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-32" value="&lt;span style=&quot;font-size: 14px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;«Component»&lt;/span&gt;&lt;br&gt;&lt;b&gt;Backend Service（邏輯與服務元件）&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Dream Analysis&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;History Service&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Post &amp;amp; Forum Manager&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Hot Search Engine&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;align=center;" vertex="1" parent="1">
+          <mxGeometry x="300" y="450" width="240" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-33" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="S_nrsH5fP5m5aPKsDpfG-32">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-40" value="" style="ellipse;whiteSpace=wrap;html=1;align=center;aspect=fixed;fillColor=none;strokeColor=none;resizable=0;perimeter=centerPerimeter;rotatable=0;allowArrows=0;points=[];outlineConnect=1;" vertex="1" parent="1">
+          <mxGeometry x="1035" y="270" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="S_nrsH5fP5m5aPKsDpfG-49" value="" style="ellipse;whiteSpace=wrap;html=1;align=center;aspect=fixed;fillColor=none;strokeColor=none;resizable=0;perimeter=centerPerimeter;rotatable=0;allowArrows=0;points=[];outlineConnect=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="270" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="uTTDsq5DybOpga3WHYvX-1" value="Actor" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="565" y="10" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uTTDsq5DybOpga3WHYvX-2" value="Use" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="S_nrsH5fP5m5aPKsDpfG-5" target="S_nrsH5fP5m5aPKsDpfG-26">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="170" y="190" as="sourcePoint" />
+            <mxPoint x="330" y="190" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uTTDsq5DybOpga3WHYvX-3" value="Use" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="S_nrsH5fP5m5aPKsDpfG-5" target="S_nrsH5fP5m5aPKsDpfG-32">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="410" y="95" as="sourcePoint" />
+            <mxPoint x="80" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uTTDsq5DybOpga3WHYvX-4" value="Use" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="S_nrsH5fP5m5aPKsDpfG-5" target="S_nrsH5fP5m5aPKsDpfG-19">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="470" y="295" as="sourcePoint" />
+            <mxPoint x="140" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uTTDsq5DybOpga3WHYvX-5" value="Use" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="S_nrsH5fP5m5aPKsDpfG-5" target="S_nrsH5fP5m5aPKsDpfG-28">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="480" y="305" as="sourcePoint" />
+            <mxPoint x="150" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uTTDsq5DybOpga3WHYvX-8" value="" style="endArrow=block;dashed=1;endFill=0;endSize=12;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="S_nrsH5fP5m5aPKsDpfG-5">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="310" y="90" as="sourcePoint" />
+            <mxPoint x="580" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="67ldTtuECXBqFzS9zCxm-1" value="Actor" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="710" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="EdAlpbBaV5JCNm2FwDSd-1" value="" style="endArrow=block;dashed=1;endFill=0;endSize=12;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="S_nrsH5fP5m5aPKsDpfG-19">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="605" y="775" as="sourcePoint" />
+            <mxPoint x="735" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="EdAlpbBaV5JCNm2FwDSd-2" value="系統管理員" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="690" y="790" width="90" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="O_I3GP6rzyIEz8VYUs-8" name="第2頁">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-1" value="«&lt;b&gt;Component&lt;/b&gt;»&lt;div&gt;&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;DreamEcho AI 系統&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="540" y="250" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-2" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="ZqRcHZAH1r8QIfhtKHCK-1">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-5" value="«&lt;b&gt;Component&lt;/b&gt;»&lt;div&gt;Web UI&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="540" y="130" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-6" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="ZqRcHZAH1r8QIfhtKHCK-5">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-7" value="«&lt;b&gt;Component&lt;/b&gt;»&lt;div&gt;&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Admin interface&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="540" y="380" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-8" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="ZqRcHZAH1r8QIfhtKHCK-7">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-9" value="«&lt;b&gt;Component&lt;/b&gt;»&lt;div&gt;&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Dream Analysis&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="html=1;dropTarget=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="540" y="490" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ZqRcHZAH1r8QIfhtKHCK-10" value="" style="shape=module;jettyWidth=8;jettyHeight=4;" vertex="1" parent="ZqRcHZAH1r8QIfhtKHCK-9">
+          <mxGeometry x="1" width="20" height="20" relative="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
