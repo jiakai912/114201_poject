@@ -18,7 +18,24 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'dreams',
     'django_crontab',  # 添加 crontab 支持
+    'django.contrib.sites',  # 必要
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',  # Google 驗證
 ]
+
+# google驗證
+SITE_ID = 1
+LOGIN_REDIRECT_URL = '/dream_form/'  # 成功登入後導向的頁面
+LOGOUT_REDIRECT_URL = '/logout_success/'  # 登出後導向頁面
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    #'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+
 
 CRONJOBS = [
     ('0 0 * * *', 'dreams.cron.update_dream_trends'),  # 每天午夜執行趨勢更新
@@ -32,6 +49,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'dreamweb.urls'

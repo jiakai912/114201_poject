@@ -62,7 +62,6 @@ def logout_success(request):
 # 載入環境變量
 load_dotenv()
 # DEEPSEEK_API_KEY = os.getenv("sk-b1e7ea9f25184324aaa973412b081f6f")  # 修正為正確的環境變量名稱
-
 # 初始化 OpenAI 客戶端
 client = OpenAI(api_key="sk-b1e7ea9f25184324aaa973412b081f6f", base_url="https://api.deepseek.com")
 

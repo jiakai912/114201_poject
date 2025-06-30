@@ -23,9 +23,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),  # 管理後台
     path('', include('dreams.urls')),  # 包含 dreams 應用
+    path('accounts/', include('allauth.urls')),  # allauth 提供的帳號系統
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
