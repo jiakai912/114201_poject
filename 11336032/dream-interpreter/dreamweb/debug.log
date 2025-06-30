@@ -1,0 +1,35 @@
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreamweb/settings.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreams/models.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreams/models.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreams/models.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreams/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreams/views.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreamweb/settings.py changed, reloading.
+Watching for file changes with StatReloader
+"GET / HTTP/1.1" 200 19550
+"GET /history/ HTTP/1.1" 200 27267
+"GET /history/ HTTP/1.1" 200 27267
+"GET /dashboard/ HTTP/1.1" 200 19912
+"GET / HTTP/1.1" 200 19550
+Internal Server Error: /mental_health_dashboard/
+Traceback (most recent call last):
+  File "/Users/hujiakai/Desktop/dream-interpreter/venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hujiakai/Desktop/dream-interpreter/venv/lib/python3.12/site-packages/django/utils/deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hujiakai/Desktop/dream-interpreter/venv/lib/python3.12/site-packages/django/middleware/clickjacking.py", line 27, in process_response
+    if response.get("X-Frame-Options") is not None:
+       ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'get'
+- Broken pipe from ('127.0.0.1', 49452)
+"POST / HTTP/1.1" 200 15038
+/Users/hujiakai/Desktop/dream-interpreter/dreamweb/dreams/views.py changed, reloading.
