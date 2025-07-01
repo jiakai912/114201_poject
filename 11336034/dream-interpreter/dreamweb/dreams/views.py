@@ -584,34 +584,35 @@ def dream_community(request):
 
 
 # 2. 匿名夢境分享
+# ai審核貼文
+from .utils import contains_dangerous_keywords
+
 @login_required
 def share_dream(request):
     if request.method == 'POST':
         title = request.POST.get('title')
         content = request.POST.get('content')
         is_anonymous = request.POST.get('is_anonymous') == 'on'
-        tags = request.POST.getlist('tags')  # 來自 select 的標籤
-        
-        # 創建新的 DreamPost
+        tags = request.POST.getlist('tags')
+
+        # 危險字眼檢查
+        flagged = contains_dangerous_keywords(content)
+
         dream_post = DreamPost.objects.create(
             title=title,
             content=content,
-            user=request.user if not is_anonymous else None,  # 如果匿名則不設置使用者
+            user=request.user if not is_anonymous else None,
             is_anonymous=is_anonymous,
+            is_flagged=flagged  # 儲存標記狀態
         )
 
-        # 處理標籤（現有標籤或新增標籤）
         for tag_name in tags:
             tag, created = DreamTag.objects.get_or_create(name=tag_name)
             dream_post.tags.add(tag)
 
-        dream_post.save()  # 保存 DreamPost
+        return redirect('dream_community')
 
-        return redirect('dream_community')  # 重定向到夢境社群頁面
-
-    # 取得流行標籤
     popular_tags = DreamTag.objects.all()
-
     return render(request, 'dreams/share_dream.html', {
         'popular_tags': popular_tags
     })

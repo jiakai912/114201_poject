@@ -39,6 +39,7 @@ class DreamPost(models.Model):
     emotion_data = models.JSONField(default=dict, blank=True, verbose_name="情緒數據")  # 儲存情緒 JSON
     advice = models.TextField(verbose_name="心理診斷個人化建議", blank=True, null=True)  # 心理建議
     created_at = models.DateTimeField(auto_now_add=True)
+    is_flagged = models.BooleanField(default=False, verbose_name="是否含有危險字詞")
 
     class Meta:
         ordering = ['-created_at']

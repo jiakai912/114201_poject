@@ -87,6 +87,10 @@ DATABASES = {
     }
 }
 
+# settings.py AI審核貼文
+DANGEROUS_KEYWORDS = ['自殺', '殺人', '輕生', '毒品', '割腕','災難', '虐待', '性暴力', '性侵害', '性騷擾','末日','地震','海嘯']
+
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
