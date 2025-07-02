@@ -30,6 +30,8 @@ urlpatterns = [
     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
     path('polls/', views.polls, name='polls'),
     path('consultation/', views.consultation_chat, name='consultation_chat'),
+    path('consultation/chat/<int:counselor_id>/', views.chat_with_counselor_view, name='consultation_chat_with_counselor'),
+    path('counselors/', views.counselor_list_view, name='counselor_list'),
     
 ]
 
