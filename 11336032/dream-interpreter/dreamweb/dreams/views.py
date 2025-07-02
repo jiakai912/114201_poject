@@ -859,3 +859,20 @@ def consultation_chat(request):
     return render(request, 'dreams/consultation_chat.html')
 
 
+def consultation_landing_page(request):
+    """渲染新的諮詢對話介紹頁面."""
+    return render(request, 'dreams/consultation_chat.html')
+
+def chat_with_counselor_view(request, counselor_id):
+    """渲染與特定諮詢師的聊天頁面."""
+    # counselor = get_object_or_404(Counselor, id=counselor_id) # 如果需要傳遞諮詢師對象
+    return render(request, 'dreams/chat_with_counselor.html', {
+        # 'counselor': counselor # 如果有傳遞諮詢師對象，可以在這裡傳入
+    })
+
+def counselor_list_view(request):
+    """渲染諮詢師列表頁面."""
+    # counselors = Counselor.objects.all() # 獲取所有諮詢師
+    return render(request, 'dreams/counselor_list.html', {
+        # 'counselors': counselors # 將諮詢師列表傳入模板
+    })

@@ -252,7 +252,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'dream_form' %}">
-                                <i class="fas fa-feather-alt me-1"></i>解析新夢境
+                                <i class="fas fa-feather-alt me-1"></i>解析夢境
                             </a>
                         </li>
                         <li class="nav-item">
@@ -262,23 +262,29 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'dream_dashboard' %}">
-                                <i class="fas fa-chart-line me-1"></i>夢境分析數據
+                                <i class="fas fa-chart-line me-1"></i>夢境分析
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'mental_health_dashboard' %}">
-                                <i class="fas fas fa-heartbeat me-1"></i>夢境心理診斷
+                                <i class="fas fas fa-heartbeat me-1"></i>夢境診斷
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'dream_community' %}">
-                                <i class="fas fas fa-comments me-1"></i>夢境社群討論區
+                                <i class="fas fas fa-comments me-1"></i>夢境社群
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'dream_news' %}">
-                                <i class="fas fa-solid fa-eye me-1"></i>夢境與相關新聞
+                                <i class="fas fa-solid fa-eye me-1"></i>夢境與相關
                             </a>
+                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'consultation_chat' %}">
+                                 <i class="fas fa-hands-helping me-1"></i>諮詢對話
+                             </a>
+                        </li>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}">
@@ -325,9 +331,9 @@
                 <div class="col-md-6 text-md-end text-center">
                     <p>&copy; 2025 夢境解析</p>
                     <div class="mt-2">
-                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.facebook.com/hu.jia.kai.360963" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.instagram.com/_jk.0912/" class="text-white"><i class="fab fa-instagram"></i></a>
                     </div>
                 </div>
             </div>
