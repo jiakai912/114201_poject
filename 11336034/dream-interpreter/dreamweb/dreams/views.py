@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.contrib.auth import login,logout
+from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
 from .forms import DreamForm, UserRegisterForm
 import logging
@@ -35,6 +35,9 @@ import speech_recognition as sr
 from .utils import convert_to_wav
 from pydub import AudioSegment
 import io
+# 心理諮商相關
+from django.contrib.auth.models import User
+from .models import DreamShareAuthorization, UserProfile, Dream
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -46,6 +49,32 @@ class CustomLoginView(LoginView):
     def get_redirect_url(self):
         redirect_to = self.request.GET.get('next', None)
         return redirect_to if redirect_to else '/dream_form/'  # 預設導向儀表板
+    
+# 心理諮商登入
+def custom_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            profile, created = UserProfile.objects.get_or_create(user=user)
+
+            if profile.is_therapist and not profile.is_verified_therapist:
+                return redirect('not_verified')
+
+            login(request, user)
+            return redirect('dream_form')
+        else:
+            messages.error(request, '帳號或密碼錯誤')
+            return redirect('login')
+    else:
+        return render(request, 'dreams/login.html')
+
+# 心理諮商審核介面
+def not_verified(request):
+    return render(request, 'dreams/not_verified.html')
+
 
 # 登出介面導向首頁
 def logout_view(request):
@@ -71,12 +100,20 @@ def register(request):
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
+            is_therapist = form.cleaned_data.get('is_therapist')
+
+            # 這裡設定 UserProfile
+            profile = UserProfile.objects.get(user=user)
+            profile.is_therapist = is_therapist
+            profile.save()
+
             login(request, user)
             messages.success(request, '註冊成功！您現在已登入。')
             return redirect('dream_form')
     else:
         form = UserRegisterForm()
     return render(request, 'dreams/register.html', {'form': form})
+
 
 # 將音檔轉換為 WAV 格式
 # 音檔轉換函數
@@ -843,3 +880,85 @@ def dream_news(request):
 
 
 
+# 諮商
+def consultation_chat(request):
+    return render(request, 'dreams/consultation_chat.html')
+
+
+def consultation_landing_page(request):
+    """渲染新的諮詢對話介紹頁面."""
+    return render(request, 'dreams/consultation_chat.html')
+
+def chat_with_counselor_view(request, counselor_id):
+    """渲染與特定諮詢師的聊天頁面."""
+    # counselor = get_object_or_404(Counselor, id=counselor_id) # 如果需要傳遞諮詢師對象
+    return render(request, 'dreams/chat_with_counselor.html', {
+        # 'counselor': counselor # 如果有傳遞諮詢師對象，可以在這裡傳入
+    })
+
+def counselor_list_view(request):
+    """渲染諮詢師列表頁面."""
+    # counselors = Counselor.objects.all() # 獲取所有諮詢師
+    return render(request, 'dreams/counselor_list.html', {
+        # 'counselors': counselors # 將諮詢師列表傳入模板
+    })
+
+# 諮商
+#分享給心理師
+@login_required
+def share_dreams(request):
+    if request.method == 'POST':
+        therapist_id = request.POST.get('therapist_id')
+        therapist = User.objects.get(id=therapist_id)
+
+        if not therapist.userprofile.is_therapist:
+            return HttpResponseForbidden("只能分享給心理師")
+
+        DreamShareAuthorization.objects.update_or_create(
+            user=request.user,
+            therapist=therapist,
+            defaults={'is_active': True}
+        )
+
+        messages.success(request, f"已成功分享夢境給 {therapist.username} 心理師！")
+        return redirect('dream_form')  # 或你想回到的頁面
+
+#心理師可以看到分享的列表    
+@login_required
+def shared_with_me(request):
+    """心理師查看哪些使用者分享了夢境給他"""
+    if not request.user.userprofile.is_therapist:
+        return HttpResponseForbidden("只有心理師可以查看分享名單")
+
+    shares = DreamShareAuthorization.objects.filter(
+        therapist=request.user, is_active=True
+    ).select_related('user')
+
+    return render(request, 'dreams/shared_users.html', {'shared_users': shares})
+
+
+@login_required
+def view_user_dreams(request, user_id):
+    """心理師查看指定使用者的夢境紀錄"""
+    if not request.user.userprofile.is_therapist:
+        return HttpResponseForbidden("只有心理師可以查看夢境")
+
+    # 確保該使用者已分享給此心理師
+    if not DreamShareAuthorization.objects.filter(
+        user_id=user_id, therapist=request.user, is_active=True
+    ).exists():
+        return HttpResponseForbidden("您沒有查看此使用者夢境的權限")
+
+    dreams = Dream.objects.filter(user_id=user_id).order_by('-created_at')
+    target_user = User.objects.get(id=user_id)
+    return render(request, 'dreams/user_dreams_for_therapist.html', {
+        'dreams': dreams,
+        'target_user': target_user
+    })
+
+
+
+@login_required
+def share_dream_page(request):
+    therapists = User.objects.filter(userprofile__is_therapist=True)
+    return render(request, 'dreams/share_dreams.html', {'therapists': therapists})

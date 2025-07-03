@@ -7,7 +7,7 @@ urlpatterns = [
     path('', views.welcome_page, name='welcome'),
     path('dream_form/', views.dream_form, name='dream_form'),  # ✅ 修正
     path('register/', views.register, name='register'),
-    path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('login/', views.custom_login, name='login'),
     path('logout/',  views.logout_view, name='logout'),  # ✅ 修正
     path('history/', views.dream_history, name='dream_history'),
     path('api/emotion-data/', views.get_emotion_data, name='emotion_data'),
@@ -27,7 +27,18 @@ urlpatterns = [
     path('post/<int:post_id>/edit/', views.edit_dream_post, name='edit_dream_post'),
     path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
     path('dream_news/', views.dream_news, name='dream_news'),
-     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
+    path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
+    # 諮商
+    path('consultation/', views.consultation_chat, name='consultation_chat'),
+    path('consultation/chat/<int:counselor_id>/', views.chat_with_counselor_view, name='consultation_chat_with_counselor'),
+    path('counselors/', views.counselor_list_view, name='counselor_list'),
+    path('share_dreams/', views.share_dreams, name='share_dreams'),
+
+    path('share_dream_page/', views.share_dream_page, name='share_dream_page'),
+    path('share_dreams/', views.share_dreams, name='share_dreams'),
+    path('not_verified/', views.not_verified, name='not_verified'),
+    path('shared_users/', views.shared_with_me, name='shared_with_me'),
+    path('view_user_dreams/<int:user_id>/', views.view_user_dreams, name='view_user_dreams'),
 ]
 
     

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Dream
+from .models import UserProfile
 
 @admin.register(Dream)
 class DreamAdmin(admin.ModelAdmin):
@@ -16,3 +17,8 @@ class DreamAdmin(admin.ModelAdmin):
             'fields': ('stress_index', 'emotion_score', 'anxiety', 'fear', 'surprise', 'hope', 'confusion')
         }),
     )
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'is_therapist', 'is_verified_therapist')
+    list_filter = ('is_therapist', 'is_verified_therapist')

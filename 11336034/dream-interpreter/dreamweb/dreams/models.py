@@ -1,7 +1,35 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import F
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
+# 心理諮商個人資料擴展模型
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    is_therapist = models.BooleanField(default=False)
+    is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+
+class DreamShareAuthorization(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_by')
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authorized_clients')
+    shared_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('user', 'therapist')  # 一個使用者只能對一位心理師有一筆紀錄
+
+    def __str__(self):
+        return f"{self.user.username} 授權給 {self.therapist.username}"
+
+# 夢境資料庫
 class Dream(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     dream_content = models.TextField(verbose_name="夢境內容")

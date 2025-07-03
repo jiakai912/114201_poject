@@ -129,4 +129,52 @@
     });
 </script>
 
+# 諮商
+<form method="POST" action="{% url 'share_dreams' %}">
+  {% csrf_token %}
+  <label>選擇你想分享給的心理師：</label>
+  <select name="therapist_id">
+    {% for t in therapists %}
+      <option value="{{ t.id }}">{{ t.username }}</option>
+    {% endfor %}
+  </select>
+  <a class="btn btn-primary" href="{% url 'share_dream_page' %}">分享夢境給心理師</a>
+</form>
+
+<div class="row text-center mb-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 py-4">
+            <div class="card-body">
+                <i class="fas fa-search-user fa-5x text-primary mb-3"></i>
+                <h5 class="card-title mt-3">找到適合的心理師</h5>
+                <p class="card-text text-muted">根據需求尋找相關專業的心理師，進行媒合諮詢。</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 py-4">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-5x text-primary mb-3"></i>
+                <h5 class="card-title mt-3">預約諮詢師時間</h5>
+                <p class="card-text text-muted">有效率地預約諮詢師的空閒時間，直接依照自己的空閒時間做預約並提供線上支付。</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="text-center mt-4">
+    <a href="{% url 'consultation_chat_with_counselor' counselor_id=1 %}" class="btn btn-primary btn-lg px-5 py-3">
+        <i class="fas fa-search me-2"></i>尋找心理師
+    </a>
+</div>
+
+<style>
+    .card .card-body i {
+        color: var(--primary-color); /* 確保圖標顏色與主題一致 */
+    }
+</style>
+
 {% endblock %}
+
+

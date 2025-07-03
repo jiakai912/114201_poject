@@ -239,7 +239,7 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
+        <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'dream_form' %}">
                 <img src="{% static 'images/logo.png' %}" alt="DreamEcho AI Logo" class="me-2" width="40">
                 <span>DreamEcho AI</span>
@@ -280,6 +280,14 @@
                                 <i class="fas fa-solid fa-eye me-1"></i>夢境與相關新聞
                             </a>
                         </li>
+                        {# 💡 心理師專屬選單（需已審核） #}
+                        {% if user.userprofile.is_therapist and user.userprofile.is_verified_therapist %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'shared_with_me' %}">
+                            <i class="fas fa-user-friends me-1"></i>心理師專屬後台
+                            </a>
+                        </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}">
                                 <i class="fas fa-sign-out-alt me-1"></i>登出
