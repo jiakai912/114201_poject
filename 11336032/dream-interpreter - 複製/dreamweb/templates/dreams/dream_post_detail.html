@@ -1,0 +1,100 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 夢境詳情{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="page-header text-center mb-4">
+        <div class="dream-icon">
+            <i class="fas fa-bed"></i>
+        </div>
+        <h1>{{ dream.title }}</h1>
+        <!-- dream_post_detail.html -->
+        <div class="post-header">
+        <p>發布者：{% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}</p>
+        <p><small>{{ dream.created_at }}</small></p>
+    </div>
+        <p class="text-muted">瀏覽次數：{{ dream.view_count }} | 發佈日期：{{ dream.created_at|date:"Y-m-d" }}</p>
+    </div>
+
+    <div class="row">
+        <!-- 左側導覽列 -->
+        <nav class="col-md-3">
+            <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
+                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-comments me-3 nav-icon"></i>
+                <span class="fw-medium">夢境社群</span>
+                </a>
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fa-solid fa-pen-to-square me-3 nav-icon"></i>
+                <span class="fw-medium">我的夢境貼文</span>
+                </a>
+                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-share-alt me-3 nav-icon"></i>
+                <span class="fw-medium">分享夢境</span>
+                </a>
+                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-search me-3 nav-icon"></i>
+                <span class="fw-medium">搜尋夢境</span>
+                </a>
+                <a class="list-group-item list-group-item-action card-header d-flex align-items-center py-3 border-0 transition">
+                    <i class="fa-solid fa-floppy-disk me-3 nav-icon"></i>
+                <span class="fw-medium">目前貼文</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- 主要內容 -->
+        <main class="col-md-9">
+            <div class="similar-dreams mb-4">
+                <h3><i class="fas fa-moon me-2"></i>夢境內容</h3>
+                <ul class="dream-card p-3">
+                    <p>{{ dream.content }}</p>
+                </ul>
+            </div>
+         
+            <div class="similar-dreams mb-4">
+                <h3><i class="fas fa-moon me-2"></i>相似夢境推薦：</h3>
+                <ul class="list-unstyled">
+                    {% for similar_dream in similar_dreams %}
+                        <li class="similar-dream-item mb-3">
+                            <div class="dream-card p-3">
+                                <h4>
+                                    <a href="{% url 'dream_post_detail' post_id=similar_dream.id %}" class="text-decoration-none text-primary">
+                                        {{ similar_dream.title }}
+                                    </a>
+                                </h4>
+                                <p>{{ similar_dream.content|truncatewords:20 }}</p>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+         
+            <div class="comments mb-4">
+                <h3><i class="fas fa-comments me-2"></i>評論區：</h3>
+                <ul class="comment-list list-unstyled">
+                    {% for comment in comments %}
+                        <li class="mb-2">
+                            <div class="comment-card p-3 bg-light rounded">
+                                <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+         
+                {% if user.is_authenticated %}
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <textarea name="comment" class="form-control" rows="4" placeholder="發表評論"></textarea>
+                        <button type="submit" class="btn btn-primary mt-2">提交評論</button>
+                    </form>
+                {% else %}
+                    <p class="mt-4">請先登錄以發表評論。</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
