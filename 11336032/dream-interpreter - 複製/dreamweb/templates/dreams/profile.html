@@ -1,0 +1,67 @@
+{# dreams/templates/dreams/profile.html #}
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 個人檔案{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <h1>個人檔案</h1>
+        <p class="text-muted">這裡是您的個人資料頁面。</p>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">用戶名：{{ user.username }}</h5>
+            <p class="card-text">電子郵件：{{ user.email }}</p>
+            <p class="card-text">註冊日期：{{ user.date_joined|date:"Y-m-d" }}</p>
+
+            {# 顯示當前稱號和徽章 #}
+            {% if user.userprofile.current_title %}
+            <p class="card-text">當前稱號：<span class="badge bg-info">{{ user.userprofile.current_title }}</span></p>
+            {% endif %}
+            {% if user.userprofile.current_badge_icon %}
+            <p class="card-text">當前徽章：<i class="{{ user.userprofile.current_badge_icon }} fa-2x text-warning"></i></p>
+            {% endif %}
+
+            <a href="#" class="btn btn-primary mt-3">編輯個人資料</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-trophy me-2"></i> 我的成就</h3>
+        </div>
+        <div class="card-body">
+            {% if unlocked_achievements %}
+                <div class="row">
+                    {% for ua in unlocked_achievements %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {% if ua.achievement.badge_icon %}
+                                        <i class="{{ ua.achievement.badge_icon }} me-2 text-success"></i>
+                                    {% endif %}
+                                    {{ ua.achievement.name }}
+                                </h5>
+                                <p class="card-text">{{ ua.achievement.description }}</p>
+                                {% if ua.achievement.title %}
+                                    <p class="card-text small text-muted">獲得稱號：<span class="badge bg-secondary">{{ ua.achievement.title }}</span></p>
+                                {% endif %}
+                                <p class="card-text small text-muted">解鎖於：{{ ua.unlocked_at|date:"Y-m-d" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center">您還沒有解鎖任何成就。開始探索夢境，解鎖您的第一個成就吧！</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
