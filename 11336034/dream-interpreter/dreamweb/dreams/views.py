@@ -37,7 +37,10 @@ from pydub import AudioSegment
 import io
 # 心理諮商相關
 from django.contrib.auth.models import User
-from .models import DreamShareAuthorization, UserProfile, Dream
+from .models import DreamShareAuthorization, UserProfile, Dream,TherapyAppointment, TherapyMessage,ChatMessage,User
+from django.db import models
+from django.db.models import Q
+
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -464,38 +467,59 @@ def get_dream_detail(request, dream_id):
 @login_required
 def mental_health_dashboard(request):
     dreams = Dream.objects.filter(user=request.user)
-
     selected_dream = None
     mental_health_advice = None
-    emotion_alert = None  # 新增：情緒警報訊息
+    emotion_alert = None
+    therapist = None
+    all_therapists = []
 
     if request.method == 'POST':
         dream_id = request.POST.get('dream_id')
-        selected_dream = Dream.objects.get(id=dream_id, user=request.user)
+        try:
+            selected_dream = Dream.objects.get(id=dream_id, user=request.user)
 
-        # AI 心理健康建議
-        mental_health_advice = generate_mental_health_advice(
-            selected_dream.dream_content,
-            selected_dream.emotion_score,
-            selected_dream.Happiness,
-            selected_dream.Anxiety,
-            selected_dream.Fear,
-            selected_dream.Excitement,
-            selected_dream.Sadness
-        )
+            # AI 建議
+            mental_health_advice = generate_mental_health_advice(
+                selected_dream.dream_content,
+                selected_dream.emotion_score,
+                selected_dream.Happiness,
+                selected_dream.Anxiety,
+                selected_dream.Fear,
+                selected_dream.Excitement,
+                selected_dream.Sadness
+            )
 
-        # 新增：偵測異常情緒並觸發警報
-        if (selected_dream.Anxiety >= 70 or 
-            selected_dream.Fear >= 70 or 
-            selected_dream.Sadness >= 70):
-            emotion_alert = "🚨 <strong>情緒警報：</strong> 您的夢境顯示 <strong>焦慮、恐懼或悲傷</strong> 指數偏高，建議您多關注自己的心理健康，必要時可尋求專業協助。"
+            # 情緒警報
+            if (selected_dream.Anxiety >= 70 or 
+                selected_dream.Fear >= 70 or 
+                selected_dream.Sadness >= 70):
+                emotion_alert = "🚨 <strong>情緒警報：</strong> 您的夢境顯示 <strong>焦慮、恐懼或悲傷</strong> 指數偏高，建議您多關注自己的心理健康，必要時可尋求專業協助。"
+
+            # 嘗試取得已分享的心理師（其中一位）
+            share = DreamShareAuthorization.objects.filter(user=request.user, is_active=True).first()
+            if share:
+                therapist = share.therapist
+
+        except Dream.DoesNotExist:
+            selected_dream = None
+
+    # 所有已分享的心理師（下拉用）
+    all_therapists = [
+        record.therapist for record in DreamShareAuthorization.objects.filter(
+            user=request.user, is_active=True
+        ).select_related('therapist')
+    ]
 
     return render(request, 'dreams/mental_health_dashboard.html', {
         'dreams': dreams,
         'selected_dream': selected_dream,
         'mental_health_advice': mental_health_advice,
-        'emotion_alert': emotion_alert  # 傳送至模板
+        'emotion_alert': emotion_alert,
+        'therapist': therapist,
+        'therapists': all_therapists,
     })
+
+
 
 
 def generate_mental_health_advice(dream_content, emotion_score, happiness, anxiety, fear, excitement, sadness):
@@ -923,6 +947,11 @@ def share_dreams(request):
         messages.success(request, f"已成功分享夢境給 {therapist.username} 心理師！")
         return redirect('dream_form')  # 或你想回到的頁面
 
+    # 補上 GET 請求的回傳（渲染頁面或其他）
+    therapists = User.objects.filter(userprofile__is_therapist=True)
+    return render(request, 'dreams/share_dreams.html', {'therapists': therapists})
+
+
 #心理師可以看到分享的列表    
 @login_required
 def shared_with_me(request):
@@ -957,8 +986,242 @@ def view_user_dreams(request, user_id):
     })
 
 
-
 @login_required
 def share_dream_page(request):
     therapists = User.objects.filter(userprofile__is_therapist=True)
     return render(request, 'dreams/share_dreams.html', {'therapists': therapists})
+
+
+
+# 心理諮商預約及對話
+@login_required
+def share_and_schedule(request):
+    therapists = User.objects.filter(userprofile__is_therapist=True, userprofile__is_verified_therapist=True)
+
+    if request.method == 'POST':
+        therapist_id = request.POST.get('therapist_id')
+        scheduled_time = request.POST.get('scheduled_time')
+        message_content = request.POST.get('message')
+
+        therapist = User.objects.get(id=therapist_id)
+
+        # 建立分享授權（如前邏輯）
+        DreamShareAuthorization.objects.update_or_create(
+            user=request.user,
+            therapist=therapist,
+            defaults={'is_active': True}
+        )
+
+        # 建立預約（需確認是否已被預約）
+        if scheduled_time:
+            scheduled_dt = timezone.datetime.fromisoformat(scheduled_time)
+            if TherapyAppointment.objects.filter(
+                therapist=therapist,
+                scheduled_time=scheduled_dt
+            ).exists():
+                messages.error(request, "此時間已被預約，請選擇其他時間。")
+                return render(request, 'dreams/share_and_schedule.html', {'therapists': therapists})
+
+            TherapyAppointment.objects.create(
+                user=request.user,
+                therapist=therapist,
+                scheduled_time=scheduled_dt
+            )
+
+        # 建立留言訊息
+        if message_content:
+            TherapyMessage.objects.create(
+                sender=request.user,
+                receiver=therapist,
+                content=message_content
+            )
+
+        messages.success(request, "已分享夢境並送出預約與留言")
+        return redirect('dream_form')
+
+    return render(request, 'dreams/share_and_schedule.html', {'therapists': therapists})
+
+#聊天室
+@login_required
+def chat_with_therapist(request, therapist_id):
+    therapist = get_object_or_404(User, id=therapist_id)
+
+    # 驗證對方是心理師且已被授權查看
+    if not therapist.userprofile.is_therapist or not therapist.userprofile.is_verified_therapist:
+        return HttpResponseForbidden("無效心理師")
+
+    if not DreamShareAuthorization.objects.filter(user=request.user, therapist=therapist, is_active=True).exists():
+        return HttpResponseForbidden("您尚未與該心理師分享資料")
+
+    # 所有雙方訊息
+    messages = TherapyMessage.objects.filter(
+        models.Q(sender=request.user, receiver=therapist) |
+        models.Q(sender=therapist, receiver=request.user)
+    ).order_by('timestamp')
+
+    # 若傳送訊息
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        if content:
+            TherapyMessage.objects.create(sender=request.user, receiver=therapist, content=content)
+            return redirect('chat_with_therapist', therapist_id=therapist.id)
+
+    return render(request, 'dreams/chat.html', {
+        'messages': messages,
+        'therapist': therapist
+    })
+
+
+@login_required
+def therapist_list_with_chat(request):
+    # 從授權表找出所有授權成功的心理師 ID
+    authorized_records = DreamShareAuthorization.objects.filter(
+        user=request.user,
+        is_active=True,
+        therapist__userprofile__is_therapist=True,
+        therapist__userprofile__is_verified_therapist=True
+    )
+
+    # 拿到對應的心理師
+    therapists = [record.therapist for record in authorized_records]
+
+    return render(request, 'dreams/therapist_list.html', {
+        'therapists': therapists
+    })
+
+# 心理師端的聊天室
+@login_required
+def my_clients(request):
+    # 只限心理師存取
+    if not request.user.userprofile.is_therapist:
+        return HttpResponseForbidden("只有心理師可以使用此功能")
+
+    # 找出授權給我的使用者
+    shared_users = DreamShareAuthorization.objects.filter(
+        therapist=request.user,
+        is_active=True
+    ).select_related('user')
+
+    return render(request, 'dreams/my_clients.html', {
+        'shared_users': shared_users,  # 傳入整個 queryset
+    })
+
+
+@login_required
+def chat_with_client(request, user_id):
+    chat_user = get_object_or_404(User, id=user_id)
+
+    # 先檢查授權
+    authorized = DreamShareAuthorization.objects.filter(
+        therapist=request.user,
+        user=chat_user,
+        is_active=True
+    ).exists()
+    if not authorized:
+        return HttpResponseForbidden("尚未獲得該使用者授權")
+
+    messages = ChatMessage.objects.filter(
+        Q(sender=request.user, receiver=chat_user) |
+        Q(sender=chat_user, receiver=request.user)
+    ).order_by('timestamp')
+
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+        if message_text:
+            ChatMessage.objects.create(sender=request.user, receiver=chat_user, message=message_text)
+            return redirect('chat_with_client', user_id=user_id)
+
+    return render(request, 'dreams/chat_room.html', {
+        'messages': messages,
+        'chat_user': chat_user,
+    })
+
+
+@login_required
+def chat_with_therapist(request, therapist_id):
+    chat_user = get_object_or_404(User, id=therapist_id)
+
+    messages = ChatMessage.objects.filter(
+        Q(sender=request.user, receiver=chat_user) |
+        Q(sender=chat_user, receiver=request.user)
+    ).order_by('timestamp')
+
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+        if message_text:
+            ChatMessage.objects.create(sender=request.user, receiver=chat_user, message=message_text)
+            return redirect('chat_with_therapist', therapist_id=therapist_id)
+
+    return render(request, 'dreams/chat_room.html', {
+        'messages': messages,
+        'chat_user': chat_user,
+    })
+
+
+
+@login_required
+def chat_room(request, chat_user_id):
+    chat_user = get_object_or_404(User, id=chat_user_id)
+
+    if request.method == 'POST':
+        msg = request.POST.get('message')
+        if msg:
+            ChatMessage.objects.create(sender=request.user, receiver=chat_user, message=msg)
+            return redirect('chat_room', chat_user_id=chat_user.id)  # 重導避免表單重送
+
+    messages = ChatMessage.objects.filter(
+        Q(sender=request.user, receiver=chat_user) |
+        Q(sender=chat_user, receiver=request.user)
+    ).order_by('timestamp')
+
+    return render(request, 'dreams/chat_room.html', {
+        'chat_user': chat_user,
+        'messages': messages,
+    })
+
+
+
+@login_required
+def chat_with_user(request, user_id):
+    other_user = get_object_or_404(User, id=user_id)
+
+    # 決定目前使用者的身份
+    is_self_therapist = request.user.userprofile.is_therapist
+    is_other_therapist = other_user.userprofile.is_therapist
+
+    if is_self_therapist:
+        # 心理師只能與授權給他的使用者聊天
+        authorized = DreamShareAuthorization.objects.filter(
+            therapist=request.user,
+            user=other_user,
+            is_active=True
+        ).exists()
+    else:
+        # 使用者只能與他授權的心理師聊天
+        authorized = DreamShareAuthorization.objects.filter(
+            therapist=other_user,
+            user=request.user,
+            is_active=True
+        ).exists()
+
+    if not authorized:
+        return HttpResponseForbidden("尚未取得授權或無效聊天對象")
+
+    # 抓訊息紀錄
+    messages = ChatMessage.objects.filter(
+        Q(sender=request.user, receiver=other_user) |
+        Q(sender=other_user, receiver=request.user)
+    ).order_by('timestamp')
+
+    # 發送新訊息
+    if request.method == 'POST':
+        text = request.POST.get('message', '').strip()
+        if text:
+            ChatMessage.objects.create(sender=request.user, receiver=other_user, message=text)
+            return redirect('chat_with_user', user_id=other_user.id)
+
+    return render(request, 'dreams/chat_room.html', {
+        'messages': messages,
+        'chat_user': other_user
+    })
+

@@ -32,13 +32,23 @@ urlpatterns = [
     path('consultation/', views.consultation_chat, name='consultation_chat'),
     path('consultation/chat/<int:counselor_id>/', views.chat_with_counselor_view, name='consultation_chat_with_counselor'),
     path('counselors/', views.counselor_list_view, name='counselor_list'),
-    path('share_dreams/', views.share_dreams, name='share_dreams'),
 
     path('share_dream_page/', views.share_dream_page, name='share_dream_page'),
     path('share_dreams/', views.share_dreams, name='share_dreams'),
     path('not_verified/', views.not_verified, name='not_verified'),
     path('shared_users/', views.shared_with_me, name='shared_with_me'),
     path('view_user_dreams/<int:user_id>/', views.view_user_dreams, name='view_user_dreams'),
+    path('share_and_schedule/', views.share_and_schedule, name='share_and_schedule'),
+    #聊天室
+    path('my_therapists/', views.therapist_list_with_chat, name='my_therapists'),
+    path('chat/<int:therapist_id>/', views.chat_with_therapist, name='chat_with_therapist'),
+    #聊天室
+    path('my_clients/', views.my_clients, name='my_clients'),
+    path('chat/client/<int:user_id>/', views.chat_with_client, name='chat_with_client'),
+    path('chat/<int:chat_user_id>/', views.chat_room, name='chat_room'),
+    path('chat/user/<int:user_id>/', views.chat_with_user, name='chat_with_user'),
+
+
 ]
 
     

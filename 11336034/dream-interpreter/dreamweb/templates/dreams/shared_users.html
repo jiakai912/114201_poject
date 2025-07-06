@@ -9,24 +9,29 @@
 
     <div class="page-header">
         <div class="dream-icon">
-        <i class="fas fa-user-friends"></i>
+            <i class="fas fa-user-friends"></i>
         </div>
         <h1>已與您分享夢境的使用者</h1>
         <p class="text-muted">在這裡查看哪些使用者與您分享了他們的夢境。</p>
     </div>
 
-  <ul class="list-group">
-    {% for share in shared_users %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ share.user.username }}</span>
-        <a href="{% url 'view_user_dreams' share.user.id %}" class="btn btn-sm btn-outline-primary">
-          查看夢境紀錄
-        </a>
-      </li>
-    {% empty %}
-      <li class="list-group-item text-muted">目前尚無使用者與您分享夢境。</li>
-    {% endfor %}
-  </ul>
+    <ul class="list-group">
+        {% for share in shared_users %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ share.user.username }}</span>
+            <div>
+                <a href="{% url 'view_user_dreams' share.user.id %}" class="btn btn-sm btn-outline-primary me-2">
+                    查看夢境紀錄
+                </a>
+                <a href="{% url 'chat_with_client' share.user.id %}" class="btn btn-sm btn-outline-success">
+                    進入聊天室
+                </a>
+            </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">目前尚無使用者與您分享夢境。</li>
+        {% endfor %}
+    </ul>
 </div>
 {% endblock %}
 

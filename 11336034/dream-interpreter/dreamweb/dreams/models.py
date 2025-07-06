@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 # 心理諮商個人資料擴展模型
 class UserProfile(models.Model):
@@ -136,3 +137,36 @@ class DreamRecommendation(models.Model):
         return f"{self.user.username}的夢境推薦 - {self.created_at.strftime('%Y-%m-%d')}"
 
 
+
+# 心理諮商預約及對話
+
+class TherapyAppointment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments')
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_appointments')
+    scheduled_time = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_confirmed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} 預約 {self.therapist.username} - {self.scheduled_time}"
+
+
+class TherapyMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='therapy_sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='therapy_received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.receiver.username}：{self.content[:20]}"
+
+
+
+class ChatMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sent')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_received')
+    message = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.receiver.username}: {self.message[:20]}"

@@ -1,0 +1,32 @@
+{% extends 'dreams/base.html' %}
+{% block title %}我的心理師{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h3 class="mb-4">🧠 您已分享夢境的心理師</h3>
+
+  {% if therapists %}
+    <div class="row">
+      {% for therapist in therapists %}
+        <div class="col-md-6 mb-4">
+          <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-user-md text-primary me-2"></i>{{ therapist.username }}
+              </h5>
+              {% if therapist.userprofile.specialty %}
+                <p class="card-text text-muted">專長：{{ therapist.userprofile.specialty }}</p>
+              {% endif %}
+              <a href="{% url 'chat_with_therapist' therapist.id %}" class="btn btn-outline-primary">
+                進入聊天室
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">您尚未分享夢境給任何心理師。</p>
+  {% endif %}
+</div>
+{% endblock %}
