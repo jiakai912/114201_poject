@@ -28,12 +28,14 @@ urlpatterns = [
     path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
     path('dream_news/', views.dream_news, name='dream_news'),
     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
-    path('polls/', views.polls, name='polls'),
+    #path('polls/', views.polls, name='polls'),
     path('consultation/', views.consultation_chat, name='consultation_chat'),
     path('consultation/chat/<int:counselor_id>/', views.chat_with_counselor_view, name='consultation_chat_with_counselor'),
     path('counselors/', views.counselor_list_view, name='counselor_list'),
     path('profile/', views.user_profile, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('achievements/', views.user_achievements, name='achievements'),
+    path('achievements/', views.user_achievements, name='user_achievements'),
 ]
 
     

@@ -25,6 +25,8 @@ import speech_recognition as sr
 from pydub import AudioSegment
 import io
 from django.core.paginator import Paginator
+from .models import UserProfile 
+from .forms import UserProfileForm
 # from bs4 import BeautifulSoup # 如果沒有直接使用，可以註釋或刪除
 
 # ====================================================================================================
@@ -965,5 +967,37 @@ def user_achievements(request):
 # 其他 (Miscellaneous)
 # ====================================================================================================
 
-def polls(request):
-    return HttpResponse("這是 polls 頁面")
+@login_required
+def edit_profile(request):
+    """
+    編輯用戶個人檔案的視圖。
+    """
+    user_profile_instance = request.user.userprofile # 獲取當前用戶的 UserProfile 實例
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '個人檔案已成功更新！')
+            return redirect('profile') # 更新成功後重定向回個人檔案頁面
+        else:
+            messages.error(request, '更新個人檔案失敗，請檢查您的輸入。')
+    else:
+        form = UserProfileForm(instance=user_profile_instance) # GET 請求時，用現有數據填充表單
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'dreams/edit_profile.html', context)
+
+
+
+def chat_with_counselor_view(request, counselor_id):
+    try:
+        counselor = Counselor.objects.get(id=counselor_id)
+    except Counselor.DoesNotExist:
+        messages.error(request, "找不到指定的諮詢師。")
+        return redirect('counselor_list')
+    return render(request, 'dreams/chat_with_counselor.html', {
+        'counselor': counselor
+    })

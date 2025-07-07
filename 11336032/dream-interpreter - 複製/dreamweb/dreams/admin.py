@@ -16,3 +16,8 @@ class DreamAdmin(admin.ModelAdmin):
             'fields': ('stress_index', 'emotion_score', 'anxiety', 'fear', 'surprise', 'hope', 'confusion')
         }),
     )
+
+@admin.register
+class CounselorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'specialty')
+    search_fields = ('name', 'specialty')
