@@ -8,7 +8,7 @@ from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
 from .forms import DreamForm, UserRegisterForm
 import logging
-from django.http import HttpResponse
+from django.http import HttpResponse,HttpResponseRedirect
 from django.http import JsonResponse
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
@@ -40,6 +40,7 @@ from django.contrib.auth.models import User
 from .models import DreamShareAuthorization, UserProfile, Dream,TherapyAppointment, TherapyMessage,ChatMessage,User
 from django.db import models
 from django.db.models import Q
+from django.views.decorators.http import require_POST
 
 
 def welcome_page(request):
@@ -504,11 +505,7 @@ def mental_health_dashboard(request):
             selected_dream = None
 
     # 所有已分享的心理師（下拉用）
-    all_therapists = [
-        record.therapist for record in DreamShareAuthorization.objects.filter(
-            user=request.user, is_active=True
-        ).select_related('therapist')
-    ]
+    all_therapists = User.objects.filter(userprofile__is_therapist=True)
 
     return render(request, 'dreams/mental_health_dashboard.html', {
         'dreams': dreams,
@@ -904,28 +901,11 @@ def dream_news(request):
 
 
 
-# 諮商
-def consultation_chat(request):
-    return render(request, 'dreams/consultation_chat.html')
+print("全部 UserProfile：")
+for p in UserProfile.objects.all():
+    print(f"user={p.user.username}, is_therapist={p.is_therapist}")
 
 
-def consultation_landing_page(request):
-    """渲染新的諮詢對話介紹頁面."""
-    return render(request, 'dreams/consultation_chat.html')
-
-def chat_with_counselor_view(request, counselor_id):
-    """渲染與特定諮詢師的聊天頁面."""
-    # counselor = get_object_or_404(Counselor, id=counselor_id) # 如果需要傳遞諮詢師對象
-    return render(request, 'dreams/chat_with_counselor.html', {
-        # 'counselor': counselor # 如果有傳遞諮詢師對象，可以在這裡傳入
-    })
-
-def counselor_list_view(request):
-    """渲染諮詢師列表頁面."""
-    # counselors = Counselor.objects.all() # 獲取所有諮詢師
-    return render(request, 'dreams/counselor_list.html', {
-        # 'counselors': counselors # 將諮詢師列表傳入模板
-    })
 
 # 諮商
 #分享給心理師
@@ -950,6 +930,23 @@ def share_dreams(request):
     # 補上 GET 請求的回傳（渲染頁面或其他）
     therapists = User.objects.filter(userprofile__is_therapist=True)
     return render(request, 'dreams/share_dreams.html', {'therapists': therapists})
+
+
+
+#心理師可以看到分享的列表 
+@login_required
+@require_POST
+def cancel_share(request, therapist_id):
+    try:
+        share = DreamShareAuthorization.objects.get(user=request.user, therapist_id=therapist_id, is_active=True)
+        share.is_active = False
+        share.save()
+        messages.success(request, "已取消分享夢境給該心理師。")
+    except DreamShareAuthorization.DoesNotExist:
+        messages.error(request, "找不到該分享紀錄。")
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
 
 
 #心理師可以看到分享的列表    
@@ -985,11 +982,6 @@ def view_user_dreams(request, user_id):
         'target_user': target_user
     })
 
-
-@login_required
-def share_dream_page(request):
-    therapists = User.objects.filter(userprofile__is_therapist=True)
-    return render(request, 'dreams/share_dreams.html', {'therapists': therapists})
 
 
 
@@ -1041,40 +1033,50 @@ def share_and_schedule(request):
 
     return render(request, 'dreams/share_and_schedule.html', {'therapists': therapists})
 
-#聊天室
+#使用者查看自己的預約
 @login_required
-def chat_with_therapist(request, therapist_id):
-    therapist = get_object_or_404(User, id=therapist_id)
+def user_appointments(request):
+    appointments = TherapyAppointment.objects.filter(user=request.user).order_by('-scheduled_time')
 
-    # 驗證對方是心理師且已被授權查看
-    if not therapist.userprofile.is_therapist or not therapist.userprofile.is_verified_therapist:
-        return HttpResponseForbidden("無效心理師")
+    # 找出使用者已授權的心理師
+    therapists = [
+        share.therapist for share in DreamShareAuthorization.objects.filter(
+            user=request.user, is_active=True
+        ).select_related('therapist')
+    ]
 
-    if not DreamShareAuthorization.objects.filter(user=request.user, therapist=therapist, is_active=True).exists():
-        return HttpResponseForbidden("您尚未與該心理師分享資料")
+    # 找出所有已確認的預約心理師 id
+    confirmed_therapist_ids = set(
+        appointments.filter(is_confirmed=True).values_list('therapist_id', flat=True)
+    )
 
-    # 所有雙方訊息
-    messages = TherapyMessage.objects.filter(
-        models.Q(sender=request.user, receiver=therapist) |
-        models.Q(sender=therapist, receiver=request.user)
-    ).order_by('timestamp')
-
-    # 若傳送訊息
-    if request.method == 'POST':
-        content = request.POST.get('content')
-        if content:
-            TherapyMessage.objects.create(sender=request.user, receiver=therapist, content=content)
-            return redirect('chat_with_therapist', therapist_id=therapist.id)
-
-    return render(request, 'dreams/chat.html', {
-        'messages': messages,
-        'therapist': therapist
+    return render(request, 'dreams/user_appointments.html', {
+        'appointments': appointments,
+        'therapists': therapists,
+        'confirmed_therapist_ids': confirmed_therapist_ids,  # 傳入確認名單
     })
 
 
+#使用者取消未確認的預約
+@require_POST
+@login_required
+def cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
+
+    if appointment.user != request.user:
+        return HttpResponseForbidden("您無權取消此預約")
+
+    if appointment.is_confirmed:
+        return HttpResponseForbidden("已確認的預約無法取消")
+
+    appointment.delete()
+    return redirect('user_appointments')
+
+
+#聊天室
 @login_required
 def therapist_list_with_chat(request):
-    # 從授權表找出所有授權成功的心理師 ID
+    # 授權成功的心理師紀錄
     authorized_records = DreamShareAuthorization.objects.filter(
         user=request.user,
         is_active=True,
@@ -1082,12 +1084,72 @@ def therapist_list_with_chat(request):
         therapist__userprofile__is_verified_therapist=True
     )
 
-    # 拿到對應的心理師
+    # 對應的心理師清單
     therapists = [record.therapist for record in authorized_records]
 
+    # 所有已確認的預約心理師 ID
+    confirmed_therapist_ids = set(
+        TherapyAppointment.objects.filter(
+            user=request.user,
+            is_confirmed=True
+        ).values_list('therapist_id', flat=True)
+    )
+
     return render(request, 'dreams/therapist_list.html', {
-        'therapists': therapists
+        'therapists': therapists,
+        'confirmed_therapist_ids': confirmed_therapist_ids  # ✅ 加上這個！
     })
+
+
+# 心理師端的預約時間
+@login_required
+def consultation_schedule(request, user_id):
+    client = get_object_or_404(User, id=user_id)
+    if not request.user.userprofile.is_therapist:
+        return HttpResponseForbidden("只有心理師能查看預約資料")
+
+    appointments = TherapyAppointment.objects.filter(
+        user=client,
+        therapist=request.user
+    ).order_by('-scheduled_time')
+
+    return render(request, 'dreams/consultation_schedule.html', {
+        'client': client,
+        'appointments': appointments
+    })
+
+
+
+# 心理師端的確認預約按鈕
+@require_POST
+@login_required
+def confirm_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
+
+    # 檢查是否是該心理師本人
+    if appointment.therapist != request.user:
+        return HttpResponseForbidden("您無權確認此預約")
+
+    appointment.is_confirmed = True
+    appointment.save()
+    return redirect('consultation_schedule', user_id=appointment.user.id)
+
+
+    
+# 心理師端的刪除預約按鈕
+@require_POST
+@login_required
+def therapist_delete_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
+
+    if appointment.therapist != request.user:
+        return HttpResponseForbidden("您無權刪除此預約。")
+
+    appointment.delete()
+    messages.success(request, "預約已刪除。")
+    return redirect('therapist_view_client_appointments', user_id=appointment.user.id)
+
+
 
 # 心理師端的聊天室
 @login_required

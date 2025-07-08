@@ -1,0 +1,56 @@
+<!-- 這是使用者看到的預約資料 -->
+
+{% extends 'dreams/base.html' %}
+
+{% block title %}我的預約紀錄{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>我的預約紀錄</h2>
+    <p class="text-muted">以下是您與心理師的諮詢預約紀錄。</p>
+
+    {% if appointments %}
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>心理師</th>
+                <th>預約時間</th>
+                <th>建立時間</th>
+                <th>狀態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appt in appointments %}
+            <tr>
+                <td>{{ appt.therapist.username }}</td>
+                <td>{{ appt.scheduled_time|date:"Y-m-d H:i" }}</td>
+                <td>{{ appt.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if appt.is_confirmed %}
+                        <span class="badge bg-success">已確認</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">待確認</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not appt.is_confirmed %}
+                    <form method="post" action="{% url 'cancel_appointment' appointment_id=appt.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">取消預約</button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted">無法取消</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            您目前尚未預約任何諮詢。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -20,6 +20,9 @@
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <span>{{ share.user.username }}</span>
             <div>
+                <a href="{% url 'consultation_schedule' user_id=share.user.id %}" class="btn btn-sm btn-outline-info mb-1">
+                查看預約時間
+                </a>
                 <a href="{% url 'view_user_dreams' share.user.id %}" class="btn btn-sm btn-outline-primary me-2">
                     查看夢境紀錄
                 </a>

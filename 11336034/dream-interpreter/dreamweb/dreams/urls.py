@@ -28,17 +28,29 @@ urlpatterns = [
     path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
     path('dream_news/', views.dream_news, name='dream_news'),
     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
-    # 諮商
-    path('consultation/', views.consultation_chat, name='consultation_chat'),
-    path('consultation/chat/<int:counselor_id>/', views.chat_with_counselor_view, name='consultation_chat_with_counselor'),
-    path('counselors/', views.counselor_list_view, name='counselor_list'),
 
-    path('share_dream_page/', views.share_dream_page, name='share_dream_page'),
+    # 使用者分享與取消分享夢境
     path('share_dreams/', views.share_dreams, name='share_dreams'),
+    path('cancel_share/<int:therapist_id>/', views.cancel_share, name='cancel_share'),
+
     path('not_verified/', views.not_verified, name='not_verified'),
     path('shared_users/', views.shared_with_me, name='shared_with_me'),
     path('view_user_dreams/<int:user_id>/', views.view_user_dreams, name='view_user_dreams'),
     path('share_and_schedule/', views.share_and_schedule, name='share_and_schedule'),
+    path('therapists/chat_list/', views.therapist_list_with_chat, name='therapist_list_with_chat'),
+
+    #使用者看到的預約狀態及取消預約按鈕
+    path('my_appointments/', views.user_appointments, name='user_appointments'),
+    path('appointment/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
+
+    #心理師看到的預約及確認按鈕
+    path('consultation/schedule/<int:user_id>/', views.consultation_schedule, name='consultation_schedule'),
+    path('appointment/confirm/<int:appointment_id>/', views.confirm_appointment, name='confirm_appointment'),
+    #心理師的刪除預約按鈕
+    path('therapist/consultation/<int:user_id>/', views.consultation_schedule, name='therapist_view_client_appointments'),
+    path('appointments/<int:appointment_id>/delete/', views.therapist_delete_appointment, name='therapist_delete_appointment'),
+
+
     #聊天室
     path('my_therapists/', views.therapist_list_with_chat, name='my_therapists'),
     path('chat/<int:therapist_id>/', views.chat_with_therapist, name='chat_with_therapist'),
