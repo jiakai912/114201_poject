@@ -123,38 +123,6 @@ class Counselor(models.Model):
     
 
 
-
-
-class Achievement(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField()
-    # 可以用來分類成就，例如 '解析', '活躍', '社群'
-    category = models.CharField(max_length=50, default='General')
-    # 稱號
-    title = models.CharField(max_length=50, blank=True, null=True)
-    # 徽章圖標的檔案路徑或 FontAwesome class
-    badge_icon = models.CharField(max_length=100, blank=True, null=True)
-    # 達成條件的關鍵字，例如 'parse_count', 'login_streak'
-    condition_key = models.CharField(max_length=50)
-    # 達成條件的數值，例如 5, 20, 100
-    condition_value = models.IntegerField(default=1)
-
-    def __str__(self):
-        return self.name
-
-class UserAchievement(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
-    unlocked_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'achievement') # 確保每個用戶只能解鎖一次同一成就
-
-    def __str__(self):
-        return f"{self.user.username} - {self.achievement.name}"
-
-# dreams/models.py
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import F
@@ -222,5 +190,3 @@ class UserAchievement(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.achievement.name}"
 
-# ... (UserProfile 模型和相關信號處理，確保它們正確無誤)
-# 確保 UserProfile 的模型已經創建，並且與 User 關聯正確，且現有用戶已有 UserProfile 實例。
