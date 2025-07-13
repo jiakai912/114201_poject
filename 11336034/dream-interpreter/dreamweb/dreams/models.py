@@ -10,12 +10,17 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_therapist = models.BooleanField(default=False)
     is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
+    current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
+    current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
-
 
 class DreamShareAuthorization(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_by')
@@ -29,6 +34,41 @@ class DreamShareAuthorization(models.Model):
 
     def __str__(self):
         return f"{self.user.username} 授權給 {self.therapist.username}"
+    
+
+# 個人檔案
+
+class Achievement(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="成就名稱")
+    description = models.TextField(verbose_name="成就描述")
+    category = models.CharField(max_length=50, default='General', verbose_name="類別")
+    title = models.CharField(max_length=50, blank=True, null=True, verbose_name="稱號")
+    badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="徽章圖標")
+    condition_key = models.CharField(max_length=50, verbose_name="條件鍵") # 例如 'parse_count'
+    condition_value = models.IntegerField(default=1, verbose_name="條件值") # 例如 5, 20, 100
+
+    class Meta:
+        verbose_name = "成就"
+        verbose_name_plural = "成就"
+        ordering = ['condition_value'] # 依條件值排序，方便展示進度
+
+    def __str__(self):
+        return self.name
+    
+
+
+class UserAchievement(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用戶")
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, verbose_name="成就")
+    unlocked_at = models.DateTimeField(auto_now_add=True, verbose_name="解鎖時間")
+
+    class Meta:
+        unique_together = ('user', 'achievement')
+        verbose_name = "用戶成就"
+        verbose_name_plural = "用戶成就"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.achievement.name}"
 
 # 夢境資料庫
 class Dream(models.Model):

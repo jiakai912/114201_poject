@@ -37,11 +37,10 @@ from pydub import AudioSegment
 import io
 # 心理諮商相關
 from django.contrib.auth.models import User
-from .models import DreamShareAuthorization, UserProfile, Dream,TherapyAppointment, TherapyMessage,ChatMessage,User
+from .models import DreamShareAuthorization, UserProfile, Dream,TherapyAppointment, TherapyMessage,ChatMessage,User,UserAchievement,Achievement
 from django.db import models
 from django.db.models import Q
 from django.views.decorators.http import require_POST
-
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -53,6 +52,26 @@ class CustomLoginView(LoginView):
     def get_redirect_url(self):
         redirect_to = self.request.GET.get('next', None)
         return redirect_to if redirect_to else '/dream_form/'  # 預設導向儀表板
+    
+# 註冊
+def register(request):
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            is_therapist = form.cleaned_data.get('is_therapist')
+
+            # 這裡設定 UserProfile
+            profile = UserProfile.objects.get(user=user)
+            profile.is_therapist = is_therapist
+            profile.save()
+
+            login(request, user)
+            messages.success(request, '註冊成功！您現在已登入。')
+            return redirect('dream_form')
+    else:
+        form = UserRegisterForm()
+    return render(request, 'dreams/register.html', {'form': form})
     
 # 心理諮商登入
 def custom_login(request):
@@ -92,31 +111,103 @@ def logout_success(request):
     return render(request, 'dreams/logout_success.html')  # 顯示登出成功頁面
 
 
+# 個人檔案
+@login_required
+def edit_profile(request):
+    """
+    編輯用戶個人檔案的視圖。
+    """
+    user_profile_instance = request.user.userprofile # 獲取當前用戶的 UserProfile 實例
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '個人檔案已成功更新！')
+            return redirect('profile') # 更新成功後重定向回個人檔案頁面
+        else:
+            messages.error(request, '更新個人檔案失敗，請檢查您的輸入。')
+    else:
+        form = UserProfileForm(instance=user_profile_instance) # GET 請求時，用現有數據填充表單
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'dreams/edit_profile.html', context)
+
+
+@login_required
+def user_profile(request):
+    """用戶個人檔案頁面"""
+    user_profile_instance, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    unlocked_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement').order_by('-unlocked_at')
+
+    if request.method == 'POST':
+        selected_title = request.POST.get('selected_title')
+        selected_badge = request.POST.get('selected_badge')
+
+        if selected_title:
+            user_profile_instance.current_title = selected_title
+        if selected_badge:
+            user_profile_instance.current_badge_icon = selected_badge
+        user_profile_instance.save()
+        messages.success(request, "您的個人檔案已更新！")
+        return redirect('profile')
+
+    available_titles = set()
+    available_badges = set()
+    for ua in unlocked_achievements:
+        if ua.achievement.title:
+            available_titles.add(ua.achievement.title)
+        if ua.achievement.badge_icon:
+            available_badges.add(ua.achievement.badge_icon)
+
+    context = {
+        'user_profile': user_profile_instance,
+        'unlocked_achievements': unlocked_achievements,
+        'available_titles': sorted(list(available_titles)),
+        'available_badges': sorted(list(available_badges)),
+    }
+    return render(request, 'dreams/profile.html', context)
+
+@login_required
+def user_achievements(request):
+    user = request.user
+    
+    unlocked_achievements = UserAchievement.objects.filter(user=user).select_related('achievement').order_by('-unlocked_at')
+
+    user_parsed_dreams_count = Dream.objects.filter(user=user).count()
+
+    parse_achievements = Achievement.objects.filter(condition_key='parse_count').order_by('condition_value')
+
+    achievements_progress = []
+    for achievement in parse_achievements:
+        is_unlocked = UserAchievement.objects.filter(user=user, achievement=achievement).exists()
+        current_progress = min(user_parsed_dreams_count, achievement.condition_value)
+        percentage = (current_progress / achievement.condition_value) * 100 if achievement.condition_value > 0 else 0
+        
+        achievements_progress.append({
+            'achievement': achievement,
+            'current_progress': current_progress,
+            'total_needed': achievement.condition_value,
+            'percentage': round(percentage, 2),
+            'is_unlocked': is_unlocked
+        })
+
+    context = {
+        'unlocked_achievements': unlocked_achievements,
+        'achievements_progress': achievements_progress,
+    }
+    return render(request, 'dreams/achievements.html', context)
+
+
+
 # 載入環境變量
 load_dotenv()
 # DEEPSEEK_API_KEY = os.getenv("sk-b1e7ea9f25184324aaa973412b081f6f")  # 修正為正確的環境變量名稱
 # 初始化 OpenAI 客戶端
 client = OpenAI(api_key="sk-b1e7ea9f25184324aaa973412b081f6f", base_url="https://api.deepseek.com")
-
-# 註冊
-def register(request):
-    if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            is_therapist = form.cleaned_data.get('is_therapist')
-
-            # 這裡設定 UserProfile
-            profile = UserProfile.objects.get(user=user)
-            profile.is_therapist = is_therapist
-            profile.save()
-
-            login(request, user)
-            messages.success(request, '註冊成功！您現在已登入。')
-            return redirect('dream_form')
-    else:
-        form = UserRegisterForm()
-    return render(request, 'dreams/register.html', {'form': form})
 
 
 # 將音檔轉換為 WAV 格式
@@ -899,14 +990,6 @@ def dream_news(request):
     return render(request, 'dreams/dream_news.html', {'news_results': news_results})
 
 
-
-
-print("全部 UserProfile：")
-for p in UserProfile.objects.all():
-    print(f"user={p.user.username}, is_therapist={p.is_therapist}")
-
-
-
 # 諮商
 #分享給心理師
 @login_required
@@ -952,35 +1035,44 @@ def cancel_share(request, therapist_id):
 #心理師可以看到分享的列表    
 @login_required
 def shared_with_me(request):
-    """心理師查看哪些使用者分享了夢境給他"""
+    """心理師查看所有曾經分享過的使用者（包含取消分享）"""
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看分享名單")
 
     shares = DreamShareAuthorization.objects.filter(
-        therapist=request.user, is_active=True
+        therapist=request.user,
+        # is_active=True  # 改成全部都抓
     ).select_related('user')
 
     return render(request, 'dreams/shared_users.html', {'shared_users': shares})
 
 
+
 @login_required
 def view_user_dreams(request, user_id):
-    """心理師查看指定使用者的夢境紀錄"""
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看夢境")
 
-    # 確保該使用者已分享給此心理師
-    if not DreamShareAuthorization.objects.filter(
-        user_id=user_id, therapist=request.user, is_active=True
-    ).exists():
+    # 不只查 is_active=True 的授權，而是找所有授權紀錄
+    share = DreamShareAuthorization.objects.filter(
+        user_id=user_id,
+        therapist=request.user
+    ).first()
+
+    if not share:
         return HttpResponseForbidden("您沒有查看此使用者夢境的權限")
 
-    dreams = Dream.objects.filter(user_id=user_id).order_by('-created_at')
+    # 分享是否啟用決定夢境資料是否取出
+    dreams = Dream.objects.filter(user_id=user_id).order_by('-created_at') if share.is_active else []
+
     target_user = User.objects.get(id=user_id)
+
     return render(request, 'dreams/user_dreams_for_therapist.html', {
         'dreams': dreams,
-        'target_user': target_user
+        'target_user': target_user,
+        'is_active_share': share.is_active,
     })
+
 
 
 
@@ -1076,18 +1168,21 @@ def cancel_appointment(request, appointment_id):
 #聊天室
 @login_required
 def therapist_list_with_chat(request):
-    # 授權成功的心理師紀錄
+    # 授權紀錄（不限定 is_active）
     authorized_records = DreamShareAuthorization.objects.filter(
         user=request.user,
-        is_active=True,
         therapist__userprofile__is_therapist=True,
         therapist__userprofile__is_verified_therapist=True
-    )
+    ).select_related('therapist')
 
-    # 對應的心理師清單
-    therapists = [record.therapist for record in authorized_records]
+    therapist_statuses = []
+    for record in authorized_records:
+        therapist_statuses.append({
+            'therapist': record.therapist,
+            'is_active': record.is_active
+        })
 
-    # 所有已確認的預約心理師 ID
+    # 查出哪些心理師的預約已確認
     confirmed_therapist_ids = set(
         TherapyAppointment.objects.filter(
             user=request.user,
@@ -1096,9 +1191,12 @@ def therapist_list_with_chat(request):
     )
 
     return render(request, 'dreams/therapist_list.html', {
-        'therapists': therapists,
-        'confirmed_therapist_ids': confirmed_therapist_ids  # ✅ 加上這個！
+        'therapist_statuses': therapist_statuses,
+        'confirmed_therapist_ids': confirmed_therapist_ids
     })
+
+
+
 
 
 # 心理師端的預約時間

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Dream
-from .models import UserProfile
+from .models import UserProfile,Achievement
 
 @admin.register(Dream)
 class DreamAdmin(admin.ModelAdmin):
@@ -22,3 +22,18 @@ class DreamAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'is_therapist', 'is_verified_therapist')
     list_filter = ('is_therapist', 'is_verified_therapist')
+
+
+
+@admin.register
+class CounselorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'specialty')
+    search_fields = ('name', 'specialty')
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'title', 'condition_key', 'condition_value')
+    search_fields = ('name', 'category', 'condition_key')
+    list_filter = ('category',)
+

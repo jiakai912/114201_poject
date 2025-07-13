@@ -29,6 +29,12 @@ urlpatterns = [
     path('dream_news/', views.dream_news, name='dream_news'),
     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
 
+    # 個人檔案
+    path('profile/', views.user_profile, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('achievements/', views.user_achievements, name='achievements'),
+    path('achievements/', views.user_achievements, name='user_achievements'),
+
     # 使用者分享與取消分享夢境
     path('share_dreams/', views.share_dreams, name='share_dreams'),
     path('cancel_share/<int:therapist_id>/', views.cancel_share, name='cancel_share'),
