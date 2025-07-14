@@ -18,7 +18,27 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'dreams',
     'django_crontab',  # 添加 crontab 支持
+    'django.contrib.sites',  # 必要
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',  # Google 驗證
+
 ]
+
+# google驗證
+SITE_ID = 1
+LOGIN_REDIRECT_URL = '/dream_form/'  # 成功登入後導向的頁面
+LOGOUT_REDIRECT_URL = '/logout_success/'  # 登出後導向頁面
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    #'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+# settings.py AI審核貼文
+DANGEROUS_KEYWORDS = ['自殺', '殺人', '輕生', '毒品', '割腕','災難', '虐待', '性暴力', '性侵害', '性騷擾','末日','地震','海嘯']
+
 
 CRONJOBS = [
     ('0 0 * * *', 'dreams.cron.update_dream_trends'),  # 每天午夜執行趨勢更新
@@ -30,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware', 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -83,7 +104,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ZH-hant'  # 使用繁體中文
 TIME_ZONE = 'Asia/Taipei'
 
 USE_I18N = True
