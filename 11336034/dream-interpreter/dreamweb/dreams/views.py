@@ -41,6 +41,11 @@ from .models import DreamShareAuthorization, UserProfile, Dream,TherapyAppointme
 from django.db import models
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+# 綠界
+import datetime
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from dreams.sdk.ecpay_payment_sdk import ECPayPaymentSdk
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -1385,3 +1390,151 @@ def chat_with_user(request, user_id):
         'chat_user': other_user
     })
 
+
+# 綠界第三方支付
+def ecpay_checkout(request):
+    sdk = ECPayPaymentSdk(
+        MerchantID='2000132',
+        HashKey='5294y06JbISpM5x9',
+        HashIV='v77hoKGq4kWxNNIS'
+    )
+
+    order_params = {
+        'MerchantTradeNo': 'TEST' + datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
+        'MerchantTradeDate': datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
+        'CustomField1': str(request.user.id),  # 傳使用者 ID 給 return 用
+        'PaymentType': 'aio',
+        'TotalAmount': 100,
+        'TradeDesc': '測試交易',
+        'ItemName': '夢境分析報告 x1',
+        'ReturnURL': 'http://127.0.0.1:8000/ecpay/return/',
+        'OrderResultURL': 'http://127.0.0.1:8000/ecpay/return/',
+        'ClientBackURL': 'http://127.0.0.1:8000/thankyou/',
+        'NeedExtraPaidInfo': 'Y',
+        'EncryptType': 1,
+        'ChoosePayment': 'Credit'
+    }
+
+    try:
+        final_params = sdk.create_order(order_params)
+        action_url = "https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5"
+        return render(request, 'dreams/ecpay_checkout.html', {
+        'final_params': final_params,
+        'action_url': action_url
+        })
+
+    except Exception as e:
+        return HttpResponse(f"發生錯誤：{e}")
+    
+
+def result(request):
+    return HttpResponse("付款結果頁面")
+
+# 點券包
+POINT_PACKAGES = [
+    {'id': 1, 'name': '100 點券', 'price': 100, 'points': 100},
+    {'id': 2, 'name': '500 點券', 'price': 500, 'points': 500},
+    {'id': 3, 'name': '1000 點券', 'price': 1000, 'points': 1000},
+]
+
+@login_required
+def pointshop(request):
+    return render(request, 'dreams/pointshop.html', {'packages': POINT_PACKAGES})
+    
+
+@login_required
+def pointshop_buy(request, pkg_id):
+    pkg = next((p for p in POINT_PACKAGES if p['id'] == int(pkg_id)), None)
+    if not pkg:
+        return HttpResponse("找不到點券包", status=404)
+
+    sdk = ECPayPaymentSdk(
+        MerchantID='2000132',
+        HashKey='5294y06JbISpM5x9',
+        HashIV='v77hoKGq4kWxNNIS'
+    )
+
+    def clean_username(username):
+        return ''.join(re.findall(r'[A-Za-z0-9]', username))[:5].ljust(5, 'X')
+
+    username_short = clean_username(request.user.username)
+    timestamp = datetime.datetime.now().strftime('%y%m%d%H%M')  # 12字元
+    trade_no = f"PT{username_short}{timestamp}"  # 總長 19
+
+    order_params = {
+        'MerchantTradeNo': trade_no,
+        'MerchantTradeDate': datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
+        'CustomField1': str(request.user.id),  # 傳使用者 ID 給 return 用
+        'PaymentType': 'aio',
+        'TotalAmount': pkg['price'],
+        'TradeDesc': f'購買點券包：{pkg["name"]}',
+        'ItemName': pkg['name'],
+        'ReturnURL': 'http://127.0.0.1:8000/ecpay/return/',
+        'OrderResultURL': 'http://127.0.0.1:8000/ecpay/return/',
+        'ClientBackURL': 'http://127.0.0.1:8000/thankyou/',
+        'NeedExtraPaidInfo': 'Y',
+        'EncryptType': 1,
+        'ChoosePayment': 'Credit'
+    }
+
+    try:
+        final_params = sdk.create_order(order_params)
+        action_url = "https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5"
+        return render(request, 'dreams/ecpay_checkout.html', {
+            'final_params': final_params,
+            'action_url': action_url
+        })
+    except Exception as e:
+        return HttpResponse(f"發生錯誤：{e}")
+
+
+logger = logging.getLogger(__name__)
+@csrf_exempt
+def ecpay_return(request):
+    if request.method == 'POST':
+        data = request.POST.dict()
+
+        trade_amt_str = data.get('TradeAmt', '0')
+        user_id = data.get('CustomField1')
+
+        try:
+            trade_amt = int(trade_amt_str)
+            if trade_amt <= 0:
+                logger.warning(f"收到不合理的 TradeAmt: {trade_amt}")
+                return HttpResponse("付款金額異常")
+        except ValueError:
+            logger.error(f"TradeAmt 轉換錯誤: {trade_amt_str}")
+            return HttpResponse("付款金額錯誤")
+
+        if not user_id:
+            logger.error("沒有收到使用者ID(CustomField1)")
+            return HttpResponse("缺少使用者資訊")
+
+        try:
+            user = User.objects.get(id=user_id)
+            profile = user.userprofile
+            old_points = profile.points
+            profile.points += trade_amt
+            profile.save()
+            logger.info(f"已為 {user.username} 加值 {trade_amt} 點，點數從 {old_points} -> {profile.points}")
+        except User.DoesNotExist:
+            logger.error(f"找不到使用者 id={user_id}")
+            return HttpResponse("找不到使用者")
+
+        # ✅ 改成渲染 template
+        return render(request, 'dreams/pointshop.html', {
+            'success_message': f"✅ 成功加值 {trade_amt} 點，目前總點數：{profile.points}"
+        })
+
+    return HttpResponse("非 POST 請求")
+
+
+
+# 綠界測試付款完成頁
+@csrf_exempt
+def ecpay_result(request):
+    if request.method == "POST":
+        print("✅ OrderResult 收到綠界回傳資料：", request.POST.dict())
+        # 付款成功後導回點券商店
+        return redirect('pointshop')
+    return HttpResponse("這是綠界付款完成後導回的頁面")

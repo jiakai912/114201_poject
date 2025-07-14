@@ -8,6 +8,7 @@ from django.utils import timezone
 # 心理諮商個人資料擴展模型
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    points = models.IntegerField(default=0)  # 點券餘額
     is_therapist = models.BooleanField(default=False)
     is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
@@ -210,3 +211,4 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} → {self.receiver.username}: {self.message[:20]}"
+

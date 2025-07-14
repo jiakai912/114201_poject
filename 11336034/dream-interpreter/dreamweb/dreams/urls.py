@@ -56,7 +56,6 @@ urlpatterns = [
     path('therapist/consultation/<int:user_id>/', views.consultation_schedule, name='therapist_view_client_appointments'),
     path('appointments/<int:appointment_id>/delete/', views.therapist_delete_appointment, name='therapist_delete_appointment'),
 
-
     #聊天室
     path('my_therapists/', views.therapist_list_with_chat, name='my_therapists'),
     path('chat/<int:therapist_id>/', views.chat_with_therapist, name='chat_with_therapist'),
@@ -65,8 +64,13 @@ urlpatterns = [
     path('chat/client/<int:user_id>/', views.chat_with_client, name='chat_with_client'),
     path('chat/<int:chat_user_id>/', views.chat_room, name='chat_room'),
     path('chat/user/<int:user_id>/', views.chat_with_user, name='chat_with_user'),
-
-
+    #綠界第三方支付
+    path('ecpay/checkout/', views.ecpay_checkout, name='ecpay_checkout'),
+    path('ecpay/return/', views.ecpay_return, name='ecpay_return'),
+    path('result/', views.ecpay_result, name='ecpay_result'),
+    #點券包
+    path('pointshop/', views.pointshop, name='pointshop'),
+    path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
 ]
 
     
