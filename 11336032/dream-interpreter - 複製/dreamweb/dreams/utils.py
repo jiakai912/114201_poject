@@ -1,6 +1,6 @@
 from pydub import AudioSegment
 import tempfile
-import io
+import os
 
 def convert_to_wav(audio_file):
     try:
@@ -11,3 +11,12 @@ def convert_to_wav(audio_file):
         return temp_wav_file.name  # 返回臨時 WAV 文件的路徑
     except Exception as e:
         raise ValueError("音檔轉換錯誤") from e
+
+# AI審核貼文
+from django.conf import settings
+
+def contains_dangerous_keywords(text):
+    for keyword in settings.DANGEROUS_KEYWORDS:
+        if keyword in text:
+            return True
+    return False

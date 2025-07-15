@@ -1,0 +1,46 @@
+<!-- 這是心理師看到的使用者資料 -->
+
+{% extends 'dreams/base.html' %}
+
+{% block title %}已與您分享夢境的使用者{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-user-friends"></i>
+        </div>
+        <h1>已與您分享夢境的使用者</h1>
+        <p class="text-muted">在這裡查看哪些使用者與您分享了他們的夢境。</p>
+    </div>
+
+    <!-- dreams/shared_users.html -->
+    <ul class="list-group">
+    {% for share in shared_users %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ share.user.username }}</span>
+        <div>
+            <a href="{% url 'consultation_schedule' user_id=share.user.id %}" class="btn btn-sm btn-outline-info mb-1">
+            查看預約時間
+            </a>
+
+            {% if share.is_active %}
+            <a href="{% url 'view_user_dreams' share.user.id %}" class="btn btn-sm btn-outline-primary me-2">
+                查看夢境紀錄
+            </a>
+            {% else %}
+            <button class="btn btn-sm btn-secondary me-2" disabled>已取消分享夢境</button>
+            {% endif %}
+
+            <a href="{% url 'chat_with_client' share.user.id %}" class="btn btn-sm btn-outline-success">
+            進入聊天室
+            </a>
+        </div>
+        </li>
+    {% empty %}
+        <li class="list-group-item text-muted">目前尚無使用者與您分享夢境。</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endblock %}

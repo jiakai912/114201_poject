@@ -280,11 +280,14 @@
                                 <i class="fas fa-solid fa-eye me-1"></i>夢境相關新聞
                             </a>
                         </li>
+                        {# 💡 心理師專屬選單（需已審核） #}
+                        {% if user.userprofile.is_therapist and user.userprofile.is_verified_therapist %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'consultation_chat' %}">
-                                 <i class="fas fa-hands-helping me-1"></i>諮詢對話
-                             </a>
+                            <a class="nav-link" href="{% url 'shared_with_me' %}">
+                            <i class="fas fa-user-friends me-1"></i>心理師專屬後台
+                            </a>
                         </li>
+                        {% endif %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownSettings" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog me-1"></i>設定

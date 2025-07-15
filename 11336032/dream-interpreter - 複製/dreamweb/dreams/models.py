@@ -1,7 +1,81 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import F
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
 
+# 心理諮商個人資料擴展模型
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    is_therapist = models.BooleanField(default=False)
+    is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
+    current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
+    current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
+    
+    # 新增 bio 和 avatar 字段
+    bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        # 改用 get_or_create 避免重複 key 錯誤
+        UserProfile.objects.get_or_create(user=instance)
+
+class DreamShareAuthorization(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_by')
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authorized_clients')
+    shared_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('user', 'therapist')  # 一個使用者只能對一位心理師有一筆紀錄
+
+    def __str__(self):
+        return f"{self.user.username} 授權給 {self.therapist.username}"
+    
+
+# 個人檔案
+
+class Achievement(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="成就名稱")
+    description = models.TextField(verbose_name="成就描述")
+    category = models.CharField(max_length=50, default='General', verbose_name="類別")
+    title = models.CharField(max_length=50, blank=True, null=True, verbose_name="稱號")
+    badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="徽章圖標")
+    condition_key = models.CharField(max_length=50, verbose_name="條件鍵") # 例如 'parse_count'
+    condition_value = models.IntegerField(default=1, verbose_name="條件值") # 例如 5, 20, 100
+
+    class Meta:
+        verbose_name = "成就"
+        verbose_name_plural = "成就"
+        ordering = ['condition_value'] # 依條件值排序，方便展示進度
+
+    def __str__(self):
+        return self.name
+    
+
+
+class UserAchievement(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用戶")
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, verbose_name="成就")
+    unlocked_at = models.DateTimeField(auto_now_add=True, verbose_name="解鎖時間")
+
+    class Meta:
+        unique_together = ('user', 'achievement')
+        verbose_name = "用戶成就"
+        verbose_name_plural = "用戶成就"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.achievement.name}"
+
+# 夢境資料庫
 class Dream(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     dream_content = models.TextField(verbose_name="夢境內容")
@@ -39,6 +113,7 @@ class DreamPost(models.Model):
     emotion_data = models.JSONField(default=dict, blank=True, verbose_name="情緒數據")  # 儲存情緒 JSON
     advice = models.TextField(verbose_name="心理診斷個人化建議", blank=True, null=True)  # 心理建議
     created_at = models.DateTimeField(auto_now_add=True)
+    is_flagged = models.BooleanField(default=False, verbose_name="是否含有危險字詞")
 
     class Meta:
         ordering = ['-created_at']
@@ -107,86 +182,36 @@ class DreamRecommendation(models.Model):
         return f"{self.user.username}的夢境推薦 - {self.created_at.strftime('%Y-%m-%d')}"
 
 
-# 新增 Counselor 模型
-class Counselor(models.Model):
-    name = models.CharField(max_length=100, verbose_name="諮詢師姓名")
-    specialty = models.CharField(max_length=200, verbose_name="專長領域")
-    description = models.TextField(verbose_name="簡介", blank=True, null=True)
-    image_url = models.URLField(verbose_name="頭像圖片網址", blank=True, null=True)
 
-    class Meta:
-        verbose_name = "諮詢師"
-        verbose_name_plural = "諮詢師"
+# 心理諮商預約及對話
 
-    def __str__(self):
-        return self.name
-    
-
-
-from django.db import models
-from django.contrib.auth.models import User
-from django.db.models import F
-from django.db.models.signals import post_save # 確保只導入 post_save
-from django.dispatch import receiver
-
-# ... (現有的 Dream, DreamPost 等模型定義)
-
-# 新增 UserProfile 模型
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # 用戶當前選擇的稱號
-    current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
-    # 用戶當前選擇的徽章圖標 (可以存儲 FontAwesome class 或圖片路徑)
-    current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
-    # 您可以根據需要添加其他用戶資料欄位，例如：
-    # bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
-    # avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
+class TherapyAppointment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments')
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_appointments')
+    scheduled_time = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_confirmed = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user.username}'s Profile"
-
-# 確保在 User 創建時自動創建 UserProfile
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-    # 不需要 instance.userprofile.save() 這行，因為它會導致循環或 RelatedObjectDoesNotExist
-
-# dreams/models.py
-
-# ... (確保您已導入其他必要的模組，如 User, models)
-from django.db import models
-from django.contrib.auth.models import User # 確保有這個
-# ... (您的其他模型，如 Dream, UserProfile 等)
+        return f"{self.user.username} 預約 {self.therapist.username} - {self.scheduled_time}"
 
 
-class Achievement(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="成就名稱")
-    description = models.TextField(verbose_name="成就描述")
-    category = models.CharField(max_length=50, default='General', verbose_name="類別")
-    title = models.CharField(max_length=50, blank=True, null=True, verbose_name="稱號")
-    badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="徽章圖標")
-    condition_key = models.CharField(max_length=50, verbose_name="條件鍵") # 例如 'parse_count'
-    condition_value = models.IntegerField(default=1, verbose_name="條件值") # 例如 5, 20, 100
-
-    class Meta:
-        verbose_name = "成就"
-        verbose_name_plural = "成就"
-        ordering = ['condition_value'] # 依條件值排序，方便展示進度
+class TherapyMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='therapy_sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='therapy_received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return self.name
+        return f"{self.sender.username} → {self.receiver.username}：{self.content[:20]}"
 
-class UserAchievement(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用戶")
-    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, verbose_name="成就")
-    unlocked_at = models.DateTimeField(auto_now_add=True, verbose_name="解鎖時間")
 
-    class Meta:
-        unique_together = ('user', 'achievement')
-        verbose_name = "用戶成就"
-        verbose_name_plural = "用戶成就"
+
+class ChatMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sent')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_received')
+    message = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.user.username} - {self.achievement.name}"
-
+        return f"{self.sender.username} → {self.receiver.username}: {self.message[:20]}"

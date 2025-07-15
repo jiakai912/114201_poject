@@ -1,0 +1,52 @@
+<!-- 這是心理師審核介面 -->
+{% extends 'dreams/base.html' %}
+
+{% block title %}尚未通過心理師審核{% endblock %}
+
+{% block content %}
+<style>
+  .verify-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fffbe6;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    animation: fadeIn 1s ease-in-out;
+  }
+
+  .verify-icon {
+    font-size: 4rem;
+    color: #ffc107;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .contact-link {
+    color: #0d6efd;
+    text-decoration: underline;
+  }
+
+  .contact-link:hover {
+    text-decoration: none;
+  }
+</style>
+
+<div class="container mt-5">
+  <div class="verify-container text-center">
+    <div class="verify-icon mb-3">🕵️‍♀️</div>
+    <h2 class="mb-3">心理師身份審核中</h2>
+    <p class="lead">感謝您申請心理師身份。</p>
+    <p>為了維護使用者的心理健康與安全，我們需先審核您的專業資格。</p>
+    <p>您將在 1~3 個工作天內收到通知。</p>
+    <hr>
+    <p class="mb-3 text-muted">
+      若您有任何問題，歡迎<a href="mailto:support@dreamecho.ai" class="contact-link">聯絡我們</a>。
+    </p>
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4">回到登入頁</a>
+  </div>
+</div>
+{% endblock %}
