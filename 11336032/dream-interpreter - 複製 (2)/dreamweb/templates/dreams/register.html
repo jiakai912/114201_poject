@@ -1,0 +1,71 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 註冊{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center">註冊帳戶</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <!-- 在其他欄位下方加入心理師身份選項 -->
+                    <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_therapist" id="is_therapist">
+                    <label class="form-check-label" for="is_therapist">
+                        我是心理師
+                    </label>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="{{ form.username.id_for_label }}" class="col-sm-3 col-form-label">用戶名</label>
+                        <div class="d-grid">
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="text-danger">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>                    
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="col-sm-3 col-form-label">電子郵件</label>
+                        <div class="d-grid">
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.password1.id_for_label }}" class="col-sm-3 col-form-label">密碼</label>
+                        <div class="d-grid">
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                                <div class="text-danger">{{ form.password1.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                        <div class="mb-3">
+                        <label for="{{ form.password2.id_for_label }}" class="col-sm-3 col-form-label">確認密碼</label>
+                        <div class="d-grid">
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger">{{ form.password2.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">註冊</button>
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                已有帳戶？ <a href="{% url 'login' %}">登入</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

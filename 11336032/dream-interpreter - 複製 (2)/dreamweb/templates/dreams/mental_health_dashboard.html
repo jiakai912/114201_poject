@@ -1,0 +1,210 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %}心理健康分析{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-heartbeat"></i>
+        </div>
+        <h1>夢境心理診斷</h1>
+        <p class="text-muted">分析您的夢境並獲取心理健康建議</p>
+    </div>
+
+    <!-- 選擇夢境 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">選擇夢境進行分析</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <label for="dream_id" class="form-label">選擇夢境：</label>
+                <select name="dream_id" class="form-select" required>
+                    {% for dream in dreams %}
+                        <option value="{{ dream.id }}">{{ dream.created_at|date:"Y-m-d H:i" }} - {{ dream.dream_content|truncatechars:30 }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary mt-3">分析心理健康</button>
+            </form>
+        </div>
+    </div>
+
+    {% if selected_dream %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5><i class="fas fa-moon me-2"></i> 夢境內容</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ selected_dream.dream_content }}</p>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5><i class="fas fa-brain me-2"></i> 解析結果</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ selected_dream.interpretation|linebreaks }}</p>
+        </div>
+    </div>
+
+    <div class="modal fade" id="emotionAlertModal" tabindex="-1" aria-labelledby="emotionAlertLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="emotionAlertLabel">⚠️ AI 情緒警報</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body">
+                    {{ emotion_alert|safe }}
+                </div>
+                <div class="modal-footer d-flex justify-content-center w-100">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-dismiss="modal">我知道了</button>
+                </div>                    
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            <h5><i class="fas fa-heartbeat"></i> 心理健康建議</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ mental_health_advice }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <div class="container mt-5 mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow rounded-4 border-0">
+                    <div class="card-body px-4 py-5">
+
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <h3 class="mb-3 mb-md-0">
+                                <i class="fas fa-hand-holding-heart text-primary me-2"></i>分享夢境並預約心理會談
+                            </h3>
+                            {% if request.user.is_authenticated and not request.user.userprofile.is_therapist %}
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'user_appointments' %}" class="btn btn-outline-info rounded-pill px-4">
+                                    <i class="fas fa-calendar-check me-2"></i> 我的預約
+                                </a>
+                                <a href="{% url 'therapist_list_with_chat' %}" class="btn btn-outline-primary rounded-pill px-4">
+                                    <i class="fas fa-comments me-2"></i> 聊天對象列表
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <form method="POST" action="{% url 'share_and_schedule' %}" id="appointmentForm">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="therapistSelect" class="form-label fw-bold">選擇心理師</label>
+                                        <select class="form-select rounded-pill px-3 py-2" name="therapist_id" id="therapistSelect" required>
+                                            {% for t in therapists %}
+                                                <option value="{{ t.id }}" {% if forloop.first %}selected{% endif %}
+                                                    data-username="{{ t.username }}"
+                                                    data-specialty="{{ t.userprofile.specialty|default:'未提供' }}"
+                                                    data-bio="{{ t.userprofile.bio|default:'尚未提供自我介紹' }}">
+                                                    {{ t.username }}{% if t.userprofile.specialty %}（{{ t.userprofile.specialty }}）{% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="scheduled_time" class="form-label fw-bold">預約時間</label>
+                                        <input type="datetime-local" class="form-control rounded-pill px-3 py-2" name="scheduled_time" id="scheduled_time" required>
+                                        <small class="text-muted">系統將自動避免時間衝突，請選擇您方便的時段。</small>
+                                    </div>
+                                    <div class="text-center mt-4">
+                                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm">
+                                            <i class="fas fa-paper-plane me-2"></i>送出預約與分享
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div id="therapistInfoCard" class="card border-info shadow-sm d-none">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="rounded-circle bg-info text-white d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
+                                                <i class="fas fa-user-md"></i>
+                                            </div>
+                                            <h5 class="ms-3 mb-0" id="therapistName">心理師姓名</h5>
+                                        </div>
+                                        <hr>
+                                        <h6 class="fw-bold text-secondary">專長領域</h6>
+                                        <p id="therapistSpecialty" class="text-muted mb-3">請選擇心理師以顯示資料</p>
+                                        <h6 class="fw-bold text-secondary">自我介紹</h6>
+                                        <p id="therapistBio" class="text-muted">請選擇心理師以顯示資料</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <!-- row -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card .card-body i {
+        color: var(--primary-color);
+    }
+    .modal-dialog {
+        position: fixed;
+        top: -41.4%;
+        left: 32%;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if emotion_alert %}
+        const modalElement = document.getElementById('emotionAlertModal');
+        const modal = new bootstrap.Modal(modalElement, {
+            backdrop: false,
+            keyboard: false
+        });
+        setTimeout(function () {
+            modal.show();
+        }, 500);
+        {% endif %}
+
+        const select = document.getElementById("therapistSelect");
+        const card = document.getElementById("therapistInfoCard");
+        const nameEl = document.getElementById("therapistName");
+        const specialtyEl = document.getElementById("therapistSpecialty");
+        const bioEl = document.getElementById("therapistBio");
+        const updateTherapistInfo = function(option) {
+            nameEl.textContent = option.getAttribute("data-username") || "心理師姓名";
+            specialtyEl.textContent = option.getAttribute("data-specialty") || "未提供";
+            bioEl.textContent = option.getAttribute("data-bio") || "尚未提供自我介紹";
+            card.classList.remove("d-none");
+        };
+        if (select && select.options.length > 0) {
+            updateTherapistInfo(select.options[select.selectedIndex]);
+            select.addEventListener("change", function () {
+                updateTherapistInfo(this.options[this.selectedIndex]);
+            });
+        }
+
+        const scheduledInput = document.getElementById("scheduled_time");
+        if (scheduledInput) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            scheduledInput.value = now.toISOString().slice(0, 16);
+        }
+    });
+</script>
+{% endblock %}

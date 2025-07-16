@@ -1,0 +1,52 @@
+<!-- 這是點券包列表 -->
+{% extends 'dreams/base.html' %}
+
+{% block title %}點券商店{% endblock %}
+
+{% block content %}
+
+
+{% if success_message %}
+  <div class="alert alert-success text-center mt-4" style="border-radius: 1rem;">
+    {{ success_message }}
+    <br>
+    <a href="{% url 'pointshop' %}" class="btn btn-primary mt-3" style="border-radius: 2rem;">
+      回商城
+    </a>
+  </div>
+{% endif %}
+
+
+
+<div class="container mt-5">
+  <div class="d-flex justify-content-center position-relative mb-4">
+    <h1 class="mb-0">點券商店</h1>
+    <p class="position-absolute end-0 top-50 translate-middle-y text-primary fs-5 mb-0">
+      目前點數：<strong>{{ request.user.userprofile.points }}</strong> 點
+    </p>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+    {% for package in packages %}
+    <div class="col-md-4">
+      <div class="card dream-card h-100 text-center">
+        <div class="card-body d-flex flex-column justify-content-between">
+          <div>
+            <div class="dream-icon mb-4"><i class="fas fa-gem fa-2x"></i></div>
+            <h5 class="card-title fw-bold fs-4">{{ package.name }}</h5>
+            <p class="card-text text-muted fs-5">價格：<strong class="text-dark">NT$ {{ package.price }}</strong></p>
+
+          </div>
+            <a href="{% url 'pointshop_buy' package.id %}" class="btn btn-primary mt-3">
+                <i class="fas fa-cart-plus me-1"></i> 立即購買
+            </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-center">目前沒有可供購買的點券包。</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

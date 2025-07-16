@@ -1,0 +1,117 @@
+<!-- 這是使用者個人檔案 -->
+{% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+
+{% block title %} - 個人檔案{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <h1>個人檔案</h1>
+        <p class="text-muted">這裡是您的個人資料頁面。</p>
+    </div>
+
+    <div class="row">
+        {# 左側個人資料卡片 #}
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3><i class="fas fa-id-card me-2"></i>基本資料</h3>
+                </div>
+                <div class="card-body text-center">
+                    {# 頭像顯示 #}
+                    {% if user_profile.avatar %}
+                        <img src="{{ user_profile.avatar.url }}" alt="{{ user.username }}的頭像" 
+                             class="rounded-circle mb-3 border border-3 border-primary" 
+                             style="width: 120px; height: 120px; object-fit: cover;">
+                    {% else %}
+                        <i class="fas fa-user-circle fa-6x text-muted mb-3"></i> {# 預設圖示 #}
+                    {% endif %}
+
+                    <h5 class="card-title mt-3">{{ user.username }}</h5>
+                    <p class="card-text text-muted">{{ user.email }}</p>
+                    <p class="card-text small text-muted">註冊日期：{{ user.date_joined|date:"Y-m-d" }}</p>
+
+                    {# 當前稱號顯示 #}
+                    <p class="card-text">
+                        當前稱號：
+                        {% if user_profile.current_title %}
+                            <span class="badge bg-info">{{ user_profile.current_title }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">無稱號</span>
+                        {% endif %}
+                    </p>
+                    {# 當前徽章顯示 #}
+                    <p class="card-text">
+                        當前徽章：
+                        {% if user_profile.current_badge_icon %}
+                            <i class="{{ user_profile.current_badge_icon }} fa-2x text-warning me-1"></i>
+                        {% else %}
+                            <span class="text-muted">無徽章</span>
+                        {% endif %}
+                    </p>
+
+                    {# 個人簡介 #}
+                    <div class="mt-4 text-start">
+                        <h6><i class="fas fa-info-circle me-1"></i>個人簡介</h6>
+                        {% if user_profile.bio %}
+                            <p class="card-text text-muted">{{ user_profile.bio|linebreaksbr }}</p>
+                        {% else %}
+                            <p class="card-text text-muted">您還沒有填寫個人簡介，點擊編輯個人資料來新增吧！</p>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary mt-4">
+                        <i class="fas fa-edit me-1"></i>編輯個人資料
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {# 右側統計與社群概覽 #}
+        <div class="col-lg-6 mb-4">
+            {# 最受歡迎的社群貼文 #}
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-trophy me-2"></i> 我的成就</h3>
+                </div>
+                <div class="card-body">
+                    {% if unlocked_achievements %}
+                        <div class="row">
+                            {% for ua in unlocked_achievements %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            {% if ua.achievement.badge_icon %}
+                                                <i class="{{ ua.achievement.badge_icon }} me-2 text-success"></i>
+                                            {% endif %}
+                                            {{ ua.achievement.name }}
+                                        </h5>
+                                        <p class="card-text">{{ ua.achievement.description }}</p>
+                                        {% if ua.achievement.title %}
+                                            <p class="card-text small text-muted">獲得稱號：<span class="badge bg-secondary">{{ ua.achievement.title }}</span></p>
+                                        {% endif %}
+                                        <p class="card-text small text-muted">解鎖於：{{ ua.unlocked_at|date:"Y-m-d" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{% url 'user_achievements' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-trophy me-1"></i>查看所有成就
+                            </a>
+                        </div>
+                    {% else %}
+                        <p class="text-center">您還沒有解鎖任何成就。開始探索夢境，解鎖您的第一個成就吧！</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
