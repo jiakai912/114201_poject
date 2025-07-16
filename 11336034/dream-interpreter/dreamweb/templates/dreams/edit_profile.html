@@ -1,58 +1,138 @@
 <!-- 這是編輯個人檔案 -->
+{# dreams/templates/dreams/edit_profile.html #}
 {% extends 'dreams/base.html' %}
-{% load crispy_forms_tags %} {# 如果您使用 django-crispy-forms 來美化表單 #}
 
-{% block title %} - 編輯個人資料{% endblock %}
+{% block title %} - 編輯個人檔案{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 animation-fade-in">
     <div class="page-header">
         <div class="dream-icon">
-            <i class="fas fa-edit"></i>
+            <i class="fas fa-user-edit"></i>
         </div>
-        <h1>編輯個人資料</h1>
-        <p class="text-muted">在這裡更新您的個人資訊。</p>
+        <h1>編輯個人檔案</h1>
+        <p class="text-muted">在這裡更新您的用戶名、電子郵件及其他個人資訊。</p>
     </div>
 
     <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="mb-0"><i class="fas fa-info-circle me-2"></i>基本資訊</h2>
+        </div>
         <div class="card-body">
-            <form method="POST" enctype="multipart/form-data"> {# enctype="multipart/form-data" 允許文件上傳 #}
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                
-                {# 如果您使用 crispy_forms_tags #}
-                {{ form|crispy }}
-                
-                {# 如果不使用 crispy_forms_tags，手動渲染表單字段 #}
-                {#
+
+                {# 用戶名欄位 - 顯示為不可編輯 #}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">用戶名</label>
+                    <input type="text" class="form-control" id="id_username" value="{{ user.username }}" readonly>
+                    <div class="form-text text-muted">用戶名通常不允許直接修改。</div>
+                </div>
+
+                {# 電子郵件欄位 - 手動添加 class 和 placeholder #}
+                <div class="mb-3">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">電子郵件</label>
+                    <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" 
+                           class="form-control" value="{{ form.email.value|default_if_none:'' }}" 
+                           placeholder="{{ form.email.field.widget.attrs.placeholder|default:'您的電子郵件地址' }}" {% if form.email.field.required %}required{% endif %}>
+                    {% if form.email.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# 個人簡介欄位 - 手動添加 class 和 placeholder #}
                 <div class="mb-3">
                     <label for="{{ form.bio.id_for_label }}" class="form-label">個人簡介</label>
-                    {{ form.bio }}
+                    <textarea name="{{ form.bio.name }}" id="{{ form.bio.id_for_label }}" 
+                              class="form-control" rows="{{ form.bio.field.widget.attrs.rows|default:'4' }}" 
+                              placeholder="{{ form.bio.field.widget.attrs.placeholder|default:'寫一些關於您自己的內容...' }}">{{ form.bio.value|default_if_none:'' }}</textarea>
+                    {% if form.bio.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.bio.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
+
+                {# 頭像上傳欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.avatar.id_for_label }}" class="form-label">頭像</label>
                     {% if form.instance.avatar %}
-                        <img src="{{ form.instance.avatar.url }}" alt="當前頭像" class="img-thumbnail mb-2" style="max-width: 150px;">
-                        <p class="form-text text-muted">目前頭像</p>
+                        <div class="mb-2">
+                            <img src="{{ form.instance.avatar.url }}" alt="當前頭像" class="img-thumbnail" style="max-width: 150px; border-radius: 50%;">
+                            <p class="form-text text-muted">當前頭像</p>
+                        </div>
                     {% endif %}
-                    {{ form.avatar }}
-                    <div class="form-text">{{ form.avatar.help_text }}</div>
+                    <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" class="form-control">
+                    {% if form.avatar.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.avatar.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text text-muted">{{ form.avatar.help_text }}</div>
                 </div>
+
+                {# 稱號選擇欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.current_title.id_for_label }}" class="form-label">選擇稱號</label>
+                    {# 直接渲染表單字段，並用 JavaScript 確保添加 Bootstrap class #}
                     {{ form.current_title }}
+                    <script>
+                        // 為 select 標籤手動添加 Bootstrap class
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const currentTitleSelect = document.getElementById('{{ form.current_title.id_for_label }}');
+                            if (currentTitleSelect) {
+                                currentTitleSelect.classList.add('form-select');
+                            }
+                        });
+                    </script>
+                    {% if form.current_title.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.current_title.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                 <div class="mb-3">
-                    <label for="{{ form.current_badge_icon.id_for_label }}" class="form-label">選擇徽章</label>
-                    {{ form.current_badge_icon }}
-                </div>
-                #}
 
-                <button type="submit" class="btn btn-primary mt-3">
-                    <i class="fas fa-save me-1"></i>保存更改
-                </button>
-                <a href="{% url 'profile' %}" class="btn btn-secondary mt-3">
-                    <i class="fas fa-arrow-left me-1"></i>返回個人檔案
-                </a>
+                {# 徽章選擇欄位 - 手動添加 class #}
+                <div class="mb-3">
+                    <label for="{{ form.current_badge_icon.id_for_label }}" class="form-label">選擇徽章</label>
+                    {# 直接渲染表單字段，並用 JavaScript 確保添加 Bootstrap class #}
+                    {{ form.current_badge_icon }}
+                    <script>
+                        // 為 select 標籤手動添加 Bootstrap class
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const currentBadgeSelect = document.getElementById('{{ form.current_badge_icon.id_for_label }}');
+                            if (currentBadgeSelect) {
+                                currentBadgeSelect.classList.add('form-select');
+                            }
+                        });
+                    </script>
+                    {% if form.current_badge_icon.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.current_badge_icon.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-start gap-3 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>保存更改
+                    </button>
+                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>返回個人檔案
+                    </a>
+                </div>
             </form>
         </div>
     </div>

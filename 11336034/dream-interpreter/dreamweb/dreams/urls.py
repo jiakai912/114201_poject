@@ -34,6 +34,8 @@ urlpatterns = [
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('achievements/', views.user_achievements, name='achievements'),
     path('achievements/', views.user_achievements, name='user_achievements'),
+    path('profile/', views.profile_view, name='profile'),
+    
 
     # 使用者分享與取消分享夢境
     path('share_dreams/', views.share_dreams, name='share_dreams'),

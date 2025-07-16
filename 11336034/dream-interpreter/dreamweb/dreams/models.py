@@ -4,7 +4,7 @@ from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-
+    
 # 心理諮商個人資料擴展模型
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -13,6 +13,10 @@ class UserProfile(models.Model):
     is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
+
+    # 新增 bio 和 avatar 字段
+    bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -38,7 +42,6 @@ class DreamShareAuthorization(models.Model):
     
 
 # 個人檔案
-
 class Achievement(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="成就名稱")
     description = models.TextField(verbose_name="成就描述")
@@ -56,8 +59,6 @@ class Achievement(models.Model):
     def __str__(self):
         return self.name
     
-
-
 class UserAchievement(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用戶")
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, verbose_name="成就")
@@ -180,7 +181,6 @@ class DreamRecommendation(models.Model):
 
 
 # 心理諮商預約及對話
-
 class TherapyAppointment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments')
     therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_appointments')
@@ -200,7 +200,6 @@ class TherapyMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} → {self.receiver.username}：{self.content[:20]}"
-
 
 
 class ChatMessage(models.Model):

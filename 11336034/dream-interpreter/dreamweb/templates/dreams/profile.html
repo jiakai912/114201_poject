@@ -73,69 +73,41 @@
 
         {# 右側統計與社群概覽 #}
         <div class="col-lg-6 mb-4">
-            {# 夢境統計概覽 #}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3><i class="fas fa-chart-line me-2"></i>夢境數據概覽</h3>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            總解析次數
-                            <span class="badge bg-primary rounded-pill">{{ total_dreams_parsed }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            平均壓力指數
-                            <span class="badge bg-danger rounded-pill">{{ avg_stress_index|floatformat:"0" }}</span> {# 顯示為整數 #}
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            最常見夢境情緒
-                            <span class="badge bg-info rounded-pill">{{ most_frequent_emotion|default:"無" }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            已解鎖成就數量
-                            <span class="badge bg-success rounded-pill">{{ unlocked_achievements_count }}</span>
-                        </li>
-                    </ul>
-                    <div class="text-center mt-3">
-                         <a href="{% url 'user_achievements' %}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-trophy me-1"></i>查看所有成就
-                         </a>
-                    </div>
-                </div>
-            </div>
-
             {# 最受歡迎的社群貼文 #}
             <div class="card">
                 <div class="card-header">
-                    <h3><i class="fas fa-fire me-2"></i>我的熱門貼文</h3>
+                    <h3><i class="fas fa-trophy me-2"></i> 我的成就</h3>
                 </div>
                 <div class="card-body">
-                    {% if top_posts %}
-                        <ul class="list-group">
-                            {% for post in top_posts %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'dream_post_detail' post.id %}" class="text-decoration-none">
-                                        {{ post.title|truncatechars:30 }}
-                                    </a>
-                                    <span class="badge bg-secondary rounded-pill">
-                                        <i class="fas fa-eye me-1"></i>{{ post.view_count }}
-                                    </span>
-                                </li>
+                    {% if unlocked_achievements %}
+                        <div class="row">
+                            {% for ua in unlocked_achievements %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            {% if ua.achievement.badge_icon %}
+                                                <i class="{{ ua.achievement.badge_icon }} me-2 text-success"></i>
+                                            {% endif %}
+                                            {{ ua.achievement.name }}
+                                        </h5>
+                                        <p class="card-text">{{ ua.achievement.description }}</p>
+                                        {% if ua.achievement.title %}
+                                            <p class="card-text small text-muted">獲得稱號：<span class="badge bg-secondary">{{ ua.achievement.title }}</span></p>
+                                        {% endif %}
+                                        <p class="card-text small text-muted">解鎖於：{{ ua.unlocked_at|date:"Y-m-d" }}</p>
+                                    </div>
+                                </div>
+                            </div>
                             {% endfor %}
-                        </ul>
-                        <div class="text-center mt-3">
-                             <a href="{% url 'my_posts' %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-book-open me-1"></i>查看所有貼文
-                             </a>
                         </div>
-                    {% else %}
-                        <p class="text-center text-muted">您還沒有發布任何貼文，或者沒有熱門貼文。</p>
-                        <div class="text-center">
-                            <a href="{% url 'share_dream' %}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-share-alt me-1"></i>分享您的夢境
+                        <div class="text-center mt-3">
+                            <a href="{% url 'user_achievements' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-trophy me-1"></i>查看所有成就
                             </a>
                         </div>
+                    {% else %}
+                        <p class="text-center">您還沒有解鎖任何成就。開始探索夢境，解鎖您的第一個成就吧！</p>
                     {% endif %}
                 </div>
             </div>

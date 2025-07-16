@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
-from .forms import DreamForm, UserRegisterForm
+from .forms import DreamForm, UserRegisterForm,UserProfileForm
 import logging
 from django.http import HttpResponse,HttpResponseRedirect
 from django.http import JsonResponse
@@ -46,6 +46,8 @@ import datetime
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from dreams.sdk.ecpay_payment_sdk import ECPayPaymentSdk
+# 個人檔案
+from dreams.achievement_helper import check_and_unlock_achievements
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -207,6 +209,36 @@ def user_achievements(request):
     return render(request, 'dreams/achievements.html', context)
 
 
+@login_required
+def profile_view(request):
+    # 獲取當前使用者的 UserProfile
+    try:
+        user_profile = request.user.userprofile
+    except UserProfile.DoesNotExist:
+        # 如果使用者沒有 UserProfile (理論上 signals.py 應該會創建，但以防萬一)
+        user_profile = UserProfile.objects.create(user=request.user)
+
+    # 獲取使用者已解鎖的成就
+    unlocked_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement').order_by('-unlocked_at')
+
+    context = {
+        'user': request.user,
+        'user_profile': user_profile,
+        'unlocked_achievements': unlocked_achievements,
+    }
+    return render(request, 'dreams/profile.html', context)
+
+
+def check_and_unlock_achievements(user):
+    parsed_count = Dream.objects.filter(user=user).count()
+    achievements = Achievement.objects.filter(condition_key='parse_count')
+
+    for ach in achievements:
+        if parsed_count >= ach.condition_value:
+            already_unlocked = UserAchievement.objects.filter(user=user, achievement=ach).exists()
+            if not already_unlocked:
+                UserAchievement.objects.create(user=user, achievement=ach, unlocked_at=timezone.now())
+
 
 # 載入環境變量
 load_dotenv()
@@ -237,16 +269,13 @@ def dream_form(request):
         audio_file = request.FILES.get('audio_file')
         if audio_file:
             try:
-                # 將音檔轉換為 WAV 格式
                 wav_audio = convert_to_wav(audio_file)
-
                 recognizer = sr.Recognizer()
 
-                # 使用語音識別
                 with sr.AudioFile(wav_audio) as source:
                     audio = recognizer.record(source)
                     try:
-                        dream_content = recognizer.recognize_google(audio, language="zh-TW")  # 設定中文
+                        dream_content = recognizer.recognize_google(audio, language="zh-TW")
                     except sr.UnknownValueError:
                         error_message = "無法識別音檔內容，請再試一次。"
                     except sr.RequestError:
@@ -254,11 +283,9 @@ def dream_form(request):
             except Exception as e:
                 error_message = f"音檔處理錯誤: {e}"
 
-        # 使用者可以修改夢境內容
         if form.is_valid():
-            dream_content = form.cleaned_data.get('dream_content', dream_content)  # 確保語音識別後的內容能顯示在表單中
+            dream_content = form.cleaned_data.get('dream_content', dream_content)
 
-            # 進行夢境解析
             interpretation, emotions, mental_health_advice = interpret_dream(dream_content)
 
             if emotions:
@@ -274,16 +301,19 @@ def dream_form(request):
                 )
                 dream.save()
 
+                # ✅ 新增這行：儲存夢境後自動檢查並解鎖成就
+                check_and_unlock_achievements(request.user)
+
                 return render(request, 'dreams/dream_result.html', {
                     'dream': dream,
-                    'mental_health_advice': mental_health_advice  # 傳遞心理診斷建議
+                    'mental_health_advice': mental_health_advice
                 })
 
     else:
         form = DreamForm()
 
     dreams = Dream.objects.filter(user=request.user)
-    # 把夢境內容帶入表單，確保語音識別結果能顯示
+
     return render(request, 'dreams/dream_form.html', {
         'form': form,
         'dream_content': dream_content,
