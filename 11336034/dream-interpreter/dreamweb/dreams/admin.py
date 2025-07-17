@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Dream
-from .models import UserProfile,Achievement # 確保 Achievement 也被匯入
+from .models import Dream,UserProfile,Achievement # 確保 Achievement 也被匯入
 
 @admin.register(Dream)
 class DreamAdmin(admin.ModelAdmin):
@@ -33,7 +32,6 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('bio', 'avatar', 'current_title', 'current_badge_icon')
         }),
     )
-
 
 
 

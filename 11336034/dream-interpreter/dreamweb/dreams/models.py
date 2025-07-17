@@ -187,6 +187,9 @@ class TherapyAppointment(models.Model):
     scheduled_time = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_confirmed = models.BooleanField(default=False)
+    is_cancelled = models.BooleanField(default=False)  # 新增欄位
+    point_change = models.IntegerField(default=0)  # +50, -50
+    
 
     def __str__(self):
         return f"{self.user.username} 預約 {self.therapist.username} - {self.scheduled_time}"
@@ -211,3 +214,22 @@ class ChatMessage(models.Model):
     def __str__(self):
         return f"{self.sender.username} → {self.receiver.username}: {self.message[:20]}"
 
+
+# 點券使用記錄
+class PointTransaction(models.Model):
+    TRANSACTION_TYPES = [
+        ('USE', '使用'),
+        ('GAIN', '獲得'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    amount = models.IntegerField()
+    description = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_gain(self):
+        return self.transaction_type == 'GAIN'
+
+    def __str__(self):
+        return f"{self.user.username} {self.get_transaction_type_display()} {self.amount} 點 - {self.description}"

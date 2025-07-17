@@ -1,4 +1,4 @@
-# coding: utf-8
+# 綠界第三方支付 coding: utf-8
 import collections
 import hashlib
 import copy

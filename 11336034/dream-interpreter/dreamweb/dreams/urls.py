@@ -54,6 +54,9 @@ urlpatterns = [
     #心理師看到的預約及確認按鈕
     path('consultation/schedule/<int:user_id>/', views.consultation_schedule, name='consultation_schedule'),
     path('appointment/confirm/<int:appointment_id>/', views.confirm_appointment, name='confirm_appointment'),
+    path('all_users_appointments/', views.all_users_appointments, name='all_users_appointments'),
+    
+
     #心理師的刪除預約按鈕
     path('therapist/consultation/<int:user_id>/', views.consultation_schedule, name='therapist_view_client_appointments'),
     path('appointments/<int:appointment_id>/delete/', views.therapist_delete_appointment, name='therapist_delete_appointment'),
@@ -73,6 +76,9 @@ urlpatterns = [
     #點券包
     path('pointshop/', views.pointshop, name='pointshop'),
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
+    path('points/history/', views.point_history, name='point_history'),#點券使用記錄
+
 ]
+
 
     

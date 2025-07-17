@@ -1,4 +1,4 @@
-# dreams/utils/achievement_helper.py
+# 夢境解析觸發成就dreams/utils/achievement_helper.py
 from dreams.models import Dream, Achievement, UserAchievement
 from django.utils import timezone
 

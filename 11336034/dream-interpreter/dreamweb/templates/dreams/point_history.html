@@ -1,0 +1,41 @@
+<!-- 這是點券使用記錄 -->
+{% extends 'dreams/base.html' %}
+{% block title %} - 點券記錄{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2><i class="fas fa-history me-2"></i>點券使用記錄</h2>
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>時間</th>
+                <th>類型</th>
+                <th>點數</th>
+                <th>說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.created_at|date:"Y/m/d H:i" }}</td>
+                    <td>
+                        {% if tx.is_gain %}
+                            <span class="text-success">獲得</span>
+                        {% else %}
+                            <span class="text-danger">使用</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if tx.is_gain %}+{% else %}-{% endif %}{{ tx.amount }}
+                    </td>
+                    <td>{{ tx.description }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">尚無點券交易紀錄</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
