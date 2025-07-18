@@ -1,4 +1,6 @@
 {% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+
 {% block title %} - 夢境社群討論區{% endblock %}
 {% block content %}
 
@@ -12,7 +14,6 @@
     </div>
     
     <div class="row">
-        <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
               <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action card-header d-flex align-items-center py-3 border-0 transition">
@@ -34,9 +35,7 @@
             </div>
         </nav>
 
-        <!-- 主要內容 -->
         <main class="col-md-9">
-            <!-- 全球夢境趨勢 -->
             <div class="card mb-4">
                 <div class="card-header  text-white">
                     <h2 class="h5 mb-0">今日熱門夢境主題</h2>
@@ -60,7 +59,6 @@
                 </div>
             </div>
            
-            <!-- 夢境貼文區塊 -->
             <div class="card mb-4">
                 <div class="card-header text-white d-flex justify-content-between align-items-center">
                     <h2 class="h5 mb-0">夢境貼文</h2>
@@ -74,23 +72,55 @@
                         {% for dream in dream_posts %}
                             <li class="list-group-item d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
                                 <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="d-flex align-items-center text-decoration-none">
-                                    <div class="dream-icon me-3">
-                                        <i class="fas fa-bed"></i>
-                                    </div>
+                                    {# --- BEGIN MODIFICATION: Larger avatar and anonymous icon --- #}
+                                    {% if dream.is_anonymous %}
+                                        <i class="fas fa-user-secret fa-4x text-muted me-3" style="width: 50px; height: 50px; object-fit: cover;"></i> 
+                                    {% else %}
+                                        {% if dream.user.userprofile.avatar %}
+                                            <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% else %}
+                                            <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=random&color=fff&size=50" alt="{{ dream.user.username }}" class="rounded-circle me-3">
+                                        {% endif %}
+                                    {% endif %}
+                                    {# --- END MODIFICATION --- #}
                                     <div>
                                         <h5 class="dream-title text-dark">{{ dream.title }}</h5>
                                         <p class="text-muted mb-0">
-                                            {% if sort_type == 'popular' %}
-                                                {{ dream.view_count }} 次觀看
+                                            {% if dream.is_anonymous %}
+                                                <span class="d-flex align-items-center">
+                                                    匿名發佈
+                                                </span>
                                             {% else %}
-                                                發布於 {{ dream.created_at|date:"Y-m-d H:i" }}
+                                                <span class="d-flex align-items-center">
+                                                    {{ dream.user.username }}
+                                                    {% if dream.user.userprofile.current_title %}
+                                                        <span class="badge bg-info ms-1">{{ dream.user.userprofile.current_title }}</span>
+                                                    {% endif %}
+                                                </span>
                                             {% endif %}
                                         </p>
                                     </div>
                                 </a>
                                 <div class="text-end">
                                     <small class="text-muted">
-                                        發布者: {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}
+                                        {% if sort_type == 'popular' %}
+                                            {{ dream.view_count }} 次觀看
+                                        {% else %}
+                                            發布於 {{ dream.created_at|date:"Y-m-d H:i" }}
+                                        {% endif %}
+                                        <br>
+                                        {# --- BEGIN MODIFICATION: Like button with JS for real-time updates --- #}
+                                        {% if user.is_authenticated %}
+                                            <button type="button" class="btn btn-sm {% if dream.is_liked_by_user %}btn-danger{% else %}btn-outline-danger{% endif %} post-like-button" data-post-id="{{ dream.id }}">
+                                                <i class="fas fa-heart me-1"></i> <span class="like-count">{{ dream.total_post_likes }}</span>
+                                            </button>
+                                        {% else %}
+                                            {# 如果未登入，只顯示按讚數，按鈕不可點擊 #}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-heart"></i> <span class="like-count">{{ dream.total_post_likes }}</span>
+                                            </span>
+                                        {% endif %}
+                                        {# --- END MODIFICATION --- #}
                                     </small>
                                 </div>
                             </li>
@@ -103,7 +133,6 @@
 </div>
 
 <script>
-    // 添加動畫效果
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.card');
         
@@ -119,6 +148,85 @@
         cards.forEach(card => {
             observer.observe(card);
         });
+
+        {# --- BEGIN MODIFICATION: JavaScript for Post Likes functionality (CSRF token fetching improved) --- #}
+        // 從 cookie 中獲取 CSRF token 的函數 (Django 推薦的方式)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken'); // 獲取 CSRF token
+
+        const postLikeButtons = document.querySelectorAll('.post-like-button');
+
+        postLikeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const url = `/post/${postId}/like_toggle/`; // 確保這個URL正確對應urls.py
+                const buttonElement = this;
+                const likeCountSpan = buttonElement.querySelector('.like-count');
+
+                // 檢查 CSRF token 是否獲取成功 (這是額外的安全檢查，getCookie 函數會確保獲取)
+                if (!csrftoken) {
+                    console.error('CSRF token not found. Cannot send like request.');
+                    alert('安全驗證失敗，請刷新頁面再試。');
+                    return;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken, // 使用從 cookie 獲取的 token
+                        'Content-Type': 'application/x-www-form-urlencoded', // 保持這個 Content-Type
+                    },
+                    body: '' // 發送空字串作為 body，因為後端 view 只需要 CSRF token 和 post_id
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        // 處理 401 Unauthorized 錯誤 (未登入)
+                        if (response.status === 401) {
+                            alert('請先登入才能按讚或取消按讚！');
+                            window.location.href = '{% url "login" %}?next=' + window.location.pathname;
+                            return;
+                        }
+                        // 如果 HTTP 狀態碼不是 2xx，拋出錯誤
+                        throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        likeCountSpan.textContent = data.likes_count;
+                        if (data.liked) {
+                            buttonElement.classList.remove('btn-outline-danger');
+                            buttonElement.classList.add('btn-danger');
+                        } else {
+                            buttonElement.classList.remove('btn-danger');
+                            buttonElement.classList.add('btn-outline-danger');
+                        }
+                    } else {
+                        alert('操作失敗: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('按讚操作時發生錯誤。請檢查網路連線或伺服器日誌。');
+                });
+            });
+        });
+        {# --- END MODIFICATION --- #}
     });
 </script>
 {% endblock %}

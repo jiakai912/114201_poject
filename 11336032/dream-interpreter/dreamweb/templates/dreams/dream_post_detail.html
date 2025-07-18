@@ -1,4 +1,5 @@
 {% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
 
 {% block title %} - 夢境詳情{% endblock %}
 
@@ -6,20 +7,57 @@
 
 <div class="container mt-5">
     <div class="page-header text-center mb-4">
-        <div class="dream-icon">
-            <i class="fas fa-bed"></i>
+        {# 移除床的圖示，因為下方有頭像 #}
+        {# <div class="dream-icon"><i class="fas fa-bed"></i></div> #}
+        
+        <h1 class="mb-3" style="font-size: 2.2rem; font-weight: bold; line-height: 1.3;">{{ dream.title }}</h1> {# 放大標題 #}
+        
+        <div class="post-header-info d-flex flex-column align-items-center mb-3">
+            {% if dream.is_anonymous %}
+                <i class="fas fa-user-secret fa-4x text-muted mb-2"></i> {# 匿名圖示放大 #}
+                <div><strong class="text-muted">匿名發佈</strong></div>
+            {% else %}
+                {% if dream.user.userprofile.avatar %}
+                    <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" 
+                         class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--primary-color);"> {# 頭像放大並加邊框 #}
+                {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=80" 
+                         alt="{{ dream.user.username }}" 
+                         class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--primary-color);"> {# 預設頭像放大加邊框 #}
+                {% endif %}
+                <div class="text-center">
+                    <h5 class="mb-1">{{ dream.user.username }}</h5>
+                    {% if dream.user.userprofile.current_title %}
+                        <span class="badge bg-info me-1">{{ dream.user.userprofile.current_title }}</span>
+                    {% endif %}
+                    {% if dream.user.userprofile.current_badge_icon %}
+                        <i class="{{ dream.user.userprofile.current_badge_icon }} text-warning ms-1"></i>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <p class="text-muted mt-3">
+                <i class="far fa-eye me-1"></i> 瀏覽次數：{{ dream.view_count }} 
+                <span class="mx-2">|</span> 
+                <i class="far fa-calendar-alt me-1"></i> 發布日期：{{ dream.created_at|date:"Y-m-d H:i" }}
+            </p>
+            
+            {% if request.user == dream.user %}
+                <div class="post-actions mt-3 d-flex justify-content-center">
+                    <a href="{% url 'edit_dream_post' post_id=dream.id %}" class="btn btn-outline-secondary btn-sm me-2 px-4">
+                        <i class="fas fa-edit me-1"></i>編輯貼文
+                    </a>
+                    <form action="{% url 'delete_dream_post' post_id=dream.id %}" method="post" style="display:inline;" onsubmit="return confirm('您確定要刪除這篇貼文嗎？這個操作無法撤回。');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm px-4">
+                            <i class="fas fa-trash-alt me-1"></i>刪除貼文
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
         </div>
-        <h1>{{ dream.title }}</h1>
-        <!-- dream_post_detail.html -->
-        <div class="post-header">
-        <p>發布者：{% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}</p>
-        <p><small>{{ dream.created_at }}</small></p>
-    </div>
-        <p class="text-muted">瀏覽次數：{{ dream.view_count }} | 發佈日期：{{ dream.created_at|date:"Y-m-d" }}</p>
     </div>
 
     <div class="row">
-        <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
                 <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
@@ -45,56 +83,210 @@
             </div>
         </nav>
 
-        <!-- 主要內容 -->
-        <main class="col-md-9">
-            <div class="similar-dreams mb-4">
-                <h3><i class="fas fa-moon me-2"></i>夢境內容</h3>
-                <ul class="dream-card p-3">
-                    <p>{{ dream.content }}</p>
-                </ul>
+        <main class="col-md-6">
+            <div class="card p-4 mb-4"> {# 使用 card 包裹整個主貼文內容 #}
+                <div class="d-flex align-items-center mb-3">
+                    {% if dream.is_anonymous %}
+                        <i class="fas fa-user-secret fa-3x text-muted me-3"></i>
+                        <div><strong class="text-muted">匿名發佈</strong></div>
+                    {% else %}
+                        {% if dream.user.userprofile.avatar %}
+                            <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" 
+                                 class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=50" 
+                                 alt="{{ dream.user.username }}" 
+                                 class="rounded-circle me-3">
+                        {% endif %}
+                        <div>
+                            <strong class="d-block">{{ dream.user.username }}</strong>
+                            {% if dream.user.userprofile.current_title %}
+                                <span class="badge bg-info mt-1">{{ dream.user.userprofile.current_title }}</span>
+                            {% endif %}
+                            {% if dream.user.userprofile.current_badge_icon %}
+                                <i class="{{ dream.user.userprofile.current_badge_icon }} text-warning ms-1"></i>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <h1 class="mb-3" style="font-size: 2.2rem; font-weight: bold; line-height: 1.3;">{{ dream.title }}</h1>
+                
+                <div class="text-muted small mb-4 d-flex align-items-center flex-wrap">
+                    <span class="me-3"><i class="far fa-eye me-1"></i> 瀏覽：{{ dream.view_count }}</span>
+                    <span class="me-3"><i class="far fa-calendar-alt me-1"></i> 發布：{{ dream.created_at|date:"Y-m-d H:i" }}</span>
+                </div>
+
+                <div class="mb-4 post-content-body" style="font-size: 1.1rem; line-height: 1.8; white-space: pre-wrap;">
+                    {{ dream.content }}
+                </div>
+                
+                {% if request.user == dream.user %}
+                    <div class="post-actions mt-3 d-flex justify-content-end border-top pt-3">
+                        <a href="{% url 'edit_dream_post' post_id=dream.id %}" class="btn btn-outline-secondary btn-sm me-2 px-4">
+                            <i class="fas fa-edit me-1"></i>編輯貼文
+                        </a>
+                        <form action="{% url 'delete_dream_post' post_id=dream.id %}" method="post" style="display:inline;" onsubmit="return confirm('您確定要刪除這篇貼文嗎？這個操作無法撤回。');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm px-4">
+                                <i class="fas fa-trash-alt me-1"></i>刪除貼文
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
-         
-            <div class="similar-dreams mb-4">
-                <h3><i class="fas fa-moon me-2"></i>相似夢境推薦：</h3>
-                <ul class="list-unstyled">
-                    {% for similar_dream in similar_dreams %}
-                        <li class="similar-dream-item mb-3">
-                            <div class="dream-card p-3">
-                                <h4>
-                                    <a href="{% url 'dream_post_detail' post_id=similar_dream.id %}" class="text-decoration-none text-primary">
-                                        {{ similar_dream.title }}
-                                    </a>
-                                </h4>
-                                <p>{{ similar_dream.content|truncatewords:20 }}</p>
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-         
-            <div class="comments mb-4">
-                <h3><i class="fas fa-comments me-2"></i>評論區：</h3>
+
+            <div class="card p-4 comments-section">
+                <h3 class="card-title mb-3"><i class="fas fa-comments me-2"></i>評論區 ({{ comments|length }})</h3>
                 <ul class="comment-list list-unstyled">
                     {% for comment in comments %}
-                        <li class="mb-2">
-                            <div class="comment-card p-3 bg-light rounded">
-                                <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                        <li class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="d-flex align-items-start">
+                                {% if comment.user.userprofile.avatar %}
+                                    <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle me-3" style="width: 35px; height: 35px; object-fit: cover;">
+                                {% else %}
+                                    <img src="https://ui-avatars.com/api/?name={{ comment.user.username }}&background=random&color=fff&size=35" alt="{{ comment.user.username }}" class="rounded-circle me-3">
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div>
+                                            <strong class="d-block">{{ comment.user.username }}</strong>
+                                            <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                                        </div>
+                                        <div class="text-nowrap">
+                                            {% if user.is_authenticated %}
+                                                <button type="button" class="btn btn-sm {% if comment.is_liked_by_user %}btn-primary{% else %}btn-outline-primary{% endif %} like-button" data-comment-id="{{ comment.id }}" style="border-radius: 20px;">
+                                                    <i class="fas fa-heart me-1"></i> <span class="like-count">{{ comment.likes_count }}</span>
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted"><i class="fas fa-heart me-1"></i> <span class="like-count">{{ comment.likes_count }}</span></span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="mb-0 comment-text" style="font-size: 1rem; line-height: 1.6;">{{ comment.content }}</p>
+                                </div>
                             </div>
                         </li>
+                    {% empty %}
+                        <p class="text-muted text-center py-3">目前沒有評論，快來發表第一條評論吧！</p>
                     {% endfor %}
                 </ul>
          
                 {% if user.is_authenticated %}
-                    <form method="POST" class="mt-4">
+                    <form method="POST" class="mt-4 comment-form">
                         {% csrf_token %}
-                        <textarea name="comment" class="form-control" rows="4" placeholder="發表評論"></textarea>
-                        <button type="submit" class="btn btn-primary mt-2">提交評論</button>
+                        <textarea name="comment" class="form-control mb-2" rows="4" placeholder="發表評論..."></textarea>
+                        <button type="submit" class="btn btn-primary">提交評論</button>
                     </form>
                 {% else %}
-                    <p class="mt-4">請先登錄以發表評論。</p>
+                    <p class="mt-4 text-center">請先<a href="{% url 'login' %}">登入</a>以發表評論。</p>
                 {% endif %}
             </div>
         </main>
+
+        {# 右側相似夢境推薦區塊 (新增 col-md-3) #}
+        <aside class="col-md-3">
+            <div class="card p-4 mb-4">
+                <h3 class="card-title mb-3"><i class="fas fa-search me-2"></i>相似夢境推薦：</h3>
+                <ul class="list-unstyled mt-3">
+                    {% for similar_dream in similar_dreams %}
+                        <li class="mb-3">
+                            <div class="card p-3 shadow-sm bg-light">
+                                <h5 class="mb-2">
+                                    <a href="{% url 'dream_post_detail' post_id=similar_dream.id %}" class="text-decoration-none text-primary">
+                                        {{ similar_dream.title }}
+                                    </a>
+                                </h5>
+                                {# --- BEGIN MODIFICATION: Truncate content more for sidebar --- #}
+                                <p class="text-muted mb-0" style="font-size: 0.9rem;">{{ similar_dream.content|truncatewords:8 }}</p> {# 內容截斷為8個字 #}
+                                {# --- END MODIFICATION --- #}
+                            </div>
+                        </li>
+                    {% empty %}
+                        <p class="text-muted">沒有相似夢境推薦。</p>
+                    {% endfor %}
+                </ul>
+            </div>
+        </aside>
     </div>
 </div>
+
+{# --- JavaScript for Comment Like Button (保持不變) --- #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const likeButtons = document.querySelectorAll('.like-button');
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        likeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.dataset.commentId;
+                const url = `/comment/${commentId}/like_toggle/`;
+                const buttonElement = this;
+                const likeCountSpan = buttonElement.querySelector('.like-count');
+
+                if (!csrftoken) {
+                    console.error('CSRF token not found. Cannot send like request.');
+                    alert('安全驗證失敗，請刷新頁面再試。');
+                    return;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            alert('請先登入才能按讚或取消按讚！');
+                            window.location.href = '{% url "login" %}?next=' + window.location.pathname;
+                            return;
+                        }
+                        throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        likeCountSpan.textContent = data.likes_count;
+                        if (data.liked) {
+                            buttonElement.classList.remove('btn-outline-primary');
+                            buttonElement.classList.add('btn-primary');
+                        } else {
+                            buttonElement.classList.remove('btn-primary');
+                            buttonElement.classList.add('btn-outline-primary');
+                        }
+                    } else {
+                        alert('操作失敗: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('按讚操作時發生錯誤。請檢查網路連線或伺服器日誌。');
+                });
+            });
+        });
+    });
+</script>
+{# --- END MODIFICATION --- #}
+
 {% endblock %}
