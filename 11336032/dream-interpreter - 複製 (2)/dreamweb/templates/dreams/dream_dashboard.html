@@ -1,0 +1,182 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 夢境歷史{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="dream-icon">
+        <i class="fas fa-chart-line"></i>
+    </div>
+    <h1>夢境分析數據</h1>
+    <p class="text-muted">回顧您過去的夢境分析數據</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">個人關鍵字紀錄</h5>
+                <canvas id="keywordBarChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">熱門夢境關鍵字</h5>
+                <canvas id="globalTrendsChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 夢境情緒趨勢圖 -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">快樂情緒趨勢圖</h5>
+                <canvas id="happyChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">焦慮情緒趨勢圖</h5>
+                <canvas id="anxietyChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">恐懼情緒趨勢圖</h5>
+                <canvas id="fearChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">興奮情緒趨勢圖</h5>
+                <canvas id="excitedChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">悲傷情緒趨勢圖</h5>
+                <canvas id="sadChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // 夢境情緒趨勢圖
+        fetch("/api/emotion-data/")
+            .then(response => response.json())
+            .then(data => {
+                const chartOptions = {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                };
+                const createChart = (ctxId, datasetIndex, bgColor, borderColor) => {
+                    const ctx = document.getElementById(ctxId).getContext("2d");
+                    new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                ...data.datasets[datasetIndex],
+                                backgroundColor: bgColor,  // 設定背景顏色
+                                borderColor: borderColor,  // 設定邊框顏色
+                                borderWidth: 2
+                            }]
+                        },
+                        options: chartOptions
+                    });
+                };
+
+                createChart("happyChart", 0, "rgba(255, 99, 132, 0.2)", "rgba(255, 99, 132, 1)");  // 快樂
+                createChart("anxietyChart", 1, "rgba(255, 165, 0, 0.2)", "rgba(255, 165, 0, 1)");  // 焦慮
+                createChart("fearChart", 2, "rgba(153, 102, 255, 0.2)", "rgba(153, 102, 255, 1)");  // 恐懼
+                createChart("excitedChart", 3, "rgba(75, 192, 192, 0.2)", "rgba(75, 192, 192, 1)");  // 興奮
+                createChart("sadChart", 4, "rgba(94, 204, 238, 0.35)", "rgba(54, 162, 235, 1)");  // 悲傷
+            });
+        
+        // 熱門關鍵字圖
+        fetch("/api/global-trends/")
+            .then(response => response.json())
+            .then(globalTrendsData => {
+                const ctx = document.getElementById("globalTrendsChart").getContext("2d");
+
+                new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: globalTrendsData.map(item => item.text),
+                        datasets: [{
+                            label: "夢境關鍵字比例",
+                            data: globalTrendsData.map(item => item.percentage),
+                            backgroundColor: "rgba(146, 9, 232, 0.2)",
+                            borderColor: "rgb(136, 37, 235)",
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error("載入全球趨勢失敗:", error));
+
+        // 個人關鍵字紀錄
+        fetch("/api/user-keywords/")
+            .then(response => response.json())
+            .then(keywordData => {
+                const ctx = document.getElementById("keywordBarChart").getContext("2d");
+    
+                new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: keywordData.map(item => item.keyword),  // 顯示關鍵字
+                        datasets: [{
+                            label: "關鍵字頻率",
+                            data: keywordData.map(item => item.count),  // 顯示頻率
+                            backgroundColor: "rgba(106, 90, 205, 0.2)",
+                            borderColor: "rgba(106, 90, 205, 1)",
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error("載入個人關鍵字資料失敗:", error));
+    });
+</script>
+
+{% endblock %}

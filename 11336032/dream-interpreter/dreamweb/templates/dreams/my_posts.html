@@ -12,7 +12,6 @@
         <p class="text-muted">與其他用戶分享夢境、交流分析，並尋找相似的夢境經歷。</p>
     </div>
     <div class="row">
-        <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
                 <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
@@ -34,7 +33,6 @@
             </div>
         </nav>
         
-        <!-- 主要內容 -->
         <main class="col-md-9">
             {% if my_posts %}
                 <div class="row">
@@ -49,6 +47,23 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
+                                    {# --- BEGIN MODIFICATION --- #}
+                                    <div class="d-flex align-items-center mb-3">
+                                        {% if post.user and post.user.userprofile.avatar %}
+                                            <img src="{{ post.user.userprofile.avatar.url }}" alt="{{ post.user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                        {% elif post.user %}
+                                            <img src="https://ui-avatars.com/api/?name={{ post.user.username }}&background=random&color=fff&size=30" alt="{{ post.user.username }}" class="rounded-circle me-2">
+                                        {% else %}
+                                            <i class="fas fa-user-secret fa-2x text-muted me-2"></i>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            {% if post.is_anonymous %}匿名發佈{% else %}{{ post.user.username }}{% endif %}
+                                            {% if post.user and post.user.userprofile.current_title %}
+                                                <span class="badge bg-info ms-2">{{ post.user.userprofile.current_title }}</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    {# --- END MODIFICATION --- #}
                                     <p>{{ post.content|truncatewords:20 }}</p>
                                     <small class="text-muted">
                                         發佈時間：{{ post.created_at|date:"Y-m-d H:i" }} |
@@ -60,9 +75,7 @@
                                     </small>
                                 </div>
                                 <div class="card-footer d-flex justify-content-end">
-                                    <!-- 編輯按鈕 -->
                                     <a href="{% url 'edit_dream_post' post_id=post.id %}" class="btn btn-sm" style="background-color: #6a5acd; color: white; border: none; margin-right: 50px;">編輯</a>
-                                    <!-- 刪除按鈕 -->
                                     <form action="{% url 'delete_dream_post' post_id=post.id %}" method="post" style="display:inline;" onsubmit="return confirmDelete();">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-danger">刪除</button>

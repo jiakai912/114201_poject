@@ -1,0 +1,30 @@
+<!-- 這是心理師看到的聊天室 -->
+{% extends 'dreams/base.html' %}
+{% block title %}我的使用者{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h3 class="mb-4">🧑‍💼 已與您分享夢境的使用者</h3>
+
+  {% if clients %}
+    <div class="row">
+      {% for user in clients %}
+        <div class="col-md-6 mb-4">
+          <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-user text-secondary me-2"></i>{{ user.username }}
+              </h5>
+              <a href="{% url 'chat_with_client' user.id %}" class="btn btn-outline-success">
+                進入聊天室
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">目前沒有任何使用者與您分享夢境。</p>
+  {% endif %}
+</div>
+{% endblock %}
