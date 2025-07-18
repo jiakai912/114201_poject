@@ -29,6 +29,14 @@ urlpatterns = [
     path('dream_news/', views.dream_news, name='dream_news'),
     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
 
+
+    # 黃忠
+    path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'), 
+    path('comment/<int:comment_id>/like_toggle/', views.toggle_comment_like, name='toggle_comment_like'),
+    path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
+    path('comment/<int:comment_id>/like_toggle/', views.toggle_comment_like, name='toggle_comment_like'), # 評論按讚
+    path('post/<int:post_id>/like_toggle/', views.toggle_post_like, name='toggle_post_like'), # 貼文按讚
+
     # 個人檔案
     path('profile/', views.user_profile, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
@@ -77,8 +85,5 @@ urlpatterns = [
     path('pointshop/', views.pointshop, name='pointshop'),
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
-
 ]
-
-
     

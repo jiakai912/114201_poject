@@ -33,8 +33,6 @@ class UserProfileAdmin(admin.ModelAdmin):
         }),
     )
 
-
-
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'title', 'condition_key', 'condition_value')

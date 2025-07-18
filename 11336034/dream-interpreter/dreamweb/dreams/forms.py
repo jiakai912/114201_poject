@@ -78,5 +78,3 @@ class UserProfileForm(forms.ModelForm):
             user_profile.save() # 提交 UserProfile 的更改
         
         return user_profile
-    
-

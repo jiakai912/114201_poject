@@ -233,3 +233,37 @@ class PointTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} {self.get_transaction_type_display()} {self.amount} 點 - {self.description}"
+
+
+
+
+# --- 黃忠 ---
+class CommentLike(models.Model):
+    """評論按讚模型"""
+    comment = models.ForeignKey(DreamComment, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    liked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('comment', 'user') # 確保一個用戶對一個評論只能按讚一次
+        verbose_name = "評論按讚"
+        verbose_name_plural = "評論按讚"
+
+    def __str__(self):
+        return f"{self.user.username} 喜歡 {self.comment.id} 號評論"
+
+
+
+class PostLike(models.Model):
+    """夢境貼文按讚模型"""
+    post = models.ForeignKey(DreamPost, on_delete=models.CASCADE, related_name='likes') # 這裡的 related_name='likes' 是針對 PostLike 的反向關聯
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    liked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user') # 確保一個用戶對一個貼文只能按讚一次
+        verbose_name = "貼文按讚"
+        verbose_name_plural = "貼文按讚"
+
+    def __str__(self):
+        return f"{self.user.username} 喜歡 {self.post.title} 貼文"

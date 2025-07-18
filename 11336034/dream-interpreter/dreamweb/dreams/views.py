@@ -11,7 +11,7 @@ import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
-from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement
+from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike
 from django.db.models import Count,Q
 from django.utils import timezone
 import jieba  # 中文分詞庫
@@ -38,6 +38,7 @@ from django.contrib.auth.models import User
 from django.db import models,transaction
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+from datetime import datetime
 
 # 綠界
 import datetime
@@ -48,6 +49,7 @@ from dreams.sdk.ecpay_payment_sdk import ECPayPaymentSdk
 from dreams.achievement_helper import check_and_unlock_achievements
 
 from dreams.models import TherapyAppointment, PointTransaction
+
 
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -1131,9 +1133,6 @@ def view_user_dreams(request, user_id):
     })
 
 
-
-
-
 # 心理諮商預約及對話
 @login_required
 def share_and_schedule(request):
@@ -1144,49 +1143,58 @@ def share_and_schedule(request):
         scheduled_time = request.POST.get('scheduled_time')
         message_content = request.POST.get('message')
 
-        therapist = User.objects.get(id=therapist_id)
+        try:
+            therapist = User.objects.get(id=therapist_id)
+        except User.DoesNotExist:
+            messages.error(request, "找不到該心理師。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
         user_profile = request.user.userprofile
         appointment_cost = 1500
 
-        # ➤ 開始一個 atomic 區塊
         with transaction.atomic():
-            # ✅ 檢查點數是否足夠
             if user_profile.points < appointment_cost:
                 messages.error(request, "點數不足，無法預約。請先儲值。")
-                return render(request, 'dreams/share_and_schedule.html', {'therapists': therapists})
+                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-            # ✅ 扣點
+            try:
+                from datetime import datetime
+
+                scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
+                if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
+                    messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
+                    return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+            except Exception:
+                messages.error(request, "預約時間格式錯誤。")
+                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+            # 🛑 時間已被預約：顯示錯誤訊息但不導頁
+            if TherapyAppointment.objects.filter(therapist=therapist, scheduled_time=scheduled_dt).exists():
+                messages.error(request, "此時間已被預約，請選擇其他時間。")
+                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+            # 正常建立預約流程
             user_profile.points -= appointment_cost
             user_profile.save()
 
-            # ✅ 建立交易記錄
             PointTransaction.objects.create(
                 user=request.user,
                 amount=-appointment_cost,
                 description=f"預約心理師 {therapist.username} 諮商（1 小時）"
             )
 
-            # ✅ 建立分享授權
             DreamShareAuthorization.objects.update_or_create(
                 user=request.user,
                 therapist=therapist,
                 defaults={'is_active': True}
             )
 
-            # ✅ 建立預約
-            if scheduled_time:
-                scheduled_dt = timezone.datetime.fromisoformat(scheduled_time)
-                if TherapyAppointment.objects.filter(therapist=therapist, scheduled_time=scheduled_dt).exists():
-                    messages.error(request, "此時間已被預約，請選擇其他時間。")
-                    return render(request, 'dreams/share_and_schedule.html', {'therapists': therapists})
+            TherapyAppointment.objects.create(
+                user=request.user,
+                therapist=therapist,
+                scheduled_time=scheduled_dt
+            )
 
-                TherapyAppointment.objects.create(
-                    user=request.user,
-                    therapist=therapist,
-                    scheduled_time=scheduled_dt
-                )
-
-            # ✅ 建立留言
             if message_content:
                 TherapyMessage.objects.create(
                     sender=request.user,
@@ -1194,12 +1202,10 @@ def share_and_schedule(request):
                     content=message_content
                 )
 
-        # ✅ 成功訊息
-        messages.success(request, f"已預約心理師並扣除 {appointment_cost} 點，目前剩餘 {user_profile.points} 點。")
+        messages.success(request, f"已成功預約，並扣除 {appointment_cost} 點，目前剩餘 {user_profile.points} 點。")
         return redirect('user_appointments')
 
-    return render(request, 'dreams/share_and_schedule.html', {'therapists': therapists})
-
+    return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
 #使用者查看自己的預約
 @login_required
@@ -1698,3 +1704,172 @@ def ecpay_result(request):
         # 付款成功後導回點券商店
         return redirect('pointshop')
     return HttpResponse("這是綠界付款完成後導回的頁面")
+
+
+
+@login_required
+def dream_post_detail(request, post_id):
+    dream_post = get_object_or_404(DreamPost.objects.select_related('user__userprofile'), id=post_id) # 這裡您原先的代碼是 post，但html中是dream
+    # 增加瀏覽次數
+    dream_post.increase_view_count()
+    # 獲取評論
+    comments = dream_post.comments.all()
+    # 獲取相似夢境推薦
+    similar_dreams = get_similar_dreams(dream_post)
+    # 處理評論提交
+    if request.method == 'POST' and request.user.is_authenticated:
+        comment_content = request.POST.get('comment')
+        if comment_content:
+            DreamComment.objects.create(
+                dream_post=dream_post,
+                user=request.user,
+                content=comment_content
+            )
+            messages.success(request, '評論已提交！')
+            return redirect('dream_post_detail', post_id=post_id)
+    return render(request, 'dreams/dream_post_detail.html', { 
+        'dream': dream_post, 
+        'comments': comments,
+        'similar_dreams': similar_dreams
+    })
+
+
+
+
+
+from django.http import JsonResponse
+@login_required
+@require_POST 
+def toggle_comment_like(request, comment_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
+
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    user = request.user
+
+    try:
+        like = CommentLike.objects.get(comment=comment, user=user)
+        like.delete() # 如果已按讚，則取消按讚
+        liked = False
+        message = '已取消按讚'
+    except CommentLike.DoesNotExist:
+        CommentLike.objects.create(comment=comment, user=user) # 如果未按讚，則按讚
+        liked = True
+        message = '已按讚'
+
+    # 獲取最新的按讚數量
+    likes_count = comment.likes.count()
+    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+
+
+
+from .models import DreamPost, DreamComment, CommentLike, DreamTrend
+@login_required
+def dream_post_detail(request, post_id):
+    dream_post = get_object_or_404(DreamPost.objects.select_related('user__userprofile'), id=post_id)
+    dream_post.increase_view_count()
+
+    # 取得評論及按讚狀態
+    comments = []
+    raw_comments = dream_post.comments.select_related('user__userprofile').order_by('created_at')
+    for comment in raw_comments:
+        comment_data = {
+            'id': comment.id,
+            'user': comment.user,
+            'content': comment.content,
+            'created_at': comment.created_at,
+            'likes_count': comment.likes.count(),
+            'is_liked_by_user': False
+        }
+        if request.user.is_authenticated:
+            comment_data['is_liked_by_user'] = CommentLike.objects.filter(comment=comment, user=request.user).exists()
+        comments.append(comment_data)
+
+    # 相似夢境推薦
+    similar_dreams = get_similar_dreams(dream_post)
+
+    # 處理評論提交
+    if request.method == 'POST' and request.user.is_authenticated:
+        comment_content = request.POST.get('comment')
+        if comment_content:
+            DreamComment.objects.create(
+                dream_post=dream_post,
+                user=request.user,
+                content=comment_content
+            )
+            messages.success(request, '評論已提交！')
+            return redirect('dream_post_detail', post_id=post_id)
+
+    return render(request, 'dreams/dream_post_detail.html', {
+        'dream': dream_post,
+        'comments': comments,
+        'similar_dreams': similar_dreams
+    })
+
+
+
+# 黃忠
+from django.db.models import Count 
+
+@login_required
+@require_POST # 只允許 POST 請求
+def toggle_post_like(request, post_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
+
+    post = get_object_or_404(DreamPost, id=post_id)
+    user = request.user
+
+    try:
+        like = PostLike.objects.get(post=post, user=user)
+        like.delete() # 如果已按讚，則取消按讚
+        liked = False
+        message = '已取消按讚貼文'
+    except PostLike.DoesNotExist:
+        PostLike.objects.create(post=post, user=user) # 如果未按讚，則按讚
+        liked = True
+        message = '已按讚貼文'
+
+    # 獲取最新的按讚數量
+    likes_count = post.likes.count() # 這裡使用 post.likes，因為 PostLike 的 related_name='likes'
+    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+
+
+
+
+def community(request):
+    """夢境社群主頁"""
+    sort_type = request.GET.get('sort', 'popular') # 預設為 popular
+
+    base_query = DreamPost.objects.select_related('user__userprofile').annotate(
+        total_post_likes=Count('likes')
+    )
+    if sort_type == 'latest':
+        dream_posts_raw = base_query.order_by('-created_at')[:10]
+    else:
+        dream_posts_raw = base_query.order_by('-view_count')[:10]
+
+    posts_for_template = []
+    for post in dream_posts_raw:
+        post.is_liked_by_user = False # 預設為未按讚
+        if request.user.is_authenticated:
+            # 檢查 PostLike 記錄是否存在
+            post.is_liked_by_user = PostLike.objects.filter(post=post, user=request.user).exists()
+        posts_for_template.append(post)
+    # --- END MODIFICATION ---
+
+    # 獲取最新夢境趨勢 (保持不變)
+    try:
+        latest_trend = DreamTrend.objects.latest('date')
+        trend_data = latest_trend.trend_data
+    except DreamTrend.DoesNotExist:
+        trend_data = {}
+
+    if trend_data:
+        trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
+
+    return render(request, 'dreams/community.html', {
+        'dream_posts': posts_for_template, # 將修改後的列表傳遞給模板
+        'trend_data': trend_data,
+        'sort_type': sort_type,
+    })

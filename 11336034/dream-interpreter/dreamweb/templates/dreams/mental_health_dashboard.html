@@ -3,6 +3,7 @@
 {% block title %}心理健康分析{% endblock %}
 
 {% block content %}
+
 <div class="container mt-5">
     <div class="page-header">
         <div class="dream-icon">
@@ -124,9 +125,12 @@
                                         <input type="datetime-local" class="form-control rounded-pill px-3 py-2" name="scheduled_time" id="scheduled_time" required>
                                         <small class="text-muted">系統將自動避免時間衝突，請選擇您方便的時段。</small>
                                     </div>
+
                                     <div class="text-center mt-4">
-                                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm">
-                                            <i class="fas fa-paper-plane me-2"></i>送出預約與分享
+                                    <!-- 預約心理師按鈕 -->
+                                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm"
+                                                onclick="return confirm('預約將扣除 1500 點券，是否確定預約？');">
+                                            <i class="fas fa-paper-plane me-2"></i>送出預約與分享（每1小時1500點券）
                                         </button>
                                     </div>
                                 </form>
@@ -201,10 +205,27 @@
 
         const scheduledInput = document.getElementById("scheduled_time");
         if (scheduledInput) {
+            // 設定預設時間為最近的下個整點
             const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            now.setMinutes(0);
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            now.setHours(now.getHours() + 1); // 預設為下一個整點
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // 調整為本地時間
             scheduledInput.value = now.toISOString().slice(0, 16);
+
+            // 當使用者手動修改時，自動將分鐘改為 00
+            scheduledInput.addEventListener("input", function () {
+                const dt = new Date(this.value);
+                dt.setMinutes(0);
+                dt.setSeconds(0);
+                dt.setMilliseconds(0);
+                dt.setHours(dt.getHours()); // 維持小時不變
+                dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset()); // 調整為本地時間
+                this.value = dt.toISOString().slice(0, 16);
+            });
         }
+
     });
 </script>
 {% endblock %}
