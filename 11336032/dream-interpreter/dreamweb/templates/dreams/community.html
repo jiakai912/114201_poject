@@ -5,6 +5,7 @@
 {% block content %}
 
 <div class="container mt-5">
+    {# Page Header - 保持不變 #}
     <div class="page-header">
         <div class="dream-icon">
             <i class="fas fa-comments"></i>
@@ -14,6 +15,7 @@
     </div>
     
     <div class="row">
+        {# 左側導覽列 - col-md-3 保持不變 #}
         <nav class="col-md-3">
             <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
               <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action card-header d-flex align-items-center py-3 border-0 transition">
@@ -35,31 +37,10 @@
             </div>
         </nav>
 
-        <main class="col-md-9">
-            <div class="card mb-4">
-                <div class="card-header  text-white">
-                    <h2 class="h5 mb-0">今日熱門夢境主題</h2>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if trend_data %}
-                            {% for keyword, count in trend_data.items %}
-                                <div class="col-md-3 mb-2">
-                                    <a href="{% url 'search_dreams' %}?q={{ keyword }}" class="btn btn-outline-primary btn-sm w-100">
-                                        {{ keyword }} ({{ count }})
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="col-12">
-                                <p class="text-muted">今天還沒有熱門趨勢數據</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-           
-            <div class="card mb-4">
+        {# 中間主內容區 - 調整為 col-md-6 #}
+        <main class="col-md-6">
+           {# 夢境貼文區塊 - Dcard 風格列表 #}
+            <div class="card mb-4 dcard-section-header">
                 <div class="card-header text-white d-flex justify-content-between align-items-center">
                     <h2 class="h5 mb-0">夢境貼文</h2>
                     <div>
@@ -67,68 +48,121 @@
                         <a href="?sort=latest" class="btn btn-sm {% if sort_type == 'latest' %}btn-light{% else %}btn-outline-light{% endif %}">最新</a>
                     </div>
                 </div>
-                <div class="card-body">
-                    <ul class="list-group">
+                <div class="card-body p-0"> {# 移除預設 padding，讓 list-group-item 自己控制 #}
+                    <ul class="list-group list-group-flush">
                         {% for dream in dream_posts %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
-                                <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="d-flex align-items-center text-decoration-none">
-                                    {# --- BEGIN MODIFICATION: Larger avatar and anonymous icon --- #}
-                                    {% if dream.is_anonymous %}
-                                        <i class="fas fa-user-secret fa-4x text-muted me-3" style="width: 50px; height: 50px; object-fit: cover;"></i> 
-                                    {% else %}
-                                        {% if dream.user.userprofile.avatar %}
-                                            <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            <li class="list-group-item dcard-post-item"> {# Added border, shadow directly in CSS #}
+                                <div class="dcard-post-header">
+                                    {# 發文者頭像 #}
+                                    <div class="dcard-avatar me-2">
+                                        {% if dream.is_anonymous %}
+                                            <i class="fas fa-user-secret fa-2x text-muted"></i> 
                                         {% else %}
-                                            <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=random&color=fff&size=50" alt="{{ dream.user.username }}" class="rounded-circle me-3">
-                                        {% endif %}
-                                    {% endif %}
-                                    {# --- END MODIFICATION --- #}
-                                    <div>
-                                        <h5 class="dream-title text-dark">{{ dream.title }}</h5>
-                                        <p class="text-muted mb-0">
-                                            {% if dream.is_anonymous %}
-                                                <span class="d-flex align-items-center">
-                                                    匿名發佈
-                                                </span>
+                                            {% if dream.user.userprofile.avatar %}
+                                                <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
                                             {% else %}
-                                                <span class="d-flex align-items-center">
-                                                    {{ dream.user.username }}
-                                                    {% if dream.user.userprofile.current_title %}
-                                                        <span class="badge bg-info ms-1">{{ dream.user.userprofile.current_title }}</span>
-                                                    {% endif %}
-                                                </span>
+                                                <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=30" alt="{{ dream.user.username }}" class="rounded-circle">
                                             {% endif %}
-                                        </p>
-                                    </div>
-                                </a>
-                                <div class="text-end">
-                                    <small class="text-muted">
-                                        {% if sort_type == 'popular' %}
-                                            {{ dream.view_count }} 次觀看
-                                        {% else %}
-                                            發布於 {{ dream.created_at|date:"Y-m-d H:i" }}
                                         {% endif %}
-                                        <br>
-                                        {# --- BEGIN MODIFICATION: Like button with JS for real-time updates --- #}
+                                    </div>
+                                    {# 用戶名/匿名及發布時間 #}
+                                    <div class="dcard-author-info flex-grow-1">
+                                        <div class="dcard-author-name">
+                                            {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}
+                                        </div>
+                                        <div class="dcard-post-time text-muted small">
+                                            {{ dream.created_at|timesince }} 前發布
+                                        </div>
+                                    </div>
+                                    {# 右側可能還有其他，例如看板資訊，目前省略 #}
+                                </div>
+
+                                {# 貼文標題及內容摘要 --- BEGIN MODIFICATION: Added content preview & striptags --- #}
+                                <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="text-decoration-none text-dark d-block dcard-post-link">
+                                    <h5 class="dcard-post-title mb-1">{{ dream.title }}</h5> 
+                                    {# 這行是關鍵，確保內容被截斷並移除 HTML 標籤 #}
+                                    <p class="dcard-post-content-preview text-muted mb-0">{{ dream.content|striptags|truncatewords:20 }}</p> 
+                                </a>
+                                {# --- END MODIFICATION --- #}
+
+                                {# 互動數據 (按讚, 留言, 分享) #}
+                                <div class="dcard-post-footer pt-3 mt-3 border-top d-flex justify-content-start align-items-center">
+                                    {# 觀看次數 #}
+                                    <span class="dcard-engagement-item me-3">
+                                        <i class="far fa-eye me-1"></i> {{ dream.view_count }}
+                                    </span>
+                                    {# 按讚按鈕 #}
+                                    <span class="dcard-engagement-item me-3">
                                         {% if user.is_authenticated %}
-                                            <button type="button" class="btn btn-sm {% if dream.is_liked_by_user %}btn-danger{% else %}btn-outline-danger{% endif %} post-like-button" data-post-id="{{ dream.id }}">
+                                            <button type="button" class="btn btn-sm {% if dream.is_liked_by_user %}btn-danger{% else %}btn-outline-danger{% endif %} post-like-button dcard-icon-button" data-post-id="{{ dream.id }}">
                                                 <i class="fas fa-heart me-1"></i> <span class="like-count">{{ dream.total_post_likes }}</span>
                                             </button>
                                         {% else %}
-                                            {# 如果未登入，只顯示按讚數，按鈕不可點擊 #}
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-heart"></i> <span class="like-count">{{ dream.total_post_likes }}</span>
+                                            <span class="text-muted dcard-icon-button">
+                                                <i class="fas fa-heart me-1"></i> <span class="like-count">{{ dream.total_post_likes }}</span>
                                             </span>
                                         {% endif %}
-                                        {# --- END MODIFICATION --- #}
-                                    </small>
+                                    </span>
+                                    {# 留言數 (假設您有 DreamComment 數量) #}
+                                    <span class="dcard-engagement-item me-3">
+                                        <a href="{% url 'dream_post_detail' post_id=dream.id %}#comments-section" class="text-decoration-none text-muted dcard-icon-button">
+                                            <i class="far fa-comment me-1"></i> {{ dream.comments.count }}
+                                        </a>
+                                    </span>
+                                    {# 分享按鈕 #}
+                                    <span class="dcard-engagement-item">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary share-button dcard-icon-button" data-post-url="{% url 'dream_post_detail' post_id=dream.id %}">
+                                            <i class="fas fa-share-alt me-1"></i> 分享
+                                        </button>
+                                    </span>
                                 </div>
                             </li>
+                        {% empty %}
+                            <li class="list-group-item text-center py-5">目前沒有夢境貼文。</li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
         </main>
+
+        {# 右側側邊欄 - col-md-3 #}
+        <aside class="col-md-3">
+            {# --- BEGIN MODIFICATION: 今日熱門夢境主題 (排行榜) --- #}
+            <div class="card mb-4 dcard-section-header">
+                <div class="card-header text-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">本週熱門夢境</h2> {# 修改標題為「本週熱門夢境」 #}
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        {% for post in top_today_posts %} {# 這裡變數名是 top_today_posts，但實際獲取的是本週數據 #}
+                            <li class="mb-3">
+                                <a href="{% url 'dream_post_detail' post_id=post.id %}" class="text-decoration-none text-dark d-block">
+                                    <h6 class="mb-1" style="font-weight: bold;">{{ forloop.counter }}. {{ post.title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="far fa-comment me-1"></i> {{ post.num_comments }} 留言
+                                        <span class="mx-1">|</span>
+                                        <i class="far fa-eye me-1"></i> {{ post.view_count }} 觀看
+                                    </small>
+                                </a>
+                            </li>
+                        {% empty %}
+                            <li><p class="text-muted">本週還沒有熱門文章。</p></li> 
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {# --- END MODIFICATION --- #}
+
+            {# 美妝版體驗箱 (如果您想保留這個廣告/佔位符) #}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">體驗箱</h5>
+                    <img src="https://via.placeholder.com/250x150?text=AD" class="img-fluid rounded mb-3">
+                    <p class="text-muted small">這裡是側邊欄內容，您可以放置更多推薦或相關資訊。</p>
+                    <a href="#" class="btn btn-sm btn-outline-primary w-100">更多推薦</a>
+                </div>
+            </div>
+        </aside>
     </div>
 </div>
 
@@ -149,15 +183,13 @@
             observer.observe(card);
         });
 
-        {# --- BEGIN MODIFICATION: JavaScript for Post Likes functionality (CSRF token fetching improved) --- #}
-        // 從 cookie 中獲取 CSRF token 的函數 (Django 推薦的方式)
+        // --- JavaScript for Post Likes functionality ---
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
                 const cookies = document.cookie.split(';');
                 for (let i = 0; i < cookies.length; i++) {
                     const cookie = cookies[i].trim();
-                    // Does this cookie string begin with the name we want?
                     if (cookie.substring(0, name.length + 1) === (name + '=')) {
                         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                         break;
@@ -167,18 +199,16 @@
             return cookieValue;
         }
 
-        const csrftoken = getCookie('csrftoken'); // 獲取 CSRF token
-
+        const csrftoken = getCookie('csrftoken'); 
         const postLikeButtons = document.querySelectorAll('.post-like-button');
 
         postLikeButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const postId = this.dataset.postId;
-                const url = `/post/${postId}/like_toggle/`; // 確保這個URL正確對應urls.py
+                const url = `/post/${postId}/like_toggle/`; 
                 const buttonElement = this;
                 const likeCountSpan = buttonElement.querySelector('.like-count');
 
-                // 檢查 CSRF token 是否獲取成功 (這是額外的安全檢查，getCookie 函數會確保獲取)
                 if (!csrftoken) {
                     console.error('CSRF token not found. Cannot send like request.');
                     alert('安全驗證失敗，請刷新頁面再試。');
@@ -188,20 +218,18 @@
                 fetch(url, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': csrftoken, // 使用從 cookie 獲取的 token
-                        'Content-Type': 'application/x-www-form-urlencoded', // 保持這個 Content-Type
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: '' // 發送空字串作為 body，因為後端 view 只需要 CSRF token 和 post_id
+                    body: '' 
                 })
                 .then(response => {
                     if (!response.ok) {
-                        // 處理 401 Unauthorized 錯誤 (未登入)
                         if (response.status === 401) {
                             alert('請先登入才能按讚或取消按讚！');
                             window.location.href = '{% url "login" %}?next=' + window.location.pathname;
                             return;
                         }
-                        // 如果 HTTP 狀態碼不是 2xx，拋出錯誤
                         throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
                     }
                     return response.json();
@@ -226,7 +254,189 @@
                 });
             });
         });
-        {# --- END MODIFICATION --- #}
+
+        // --- JavaScript for Share functionality ---
+        const shareButtons = document.querySelectorAll('.share-button');
+        shareButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const postUrl = this.dataset.postUrl;
+                const fullUrl = `${window.location.protocol}//${window.location.host}${postUrl}`;
+                
+                navigator.clipboard.writeText(fullUrl)
+                    .then(() => {
+                        alert('連結已複製到剪貼簿！');
+                    })
+                    .catch(err => {
+                        console.error('無法複製連結:', err);
+                        alert('複製連結失敗，請手動複製：' + fullUrl);
+                    });
+            });
+        });
     });
 </script>
+
+{# --- BEGIN ADDITION: Custom CSS for Dcard-like design --- #}
+<style>
+/* 核心容器和間距 */
+.dcard-section-header {
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+.dcard-section-header .card-header {
+    background-color: var(--primary-color);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+.dcard-section-header .card-body {
+    padding: 20px; /* 統一內邊距 */
+}
+
+/* 每個貼文卡片樣式 */
+.dcard-post-item {
+    padding: 20px 25px; /* 每個貼文項目的內邊距 */
+    margin-bottom: 15px; /* 增加文章卡片之間的垂直間距 */
+    border: 1px solid #eee; /* 輕微邊框增加區隔 */
+    border-radius: 12px; /* 圓角與外部卡片一致 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* 輕微陰影 */
+    background-color: white; /* 確保背景色 */
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dcard-post-item:hover {
+    background-color: #fcfcfc; /* 懸停效果 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 懸停時陰影加強 */
+}
+/* 由於現在每個 li 都是獨立的卡片，移除內部 list-group-flush 的邊框重疊 */
+.list-group-flush .list-group-item {
+    border-bottom: none; /* 由 .dcard-post-item 自身控制邊框 */
+}
+
+
+/* 貼文頂部作者資訊 */
+.dcard-post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.dcard-avatar {
+    flex-shrink: 0; /* 防止頭像縮小 */
+    margin-right: 10px;
+}
+.dcard-avatar img, .dcard-avatar i {
+    border-radius: 50%; /* 圓形頭像 */
+    object-fit: cover;
+    display: block; /* 移除 img 預設的底部空間 */
+}
+.dcard-author-info {
+    font-size: 0.9rem;
+}
+.dcard-author-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+.dcard-post-time {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+/* 貼文標題和內容摘要 */
+.dcard-post-link {
+    display: block; /* 讓整個區域可點擊 */
+    margin-bottom: 15px;
+}
+.dcard-post-title {
+    font-size: 1.25rem; /* 標題字體大小再加大 */
+    font-weight: 700; /* 更粗的字體 */
+    line-height: 1.4;
+    margin-bottom: 8px; /* 調整標題與內容間距 */
+}
+.dcard-post-content-preview {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #555;
+    white-space: pre-wrap; /* 保留換行 */
+}
+
+/* 貼文底部互動區 */
+.dcard-post-footer {
+    font-size: 0.9rem;
+    color: #888;
+}
+.dcard-engagement-item {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* 圖標與數字之間間距 */
+}
+.dcard-engagement-item i {
+    color: #888; /* 圖標顏色 */
+}
+.dcard-engagement-item a {
+    color: #888;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+.dcard-engagement-item a:hover {
+    color: var(--primary-color);
+}
+
+/* 互動按鈕微調 */
+.dcard-icon-button {
+    background: none !important; /* 移除按鈕背景 */
+    border: none !important; /* 移除按鈕邊框 */
+    padding: 0 !important; /* 移除按鈕內邊距 */
+    font-size: 0.9rem; /* 保持字體大小一致 */
+    color: #888 !important; /* 預設文字顏色 */
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.dcard-icon-button i {
+    font-size: 1.1rem; /* 圖標稍大 */
+    margin-right: 4px;
+}
+.dcard-icon-button:hover {
+    color: var(--primary-color) !important; /* 懸停時變色 */
+}
+
+/* 按讚按鈕的特殊顏色 */
+.post-like-button.btn-danger { /* 已按讚 */
+    background-color: var(--heart-color) !important; /* 心形紅色 */
+    color: white !important;
+    border-color: var(--heart-color) !important;
+}
+.post-like-button.btn-outline-danger { /* 未按讚 */
+    color: #888 !important; /* 灰色文字 */
+    border-color: #ccc !important; /* 灰色邊框 */
+}
+.post-like-button.btn-outline-danger i {
+    color: #888 !important; /* 灰色心形圖標 */
+}
+.post-like-button.btn-danger i {
+    color: white !important; /* 已按讚時心形顏色 */
+}
+.post-like-button:hover {
+    opacity: 0.8; /* 懸停時透明度變化 */
+}
+
+/* 側邊欄廣告和推薦 */
+aside .card-body h5 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+aside .card-body a {
+    color: var(--text-color);
+    transition: color 0.2s ease;
+}
+aside .card-body a:hover {
+    color: var(--primary-color);
+}
+
+/* 確保 base.html 中的 --heart-color 存在或在這裡定義 */
+:root {
+    --heart-color: #f44336; /* 紅色心形 */
+}
+</style>
 {% endblock %}

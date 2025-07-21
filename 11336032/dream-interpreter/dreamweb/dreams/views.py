@@ -743,32 +743,7 @@ def get_mental_health_suggestions(request, dream_id):
         return JsonResponse({"error": "夢境不存在"}, status=404)
 
 
-# 1. 社群主頁和全球夢境趨勢
-def community(request):
-    """夢境社群主頁"""
-    sort_type = request.GET.get('sort', 'popular')  # 預設為 popular
 
-    if sort_type == 'latest':
-        dream_posts = DreamPost.objects.order_by('-created_at')[:10]
-    else:
-        dream_posts = DreamPost.objects.order_by('-view_count')[:10]
-
-    # 獲取最新夢境趨勢
-    try:
-        latest_trend = DreamTrend.objects.latest('date')
-        trend_data = latest_trend.trend_data
-    except DreamTrend.DoesNotExist:
-        trend_data = {}
-
-    # 處理熱門主題趨勢
-    if trend_data:
-        trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
-
-    return render(request, 'dreams/community.html', {
-        'dream_posts': dream_posts,
-        'trend_data': trend_data,
-        'sort_type': sort_type,  # 傳入目前排序類型
-    })
 
 
 # 用這個來獲取當天的熱門趨勢
@@ -1837,13 +1812,24 @@ def toggle_post_like(request, post_id):
 
 
 
+
+
+
+from django.utils import timezone
+import datetime
+from django.db.models import Count # 確保已導入 Count
+# 從 .models 導入相關模型，確保 DreamPost, PostLike, DreamTrend, DreamComment 等被導入
+from .models import DreamPost, PostLike, DreamTrend, DreamComment # 假設這些已經導入，若有其他模型請自行添加
+
 def community(request):
     """夢境社群主頁"""
-    sort_type = request.GET.get('sort', 'popular') # 預設為 popular
-
+    sort_type = request.GET.get('sort', 'popular') 
+    
     base_query = DreamPost.objects.select_related('user__userprofile').annotate(
-        total_post_likes=Count('likes')
+        total_post_likes=Count('likes'),
+        total_comments=Count('comments') # 新增：計算評論數量
     )
+
     if sort_type == 'latest':
         dream_posts_raw = base_query.order_by('-created_at')[:10]
     else:
@@ -1853,23 +1839,35 @@ def community(request):
     for post in dream_posts_raw:
         post.is_liked_by_user = False # 預設為未按讚
         if request.user.is_authenticated:
-            # 檢查 PostLike 記錄是否存在
+            # 這行是關鍵，確保 CommentLike 導入正確，且 exists() 返回正確的值
             post.is_liked_by_user = PostLike.objects.filter(post=post, user=request.user).exists()
         posts_for_template.append(post)
-    # --- END MODIFICATION ---
 
-    # 獲取最新夢境趨勢 (保持不變)
+    # 獲取最新夢境趨勢 (保持不變，因為這個是給右側熱門主題用的)
     try:
         latest_trend = DreamTrend.objects.latest('date')
-        trend_data = latest_trend.trend_data
+        trend_data = latest_trend.trend_data # 這個是關鍵詞趨勢，不是文章排行榜
     except DreamTrend.DoesNotExist:
         trend_data = {}
 
     if trend_data:
         trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
 
+    # --- BEGIN MODIFICATION: 獲取本週熱門文章排行榜數據 ---
+    today = timezone.now().date()
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+    
+    top_this_week_posts = DreamPost.objects.filter(
+        created_at__date__gte=start_of_week 
+    ).annotate(
+        num_comments=Count('comments'),
+        num_likes=Count('likes')
+    ).order_by('-num_comments', '-view_count', '-num_likes')[:5] # 獲取前5篇
+    # --- END MODIFICATION ---
+
     return render(request, 'dreams/community.html', {
-        'dream_posts': posts_for_template, # 將修改後的列表傳遞給模板
-        'trend_data': trend_data,
+        'dream_posts': posts_for_template,
+        'trend_data': trend_data, # 關鍵詞趨勢，可以選擇性保留在右側或移除
         'sort_type': sort_type,
+        'top_today_posts': top_this_week_posts, # 將變數名稱改為 top_this_week_posts
     })
