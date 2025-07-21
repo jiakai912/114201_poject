@@ -55,9 +55,11 @@ urlpatterns = [
     path('share_and_schedule/', views.share_and_schedule, name='share_and_schedule'),
     path('therapists/chat_list/', views.therapist_list_with_chat, name='therapist_list_with_chat'),
 
-    #使用者看到的預約狀態及取消預約按鈕
+    #使用者看到的預約狀態及取消預約按鈕及已預約時段
     path('my_appointments/', views.user_appointments, name='user_appointments'),
     path('appointment/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
+    path('api/booked_slots/<int:therapist_id>/', views.get_therapist_booked_slots, name='get_booked_slots'),
+
 
     #心理師看到的預約及確認按鈕
     path('consultation/schedule/<int:user_id>/', views.consultation_schedule, name='consultation_schedule'),

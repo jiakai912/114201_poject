@@ -48,7 +48,9 @@ from dreams.sdk.ecpay_payment_sdk import ECPayPaymentSdk
 # 個人檔案
 from dreams.achievement_helper import check_and_unlock_achievements
 
-from dreams.models import TherapyAppointment, PointTransaction
+#使用者查看已預約時段
+from django.views.decorators.http import require_GET
+from django.utils.dateparse import parse_datetime
 
 
 def welcome_page(request):
@@ -1238,6 +1240,22 @@ def user_appointments(request):
         'therapists': therapists,
         'confirmed_therapist_ids': confirmed_therapist_ids,
     })
+
+
+#使用者查看已預約時段
+@require_GET
+def get_therapist_booked_slots(request, therapist_id):
+    from datetime import timedelta
+
+    appointments = TherapyAppointment.objects.filter(
+        therapist_id=therapist_id
+    ).values_list('scheduled_time', flat=True)
+
+    # 回傳 ISO 格式的時間字串
+    booked_slots = [dt.strftime("%Y-%m-%dT%H:%M") for dt in appointments]
+    return JsonResponse({'booked_slots': booked_slots})
+    
+
 
 
 #使用者取消未確認的預約
