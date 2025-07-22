@@ -59,8 +59,10 @@ class UserProfileForm(forms.ModelForm):
                 if ua.achievement.title:
                     available_titles.add((ua.achievement.title, ua.achievement.title))
                 if ua.achievement.badge_icon:
-                    available_badges.add((ua.achievement.badge_icon, ua.achievement.name + ' (' + ua.achievement.badge_icon + ')'))
+                    # 對於徽章圖標，將圖標 class 作為值，名稱和圖標作為顯示標籤
+                    available_badges.add((ua.achievement.badge_icon, f"{ua.achievement.name} ({ua.achievement.badge_icon})"))
 
+            # 確保 choices 被正確設定
             self.fields['current_title'].choices = [('', '--- 選擇稱號 ---')] + sorted(list(available_titles))
             self.fields['current_badge_icon'].choices = [('', '--- 選擇徽章 ---')] + sorted(list(available_badges))
 
@@ -74,7 +76,38 @@ class UserProfileForm(forms.ModelForm):
             user_profile.user.email = email
             user_profile.user.save() # 保存 User 模型的更改
 
+        # --- BEGIN MODIFICATION ---
+        # 明確地將選定的稱號和徽章值從 cleaned_data 賦予到 user_profile 實例
+        user_profile.current_title = self.cleaned_data.get('current_title', '')
+        user_profile.current_badge_icon = self.cleaned_data.get('current_badge_icon', '')
+        # --- END MODIFICATION ---
+
         if commit:
             user_profile.save() # 提交 UserProfile 的更改
         
         return user_profile
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.user:
+            self.fields['email'].initial = self.instance.user.email
+
+            # --- 臨時診斷打印 ---
+            print(f"DEBUG in UserProfileForm.__init__: Form Initialized for user {self.instance.user.username}")
+            unlocked_achievements = self.instance.user.userachievement_set.select_related('achievement')
+            print(f"DEBUG in UserProfileForm.__init__: unlocked_achievements count from form: {unlocked_achievements.count()}")
+            for ua in unlocked_achievements:
+                print(f"DEBUG in UserProfileForm.__init__: Form sees Unlocked Achievement: {ua.achievement.name} (Title: {ua.achievement.title}, Icon: {ua.achievement.badge_icon})")
+            # --- 臨時診斷打印結束 ---
+
+            available_titles = set()
+            available_badges = set()
+
+            for ua in unlocked_achievements:
+                if ua.achievement.title:
+                    available_titles.add((ua.achievement.title, ua.achievement.title))
+                if ua.achievement.badge_icon:
+                    available_badges.add((ua.achievement.badge_icon, f"{ua.achievement.name} ({ua.achievement.badge_icon})"))
+
+            self.fields['current_title'].choices = [('', '--- 選擇稱號 ---')] + sorted(list(available_titles))
+            self.fields['current_badge_icon'].choices = [('', '--- 選擇徽章 ---')] + sorted(list(available_badges))

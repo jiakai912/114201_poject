@@ -155,9 +155,10 @@
                                         </div>
                                         <div class="text-nowrap">
                                             {% if user.is_authenticated %}
-                                                <button type="button" class="btn btn-sm {% if comment.is_liked_by_user %}btn-primary{% else %}btn-outline-primary{% endif %} like-button" data-comment-id="{{ comment.id }}" style="border-radius: 20px;">
+                                                <button type="button" class="btn btn-sm {% if comment.is_liked_by_user %}btn-danger{% else %}btn-outline-danger{% endif %} like-button" data-comment-id="{{ comment.id }}" style="border-radius: 20px;">
                                                     <i class="fas fa-heart me-1"></i> <span class="like-count">{{ comment.likes_count }}</span>
                                                 </button>
+
                                             {% else %}
                                                 <span class="text-muted"><i class="fas fa-heart me-1"></i> <span class="like-count">{{ comment.likes_count }}</span></span>
                                             {% endif %}
@@ -187,7 +188,7 @@
         {# 右側相似夢境推薦區塊 (新增 col-md-3) #}
         <aside class="col-md-3">
             <div class="card p-4 mb-4">
-                <h3 class="card-title mb-3"><i class="fas fa-search me-2"></i>相似夢境推薦：</h3>
+                <h5 class="card-title mb-3"><i class="fas fa-search me-2"></i>相似夢境推薦：</h5>
                 <ul class="list-unstyled mt-3">
                     {% for similar_dream in similar_dreams %}
                         <li class="mb-3">
@@ -269,12 +270,13 @@
                     if (data.success) {
                         likeCountSpan.textContent = data.likes_count;
                         if (data.liked) {
-                            buttonElement.classList.remove('btn-outline-primary');
-                            buttonElement.classList.add('btn-primary');
+                            buttonElement.classList.remove('btn-outline-danger');
+                            buttonElement.classList.add('btn-danger');
                         } else {
-                            buttonElement.classList.remove('btn-primary');
-                            buttonElement.classList.add('btn-outline-primary');
+                            buttonElement.classList.remove('btn-danger');
+                            buttonElement.classList.add('btn-outline-danger');
                         }
+
                     } else {
                         alert('操作失敗: ' + data.error);
                     }

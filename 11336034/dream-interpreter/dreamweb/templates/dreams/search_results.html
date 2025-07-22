@@ -1,18 +1,99 @@
 {% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
 
 {% block title %} - 夢境搜尋結果{% endblock %}
 
 {% block content %}
+<style>
+    /* Custom styles for search results cards - Embed directly for highest priority */
+    .dcard-search-card {
+        border: none; /* Remove default bootstrap border */
+        border-radius: 12px; /* More rounded corners */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Softer, larger shadow */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden; /* Ensures content stays within rounded corners */
+        background-color: white; /* Ensure card background is white */
+        display: flex; /* Make card content flex to push footer down */
+        flex-direction: column; /* Arrange content vertically */
+    }
+
+    .dcard-search-card:hover {
+        transform: translateY(-5px); /* Lift effect on hover */
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* Enhanced shadow on hover */
+    }
+
+    .dcard-search-card-title {
+        font-size: 1.15rem; /* Slightly larger title */
+        font-weight: 600; /* Semi-bold title */
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+
+    .dcard-search-card-title a {
+        color: var(--text-dark, #333); /* Ensure title link color is dark, fallback */
+        text-decoration: none; /* Remove underline */
+    }
+
+    .dcard-search-card-title a:hover {
+        color: var(--primary-color); /* Hover color for link */
+    }
+
+    .dcard-search-card-content {
+        font-size: 0.9rem; /* Smaller content snippet font size */
+        color: #555; /* Slightly lighter text color for snippet */
+        line-height: 1.6;
+        flex-grow: 1; /* Allow content to take up available space */
+    }
+
+    /* Adjustments for the search input group */
+    .search-form .input-group-lg .form-control {
+        border-color: var(--primary-color); /* Match border color to primary */
+        box-shadow: none; /* Remove default focus shadow */
+    }
+
+    .search-form .input-group-lg .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(106, 90, 205, 0.25); /* Custom focus shadow */
+    }
+
+    .search-form .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .search-form .btn-primary:hover {
+        background-color: var(--accent-color); /* Use accent color on hover */
+        border-color: var(--accent-color);
+    }
+
+    /* Additional styles for user info in cards */
+    .dcard-user-info-meta {
+        display: flex;
+        flex-direction: column; /* Stack name and date */
+    }
+    .dcard-user-info-meta .fw-bold {
+        font-size: 0.9rem; /* Adjust name font size */
+    }
+    .dcard-user-info-meta .text-muted {
+        font-size: 0.75rem; /* Adjust date font size */
+    }
+
+</style>
+
 <div class="container mt-5">
     <div class="page-header text-center mb-4">
         <div class="dream-icon">
             <i class="fas fa-search"></i>
         </div>
         <h1>夢境搜尋結果</h1>
-        <p class="text-muted">根據您的搜尋條件，以下是與您夢境相關的結果。</p>
+        {% if query %}
+            <p class="text-muted">根據您的搜尋條件：**"{{ query }}"**，共找到 **{{ dreams|length }}** 篇相關夢境。</p>
+        {% else %}
+            <p class="text-muted">請輸入關鍵字進行搜尋。</p>
+        {% endif %}
     </div>
+
     <div class="row">
-        <!-- 左側導覽列 -->
         <nav class="col-md-3">
             <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
                 <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
@@ -34,39 +115,66 @@
             </div>
         </nav>
 
-        <!-- 主要內容 -->
         <main class="col-md-9">
-            <form method="get" class="search-form mb-4">
-                <div class="input-group">
-                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="搜尋夢境" />
-                    <button type="submit" class="btn btn-outline-primary">
-                        <i class="fas fa-search"></i> 搜尋
+            <form method="get" class="search-form mb-5">
+                <div class="input-group input-group-lg">
+                    <input type="text" name="q" value="{{ query|default:'' }}" class="form-control rounded-start-pill py-3" placeholder="搜尋夢境..." />
+                    <button type="submit" class="btn btn-primary rounded-end-pill px-4">
+                        <i class="fas fa-search me-2"></i> 搜尋
                     </button>
                 </div>
             </form>
 
             {% if dreams %}
-                <ul class="list-group">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                     {% for dream in dreams %}
-                        <li class="list-group-item d-flex justify-content-between">
-                            <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="text-decoration-none text-dark">
-                                <h4>
-                                    <i class="fas fa-moon me-2 text-primary"></i>{{ dream.title }}
-                                </h4>
-                                <p>{{ dream.content|truncatewords:30 }}</p>
-                            </a>
-                            <div class="text-end">
-                                <small class="text-muted">
-                                    發布者: {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}<br>
-                                    日期: {{ dream.created_at|date:"Y-m-d H:i" }}
-                                </small>
+                        <div class="col">
+                            <div class="card h-100 dcard-search-card">
+                                <div class="card-body p-4">
+                                    {# User Info Block #}
+                                    <div class="d-flex align-items-center mb-3">
+                                        {% if dream.is_anonymous %}
+                                            <i class="fas fa-user-secret fa-2x text-muted me-3" style="width: 45px; height: 45px;"></i> {# Adjusted size for better visual balance #}
+                                            <div class="dcard-user-info-meta">
+                                                <small class="fw-bold text-muted d-block">匿名發佈</small>
+                                                <small class="text-muted d-block">{{ dream.created_at|date:"Y-m-d H:i" }}</small>
+                                            </div>
+                                        {% else %}
+                                            {% if dream.user.userprofile.avatar %}
+                                                <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
+                                                     class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;"> {# Larger avatar #}
+                                            {% else %}
+                                                <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=45"
+                                                     alt="{{ dream.user.username }}" class="rounded-circle me-3"> {# Larger default avatar #}
+                                            {% endif %}
+                                            <div class="dcard-user-info-meta">
+                                                <small class="fw-bold text-dark d-block">{{ dream.user.username }}</small>
+                                                <small class="text-muted d-block">{{ dream.created_at|date:"Y-m-d H:i" }}</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {# Post Title #}
+                                    <h5 class="dcard-search-card-title mb-2">
+                                        <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="text-decoration-none text-dark" style="font-weight: bold;">
+                                            {{ dream.title }}
+                                        </a>
+                                    </h5>
+                                    {# Content Snippet #}
+                                    <p class="dcard-search-card-content text-muted mb-0">
+                                        {# --- BEGIN MODIFICATION: Truncate characters and add ellipsis --- #}
+                                        {{ dream.content|truncatechars:60 }} {# Truncate to 60 characters for ~20 Chinese words #}
+                                        {# --- END MODIFICATION --- #}
+                                    </p>
+                                </div>
                             </div>
-                        </li>
+                        </div>
                     {% endfor %}
-                </ul>
+                </div>
             {% else %}
                 <div class="alert alert-warning" role="alert">
-                    沒有找到相關夢境。
+                    <h4 class="alert-heading">沒有找到相關夢境。</h4>
+                    <p>請嘗試使用不同的關鍵字。</p>
                 </div>
             {% endif %}
         </main>
@@ -74,7 +182,6 @@
 </div>
 
 <script>
-    // 添加動畫效果
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.card');
         
@@ -92,4 +199,4 @@
         });
     });
 </script>
-{% endblock %}
+{% endblock content %}

@@ -1,10 +1,174 @@
-<!-- 這是個人檔案百分比 -->
 {# dreams/templates/dreams/achievements.html #}
 {% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案 #}
 
 {% block title %} - 成就{% endblock %}
 
 {% block content %}
+<style>
+    /* 統一卡片頭部樣式 */
+    .card-header {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        padding: 15px 20px;
+        border-bottom: none;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+
+    /* 統一卡片主體樣式 */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 25px;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    /* 成就進度列表項目樣式 */
+    .achievement-progress-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        flex-direction: column; /* 讓內容垂直排列 */
+        align-items: flex-start; /* 內容左對齊 */
+    }
+    .achievement-progress-item:last-child {
+        border-bottom: none;
+    }
+    .achievement-progress-item .item-header {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 8px; /* 標題和描述間距 */
+    }
+    .achievement-progress-item .item-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+        width: 30px; /* 固定圖標寬度 */
+        text-align: center;
+        color: var(--primary-color); /* 預設圖標顏色 */
+    }
+    .achievement-progress-item .item-title-desc {
+        flex-grow: 1;
+    }
+    .achievement-progress-item .item-title {
+        font-weight: bold;
+        color: var(--text-color);
+        font-size: 1.1rem;
+    }
+    .achievement-progress-item .item-description {
+        color: #666;
+        font-size: 0.85rem;
+    }
+    .achievement-progress-item .item-badges {
+        margin-left: auto; /* 推到最右邊 */
+        flex-shrink: 0; /* 防止縮小 */
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .achievement-progress-item .item-badges .badge-title {
+        background-color: var(--info-color, #17a2b8); /* 信息藍或自定義 */
+        color: white;
+        padding: 0.4em 0.8em;
+        border-radius: 50px;
+        font-size: 0.75rem;
+    }
+    .achievement-progress-item .item-badges .badge-icon {
+        font-size: 1.4rem;
+        color: var(--warning-color, #ffc107); /* 警告黃或自定義 */
+    }
+
+    /* 進度條樣式 */
+    .achievement-progress-bar-container {
+        width: 100%; /* 進度條佔滿寬度 */
+        margin-top: 5px; /* 進度條與上方內容的間距 */
+    }
+    .progress {
+        height: 18px; /* 進度條高度 */
+        border-radius: 50px; /* 圓角進度條 */
+        background-color: #e9ecef;
+    }
+    .progress-bar {
+        background-color: var(--primary-color); /* 使用主要顏色 */
+        transition: width 0.6s ease;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+    .progress-bar.bg-success {
+        background-color: var(--success-color, #28a745) !important; /* 解鎖後綠色 */
+    }
+
+    /* 已解鎖標籤樣式 */
+    .achievement-unlocked-badge {
+        background-color: var(--success-color, #28a745);
+        color: white;
+        padding: 0.4em 0.8em;
+        border-radius: 50px;
+        font-size: 0.8rem;
+    }
+
+    /* 已解鎖成就卡片樣式 */
+    .unlocked-achievement-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* 輕微陰影 */
+        background-color: #fff;
+        transition: transform 0.2s ease;
+    }
+    .unlocked-achievement-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .unlocked-achievement-card .card-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+    }
+    .unlocked-achievement-card .card-title i {
+        font-size: 1.3rem;
+        margin-right: 8px;
+        color: var(--warning-color, #ffc107); /* 徽章圖標顏色 */
+    }
+    .unlocked-achievement-card .card-text.small {
+        font-size: 0.85rem;
+        color: #777;
+    }
+    .unlocked-achievement-card .badge-secondary {
+        background-color: #6c757d; /* 預設灰色徽章 */
+        font-size: 0.75rem;
+    }
+    .unlocked-achievement-card .unlocked-at {
+        font-size: 0.7rem;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    /* 確保 base.html 中的 --primary-color 和 --text-color 存在 */
+    :root {
+        --primary-color: #6a5acd;
+        --text-color: #333333;
+        --heart-color: #f44336;
+        --info-color: #17a2b8; /* Bootstrap info color */
+        --warning-color: #ffc107; /* Bootstrap warning color */
+        --success-color: #28a745; /* Bootstrap success color */
+        --secondary-color: #9370db; /* For progress bar perhaps */
+    }
+
+</style>
+
 <div class="container mt-5">
     <div class="page-header">
         <div class="dream-icon">
@@ -19,83 +183,94 @@
         <div class="card-header">
             <h3><i class="fas fa-chart-bar me-2"></i> 成就進度</h3>
         </div>
-        <div class="card-body">
-            {% if achievements_progress %}
-                <ul class="list-group list-group-flush">
+        <div class="card-body p-0"> {# 移除 body padding，讓 list item 自己控制 #}
+            <ul class="list-group list-group-flush">
+                {% if achievements_progress %}
                     {% for item in achievements_progress %}
-                        <li class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center py-3">
-                            <div class="mb-2 mb-md-0 me-md-3">
-                                {% if item.is_unlocked %}
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                {% else %}
-                                    <i class="fas fa-lock text-muted me-2"></i>
-                                {% endif %}
-                                <strong>{{ item.achievement.name }}</strong>
-                                <small class="text-muted d-block d-md-inline-block ms-md-2">{{ item.achievement.description }}</small>
+                        <li class="list-group-item achievement-progress-item">
+                            <div class="item-header">
+                                <div class="item-icon">
+                                    {% if item.is_unlocked %}
+                                        <i class="fas fa-check-circle text-success"></i> {# 已解鎖圖標 #}
+                                    {% elif item.percentage == 0 %}
+                                        <i class="far fa-circle text-muted"></i> {# 尚未開始圖標 #}
+                                    {% else %}
+                                        <i class="fas fa-circle-notch fa-spin text-primary"></i> {# 進度中圖標 #}
+                                    {% endif %}
+                                </div>
+                                <div class="item-title-desc">
+                                    <div class="item-title">{{ item.achievement.name }}</div>
+                                    <div class="item-description">{{ item.achievement.description }}</div>
+                                </div>
+                                <div class="item-badges">
+                                    {% if item.is_unlocked %}
+                                        <span class="achievement-unlocked-badge">已解鎖</span>
+                                    {% endif %}
+                                    {% if item.achievement.title %}
+                                        <span class="badge badge-title">{{ item.achievement.title }}</span>
+                                    {% endif %}
+                                    {% if item.achievement.badge_icon %}
+                                        <i class="{{ item.achievement.badge_icon }} badge-icon"></i>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="flex-grow-1 me-md-3" style="max-width: 300px;"> {# 限制進度條寬度 #}
+                            
+                            <div class="achievement-progress-bar-container">
                                 {% if not item.is_unlocked %}
-                                    <div class="progress" style="height: 20px;">
+                                    <div class="progress">
                                         <div class="progress-bar {% if item.percentage == 100 %}bg-success{% else %}bg-primary{% endif %}" 
                                              role="progressbar" 
                                              style="width: {{ item.percentage }}%;" 
                                              aria-valuenow="{{ item.percentage }}" 
                                              aria-valuemin="0" 
                                              aria-valuemax="100">
-                                            {{ item.percentage }}% ({{ item.current_progress }}/{{ item.total_needed }})
+                                            {% if item.percentage > 0 %} {{ item.percentage }}% {% endif %}
                                         </div>
                                     </div>
-                                {% else %}
-                                    <span class="badge bg-success py-2 px-3">已解鎖</span>
-                                {% endif %}
-                            </div>
-                            <div class="text-md-end mt-2 mt-md-0">
-                                {% if item.achievement.title %}
-                                    <span class="badge bg-info me-1">{{ item.achievement.title }}</span>
-                                {% endif %}
-                                {% if item.achievement.badge_icon %}
-                                    <i class="{{ item.achievement.badge_icon }} text-warning"></i>
+                                    <div class="text-end text-muted small mt-1">
+                                        {{ item.current_progress }}/{{ item.total_needed }}
+                                    </div>
                                 {% endif %}
                             </div>
                         </li>
                     {% endfor %}
-                </ul>
-            {% else %}
-                <p class="text-center">目前沒有可追蹤的成就進度。</p>
-            {% endif %}
+                {% else %}
+                    <li class="list-group-item text-center py-4">目前沒有可追蹤的成就進度。</li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 
-    {# 已解鎖成就區塊 (可以與進度區塊分開或合併) #}
+    {# 已解鎖成就區塊 #}
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-award me-2"></i> 已解鎖成就</h3>
         </div>
         <div class="card-body">
             {% if unlocked_achievements %}
-                <div class="row">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3"> {# 使用響應式網格 #}
                     {% for ua in unlocked_achievements %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 bg-light shadow-sm">
+                    <div class="col">
+                        <div class="card h-100 unlocked-achievement-card">
                             <div class="card-body">
                                 <h5 class="card-title">
                                     {% if ua.achievement.badge_icon %}
-                                        <i class="{{ ua.achievement.badge_icon }} me-2 text-success"></i>
+                                        <i class="{{ ua.achievement.badge_icon }} me-2"></i>
                                     {% endif %}
                                     {{ ua.achievement.name }}
                                 </h5>
-                                <p class="card-text">{{ ua.achievement.description }}</p>
+                                <p class="card-text small text-muted">{{ ua.achievement.description }}</p>
                                 {% if ua.achievement.title %}
                                     <p class="card-text small text-muted">獲得稱號：<span class="badge bg-secondary">{{ ua.achievement.title }}</span></p>
                                 {% endif %}
-                                <p class="card-text small text-muted">解鎖於：{{ ua.unlocked_at|date:"Y-m-d H:i" }}</p>
+                                <p class="card-text small text-muted unlocked-at">解鎖於：{{ ua.unlocked_at|date:"Y-m-d H:i" }}</p>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p class="text-center">您還沒有解鎖任何成就。開始解析夢境，解鎖您的第一個成就吧！</p>
+                <p class="text-center py-4">您還沒有解鎖任何成就。開始解析夢境，解鎖您的第一個成就吧！</p>
             {% endif %}
         </div>
     </div>
