@@ -41,7 +41,6 @@ from datetime import datetime
 
 # 綠界
 import datetime
-from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from dreams.sdk.ecpay_payment_sdk import ECPayPaymentSdk
 # 個人檔案
@@ -50,7 +49,9 @@ from dreams.achievement_helper import check_and_unlock_achievements
 #使用者查看已預約時段
 from django.views.decorators.http import require_GET
 from django.utils.dateparse import parse_datetime
+from django.utils.timezone import localtime #已預約時段變成台灣地區時間
 
+# 燈箱
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
 
@@ -120,7 +121,7 @@ def logout_success(request):
     return render(request, 'dreams/logout_success.html')  # 顯示登出成功頁面
 
 
-# 個人檔案
+# 編輯個人檔案
 @login_required
 def edit_profile(request):
     """
@@ -146,7 +147,7 @@ def edit_profile(request):
 
 
 
-
+# 個人檔案
 @login_required
 def user_profile(request):
     """用戶個人檔案頁面"""
@@ -1114,8 +1115,7 @@ def dream_news(request):
     return render(request, 'dreams/dream_news.html', {'news_results': news_results})
 
 
-# 諮商
-#分享給心理師
+# 心理諮商頁面分享夢境給心理師
 @login_required
 def share_dreams(request):
     if request.method == 'POST':
@@ -1140,7 +1140,7 @@ def share_dreams(request):
 
 
 
-#心理師可以看到分享的列表 
+#取消分享夢境 
 @login_required
 @require_POST
 def cancel_share(request, therapist_id):
@@ -1171,7 +1171,7 @@ def shared_with_me(request):
     return render(request, 'dreams/shared_users.html', {'shared_users': shares})
 
 
-
+#心理師可以看到分享的夢境
 @login_required
 def view_user_dreams(request, user_id):
     if not request.user.userprofile.is_therapist:
@@ -1306,19 +1306,21 @@ def user_appointments(request):
 
 
 #使用者查看已預約時段
-@require_GET
+@require_GET #只有使用者看得到
 def get_therapist_booked_slots(request, therapist_id):
-    from datetime import timedelta
-
     appointments = TherapyAppointment.objects.filter(
-        therapist_id=therapist_id
-    ).values_list('scheduled_time', flat=True)
+        therapist_id=therapist_id,
+        is_cancelled=False,
+        is_confirmed=True
+    )
 
-    # 回傳 ISO 格式的時間字串
-    booked_slots = [dt.strftime("%Y-%m-%dT%H:%M") for dt in appointments]
+    # 修正這一行
+    booked_slots = [
+    localtime(appt.scheduled_time).strftime("%Y-%m-%dT%H:%M") 
+    for appt in appointments
+]
+
     return JsonResponse({'booked_slots': booked_slots})
-    
-
 
 
 #使用者取消未確認的預約
@@ -1392,9 +1394,10 @@ def consultation_schedule(request, user_id):
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師能查看預約資料")
 
-    # 只篩選未取消的預約
+    # 只查詢這個使用者的預約
     appointments = TherapyAppointment.objects.filter(
         therapist=request.user,
+        user__id=user_id,
         is_cancelled=False
     ).order_by('-scheduled_time')
 
@@ -1404,6 +1407,8 @@ def consultation_schedule(request, user_id):
     })
 
 
+
+# 心理師端可以看到的所有使用者預約時間
 @login_required
 def all_users_appointments(request):
     # 限制只有心理師可以使用
