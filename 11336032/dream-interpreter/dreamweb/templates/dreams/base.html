@@ -23,6 +23,10 @@
             --border-radius: 12px;
             --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             --transition: all 0.3s ease;
+            --info-color: #17a2b8; /* Bootstrap info color */
+            --warning-color: #ffc107; /* Bootstrap warning color */
+            --success-color: #28a745; /* Bootstrap success color */
+            --heart-color: #f44336; /* 紅色心形 */
         }
         
         body {
@@ -235,6 +239,105 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-color);
         }
+
+        /* ✅ START: Add custom CSS for user info hover card and display badge */
+        .user-info-hover-card {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            z-index: 1000;
+            min-width: 250px;
+            display: none; /* 預設隱藏 */
+            left: 0;
+            top: 100%; /* 顯示在觸發元素下方 */
+            margin-top: 5px;
+            transition: opacity 0.2s ease; /* 添加過渡效果 */
+            opacity: 0; /* 預設透明 */
+            pointer-events: none; /* 讓滑鼠可以穿透，直到顯示 */
+        }
+        .user-info-hover-card.show {
+            opacity: 1; /* 顯示時完全不透明 */
+            pointer-events: auto; /* 顯示時允許滑鼠事件 */
+        }
+        .user-info-hover-card .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .user-info-hover-card .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+            border: 2px solid var(--primary-color);
+        }
+        .user-info-hover-card .username {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--text-color);
+        }
+        .user-info-hover-card .title {
+            font-size: 0.9em;
+            color: var(--primary-color);
+            margin-left: 5px;
+            background-color: rgba(106, 90, 205, 0.1);
+            padding: 3px 8px;
+            border-radius: 5px;
+        }
+        .user-info-hover-card .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .user-info-hover-card .badge-item {
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            color: var(--text-color);
+        }
+        .user-info-hover-card .badge-item i {
+            margin-right: 5px;
+            color: var(--warning-color);
+        }
+        .user-info-hover-card a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: block;
+            text-align: center;
+        }
+        .user-info-hover-card a:hover {
+            text-decoration: underline;
+        }
+
+        /* 確保 user-info-trigger 在其父容器中正確定位和顯示 */
+        .user-info-trigger {
+            position: relative;
+            display: inline-flex; /* 讓用戶名和徽章在同一行 */
+            align-items: center;
+            cursor: pointer; /* 顯示可點擊或懸停的指示 */
+            /* Ensure the trigger is on top of other content in its containing div */
+            z-index: 2; /* 提高 z-index 確保在 Dcard 樣式之上 */
+        }
+        .user-info-trigger .display-badge {
+            font-size: 1.1em; /* 徽章圖標大小 */
+            margin-left: 5px;
+            color: var(--warning-color); /* 預設徽章顏色 */
+        }
+        /* ✅ END: Add custom CSS */
     </style>
 </head>
 <body>
@@ -293,13 +396,11 @@
                             <i class="fas fa-cog me-1"></i>設定
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownSettings" style="min-width: 160px;">
-                            <!-- 點券餘額區塊：圖示上方，數字下方置中 -->
                             <li class="px-3 py-3 d-flex flex-column align-items-center" style="background:rgb(255, 255, 255); border-bottom: 1px solid #dee2e6; min-width: 140px;">
                             <i class="fas fa-coins text-warning fs-1 mb-2"></i>
                             <span class="badge bg-primary  fs-6 px-3 py-2">{{ request.user.userprofile.points }}</span>
                             </li>
                             
-                            <!-- 功能選單 -->
                             <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2"></i>個人檔案</a></li>
                             <li><a class="dropdown-item d-flex align-items-center" href="{% url 'pointshop' %}"><i class="fas fa-coins me-2"></i>點券商店</a></li>
                             <li><a class="dropdown-item d-flex align-items-center" href="{% url 'achievements' %}"><i class="fas fa-trophy me-2"></i>成就</a></li>
@@ -335,6 +436,7 @@
             {% endfor %}
         {% endif %}
         
+        {# ✅ FIX: Remove extra '{' #}
         {% block content %}{% endblock %}
     </div>
 
@@ -376,6 +478,77 @@
             cards.forEach(card => {
                 observer.observe(card);
             });
+
+            // ✅ START: Add JavaScript for user info hover card
+            document.querySelectorAll('.user-info-trigger').forEach(trigger => {
+                let timeoutId;
+                const userId = trigger.dataset.userId; // Not used in this basic hover, but good for potential AJAX
+                let hoverCard = trigger.querySelector('.user-info-hover-card');
+
+                // If the hover card HTML is not already in the DOM, create it dynamically
+                if (!hoverCard) {
+                    hoverCard = document.createElement('div');
+                    hoverCard.classList.add('user-info-hover-card');
+                    trigger.appendChild(hoverCard);
+                }
+
+                function showHoverCard() {
+                    clearTimeout(timeoutId); // Clear any pending hide
+                    
+                    const username = trigger.dataset.username;
+                    const avatarUrl = trigger.dataset.avatarUrl;
+                    const displayTitle = trigger.dataset.displayTitle || ''; // Use || '' to handle null/undefined
+                    const profileUrl = trigger.dataset.profileUrl;
+                    
+                    let badgesHtml = '';
+                    if (trigger.dataset.unlockedAchievements) {
+                        try {
+                            const achievements = JSON.parse(trigger.dataset.unlockedAchievements);
+                            achievements.forEach(ach => {
+                                if (ach.badge_icon) {
+                                    badgesHtml += `<div class="badge-item"><i class="${ach.badge_icon}"></i><span>${ach.name}</span></div>`;
+                                }
+                            });
+                        } catch (e) {
+                            console.error("Error parsing unlocked achievements:", e);
+                        }
+                    }
+
+                    hoverCard.innerHTML = `
+                        <div class="header">
+                            <img src="${avatarUrl}" alt="${username}" class="avatar">
+                            <div>
+                                <div class="username">${username}</div>
+                                ${displayTitle ? `<div class="title">${displayTitle}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="body">
+                            ${badgesHtml ? `<div class="badges">${badgesHtml}</div>` : '<p class="small text-muted">尚未解鎖更多徽章。</p>'}
+                            <a href="${profileUrl}" class="mt-2 d-block">查看完整個人檔案 &raquo;</a>
+                        </div>
+                    `;
+                    // Position the hover card if needed (e.g., relative to trigger)
+                    // You might need to adjust 'left' and 'top' based on your layout
+                    hoverCard.style.left = '0'; // Align left with the trigger
+                    hoverCard.style.top = '100%'; // Position below the trigger
+                    hoverCard.classList.add('show');
+                }
+
+                function hideHoverCard() {
+                    // Set a timeout to hide, allowing cursor to move to the card
+                    timeoutId = setTimeout(() => {
+                        hoverCard.classList.remove('show');
+                    }, 200); // Adjust delay as needed
+                }
+
+                trigger.addEventListener('mouseenter', showHoverCard);
+                trigger.addEventListener('mouseleave', hideHoverCard);
+                
+                // Keep the card visible if the mouse moves onto the card itself
+                hoverCard.addEventListener('mouseenter', () => clearTimeout(timeoutId));
+                hoverCard.addEventListener('mouseleave', hideHoverCard);
+            });
+            // ✅ END: Add JavaScript
         });
     </script>
 </body>

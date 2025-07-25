@@ -1,5 +1,6 @@
 {% extends 'dreams/base.html' %}
 {% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+{% load custom_filters %} {# 確保加載 custom_filters 以使用 safe_json_dumps #}
 
 {% block title %} - 夢境社群討論區{% endblock %}
 {% block content %}
@@ -53,37 +54,52 @@
                         {% for dream in dream_posts %}
                             <li class="list-group-item dcard-post-item"> {# Added border, shadow directly in CSS #}
                                 <div class="dcard-post-header">
-                                    {# 發文者頭像 #}
-                                    <div class="dcard-avatar me-2">
-                                        {% if dream.is_anonymous %}
+                                    {# ✅ MODIFIED: 發文者頭像、用戶名、稱號和徽章的顯示邏輯 #}
+                                    {% if dream.is_anonymous %}
+                                        <div class="dcard-avatar me-2">
                                             <i class="fas fa-user-secret fa-2x text-muted"></i> 
-                                        {% else %}
-                                            {% if dream.user.userprofile.avatar %}
-                                                <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
-                                            {% else %}
-                                                <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=30" alt="{{ dream.user.username }}" class="rounded-circle">
-                                            {% endif %}
-                                        {% endif %}
-                                    </div>
-                                    {# 用戶名/匿名及發布時間 #}
-                                    <div class="dcard-author-info flex-grow-1">
-                                        <div class="dcard-author-name">
-                                            {% if dream.is_anonymous %}匿名{% else %}{{ dream.user.username }}{% endif %}
                                         </div>
-                                        <div class="dcard-post-time text-muted small">
-                                            {{ dream.created_at|timesince }} 前發布
+                                        <div class="dcard-author-info flex-grow-1">
+                                            <div class="dcard-author-name">匿名</div>
+                                            <div class="dcard-post-time text-muted small">
+                                                {{ dream.created_at|timesince }} 前發布
+                                            </div>
                                         </div>
-                                    </div>
-                                    {# 右側可能還有其他，例如看板資訊，目前省略 #}
+                                    {% else %}
+                                        {# 使用 user-info-trigger 包裹作者信息，並調整其內部結構以兼容 Dcard 樣式 #}
+                                        <div class="user-info-trigger d-flex align-items-center"
+                                            data-user-id="{{ dream.user.id }}"
+                                            data-username="{{ dream.user.username }}"
+                                            data-avatar-url="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
+                                            data-profile-url="{% url 'profile' %}" {# 注意: 'profile' 現在是當前用戶的，如要顯示他人資料需另設 URL #}
+                                            data-display-title="{{ dream.author_display_title|default_if_none:'' }}"
+                                            {# ✅ FIX: 確保 data-display-badge-icon 和 data-unlocked-achievements 之間有正確的空格和獨立的賦值 #}
+                                            data-display-badge-icon="{{ dream.author_display_badge_icon|default_if_none:'' }}" 
+                                            data-unlocked-achievements="{{ dream.author_unlocked_achievements|safe_json_dumps }}"
+                                        >
+                                            <div class="dcard-avatar me-2">
+                                                <img src="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}" alt="{{ dream.user.username }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                            </div>
+                                            <div class="dcard-author-info flex-grow-1">
+                                                <div class="dcard-author-name">
+                                                    {{ dream.user.username }}
+                                                    {% if dream.author_display_badge_icon %}
+                                                        <i class="{{ dream.author_display_badge_icon }} display-badge" title="展示徽章"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="dcard-post-time text-muted small">
+                                                    {{ dream.created_at|timesince }} 前發布
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                 </div>
 
-                                {# 貼文標題及內容摘要 --- BEGIN MODIFICATION: Added content preview & striptags --- #}
+                                {# 貼文標題及內容摘要 #}
                                 <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="text-decoration-none text-dark d-block dcard-post-link">
                                     <h5 class="dcard-post-title mb-1">{{ dream.title }}</h5> 
-                                    {# 這行是關鍵，確保內容被截斷並移除 HTML 標籤 #}
                                     <p class="dcard-post-content-preview text-muted mb-0">{{ dream.content|striptags|truncatewords:20 }}</p> 
                                 </a>
-                                {# --- END MODIFICATION --- #}
 
                                 {# 互動數據 (按讚, 留言, 分享) #}
                                 <div class="dcard-post-footer pt-3 mt-3 border-top d-flex justify-content-start align-items-center">
@@ -127,7 +143,6 @@
 
         {# 右側側邊欄 - col-md-3 #}
         <aside class="col-md-3">
-            {# --- BEGIN MODIFICATION: 今日熱門夢境主題 (排行榜) --- #}
             <div class="card mb-4 dcard-section-header">
                 <div class="card-header text-white d-flex justify-content-between align-items-center">
                     <h2 class="h5 mb-0">本週熱門夢境</h2> {# 修改標題為「本週熱門夢境」 #}
@@ -151,9 +166,7 @@
                     </ul>
                 </div>
             </div>
-            {# --- END MODIFICATION --- #}
 
-            {# 美妝版體驗箱 (如果您想保留這個廣告/佔位符) #}
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title text-muted">體驗箱</h5>
@@ -328,10 +341,16 @@
 }
 .dcard-author-info {
     font-size: 0.9rem;
+    /* ✅ 調整: 確保這個 flex-grow-1 不會擠壓 user-info-trigger 導致徽章被推到下一行 */
+    min-width: 0; /* Allow content to shrink if needed */
 }
 .dcard-author-name {
     font-weight: bold;
     color: var(--text-color);
+    /* ✅ 調整: 確保 user-info-trigger 內的元素能正常排列 */
+    display: flex;
+    align-items: center;
+    line-height: 1.2; /* Adjust line-height for better vertical alignment */
 }
 .dcard-post-time {
     color: #888;
