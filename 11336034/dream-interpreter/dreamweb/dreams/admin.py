@@ -26,20 +26,20 @@ class DreamAdmin(admin.ModelAdmin):
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
-        'user', 'points', 'is_therapist', 'is_verified_therapist', 'current_title', 'current_badge_icon'
+        'user', 'points', 'is_therapist', 'is_verified_therapist',
+        'current_title', 'current_badge_icon', 'coin_price'  # ✅ 加入這行
     )
     list_filter = ('is_therapist', 'is_verified_therapist')
     search_fields = ('user__username', 'current_title', 'bio')
 
     fieldsets = (
         (None, {
-            'fields': ('user', 'points', 'is_therapist', 'is_verified_therapist')
+            'fields': ('user', 'points', 'is_therapist', 'is_verified_therapist', 'coin_price')  # ✅ 加入這行
         }),
         ("個人資料", {
             'fields': ('bio', 'avatar', 'current_title', 'current_badge_icon')
         }),
     )
-
 
 
 @admin.register(Achievement)

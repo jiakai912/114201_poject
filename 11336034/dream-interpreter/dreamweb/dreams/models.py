@@ -13,6 +13,8 @@ class UserProfile(models.Model):
     is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
+    # 訂價格
+    coin_price = models.PositiveIntegerField(default=10, help_text="每次預約所需點券數")  # 新增欄位
 
     # 新增 bio 和 avatar 字段
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")

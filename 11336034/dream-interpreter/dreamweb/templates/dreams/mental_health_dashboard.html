@@ -85,7 +85,7 @@
             <div class="row align-items-center">
                 <!-- 左邊：文字 -->
                 <div class="col-md-6 ps-md-5 ps-3">
-                    <h3 class="mb-2ps-1" style="margin-left: 5rem;"> <!-- 文字位置左右 -->
+                    <h3 class="mb-2 ps-1" style="margin-left: 5rem;"> <!-- 文字位置左右 -->
                     <i class="fas fa-hand-holding-heart text-primary me-2"></i>
                     分享夢境並預約心理會談
                     </h3>
@@ -120,6 +120,7 @@
             <div class="card-header btn-outline-primary text-white fw-bold">
                 已預約的時段
             </div>
+            
             <div class="card-body p-3">
                 <div id="booked-times-list" class="row gy-2"></div>
                 <nav>
@@ -156,14 +157,18 @@
                         <div class="mb-3">
                             <label for="therapistSelect" class="form-label fw-bold">選擇心理師</label>
                             <select class="form-select rounded-pill px-3 py-2" name="therapist_id" id="therapistSelect" required>
-                                {% for t in therapists %}
-                                    <option value="{{ t.id }}" {% if forloop.first %}selected{% endif %}
+                            {% for t in therapists %}
+                                <option value="{{ t.id }}"
+                                        {% if forloop.first %}selected{% endif %}
                                         data-username="{{ t.username }}"
+                                        data-coin_price="{{ t.userprofile.coin_price }}"
                                         data-specialty="{{ t.userprofile.specialty|default:'未提供' }}"
                                         data-bio="{{ t.userprofile.bio|default:'尚未提供自我介紹' }}">
-                                        {{ t.username }}{% if t.userprofile.specialty %}（{{ t.userprofile.specialty }}）{% endif %}
-                                    </option>
-                                {% endfor %}
+                                    {{ t.username }}
+                                    {% if t.userprofile.specialty %}（{{ t.userprofile.specialty }}）{% endif %}
+                                    （每1小時 {{ t.userprofile.coin_price }} 點券）
+                                </option>
+                            {% endfor %}
                             </select>
                         </div>
 
@@ -174,12 +179,14 @@
                         </div>
 
                         <div class="text-center mt-4">
-                        <!-- 預約心理師按鈕 -->
+                            <!-- 預約心理師按鈕 -->
                             <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm"
-                                    onclick="return confirm('預約將扣除 1500 點券，是否確定預約？');">
-                                <i class="fas fa-paper-plane me-2"></i>送出預約與分享（每1小時1500點券）
+                                id="submitAppointmentBtn">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                送出預約與分享（每1小時 <span id="priceDisplay"></span> 點券）
                             </button>
                         </div>
+
                     </form>
                 </div>
 
@@ -247,75 +254,29 @@
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        {% if emotion_alert %}
-        const modalElement = document.getElementById('emotionAlertModal');
-        const modal = new bootstrap.Modal(modalElement, {
-            backdrop: false,
-            keyboard: false
-        });
-        setTimeout(function () {
-            modal.show();
-        }, 500);
-        {% endif %}
-
-        const select = document.getElementById("therapistSelect");
-        const card = document.getElementById("therapistInfoCard");
-        const nameEl = document.getElementById("therapistName");
-        const specialtyEl = document.getElementById("therapistSpecialty");
-        const bioEl = document.getElementById("therapistBio");
-        const updateTherapistInfo = function(option) {
-            nameEl.textContent = option.getAttribute("data-username") || "心理師姓名";
-            specialtyEl.textContent = option.getAttribute("data-specialty") || "未提供";
-            bioEl.textContent = option.getAttribute("data-bio") || "尚未提供自我介紹";
-            card.classList.remove("d-none");
-
-            const nameSpanInButton = document.getElementById("selectedTherapistName");
-            if (nameSpanInButton) {
-                nameSpanInButton.textContent = option.getAttribute("data-username") || "心理師姓名";
-            }
-
-        };
-        
-        if (select && select.options.length > 0) {
-            updateTherapistInfo(select.options[select.selectedIndex]);
-            select.addEventListener("change", function () {
-                updateTherapistInfo(this.options[this.selectedIndex]);
-            });
-        }
-
-        const scheduledInput = document.getElementById("scheduled_time");
-        if (scheduledInput) {
-            // 設定預設時間為最近的下個整點
-            const now = new Date();
-            now.setMinutes(0);
-            now.setSeconds(0);
-            now.setMilliseconds(0);
-            now.setHours(now.getHours() + 1); // 預設為下一個整點
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // 調整為本地時間
-            scheduledInput.value = now.toISOString().slice(0, 16);
-
-            // 當使用者手動修改時，自動將分鐘改為 00
-            scheduledInput.addEventListener("input", function () {
-                const dt = new Date(this.value);
-                dt.setMinutes(0);
-                dt.setSeconds(0);
-                dt.setMilliseconds(0);
-                dt.setHours(dt.getHours()); // 維持小時不變
-                dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset()); // 調整為本地時間
-                this.value = dt.toISOString().slice(0, 16);
-            });
-        }
-
-    });
-</script>
-
-
-<script>
 document.addEventListener('DOMContentLoaded', function () {
-    const therapistSelect = document.querySelector('select[name="therapist_id"]');
+    {% if emotion_alert %}
+    const modalElement = document.getElementById('emotionAlertModal');
+    const modal = new bootstrap.Modal(modalElement, {
+        backdrop: false,
+        keyboard: false
+    });
+    setTimeout(function () {
+        modal.show();
+    }, 500);
+    {% endif %}
+
+    const select = document.getElementById("therapistSelect");
+    const card = document.getElementById("therapistInfoCard");
+    const nameEl = document.getElementById("therapistName");
+    const specialtyEl = document.getElementById("therapistSpecialty");
+    const bioEl = document.getElementById("therapistBio");
+    const submitBtn = document.getElementById('submitAppointmentBtn');
+    const priceDisplay = document.getElementById('priceDisplay');
+
+    // 已預約時段相關元素
     const toggleBtn = document.getElementById('toggleBookedSlotsBtn');
-    const card = document.getElementById('bookedSlotsCard');
+    const bookedCard = document.getElementById('bookedSlotsCard');
     const listContainer = document.getElementById('booked-times-list');
     const pagination = document.getElementById('pagination');
 
@@ -324,16 +285,35 @@ document.addEventListener('DOMContentLoaded', function () {
     const itemsPerPage = 10;
     let currentPage = 1;
 
+    function updateTherapistInfo(option) {
+        nameEl.textContent = option.getAttribute("data-username") || "心理師姓名";
+        specialtyEl.textContent = option.getAttribute("data-specialty") || "未提供";
+        bioEl.textContent = option.getAttribute("data-bio") || "尚未提供自我介紹";
+        card.classList.remove("d-none");
+    }
+
+    function updateConfirmMessage() {
+        if (!submitBtn || !priceDisplay) return;
+        const selectedOption = select.options[select.selectedIndex];
+        const selectedPrice = selectedOption.getAttribute('data-coin_price') || '1500';
+
+        // 更新 confirm 提示訊息
+        submitBtn.setAttribute('onclick', `return confirm('預約將扣除 ${selectedPrice} 點券，是否確定預約？');`);
+        // 更新按鈕內價格顯示
+        priceDisplay.textContent = selectedPrice;
+    }
+
     function getSelectedTherapistName() {
-        const selectedOption = therapistSelect.options[therapistSelect.selectedIndex];
+        const selectedOption = select.options[select.selectedIndex];
         return selectedOption ? selectedOption.text.trim() : "心理師";
     }
 
+    
     function updateToggleButtonText(showing) {
         const name = getSelectedTherapistName();
         toggleBtn.innerHTML = showing
             ? `關閉已預約的時段`
-            : ` <span class="fw-bold text-purple">${name}</span> 已預約的時段`;
+            : `<span class="fw-bold text-purple"></span> 已預約的時段`;
     }
 
     function renderList(page) {
@@ -391,42 +371,85 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function loadBookedSlots(therapistId) {
+        fetch(`/api/booked_slots/${therapistId}/`)
+            .then(res => res.json())
+            .then(data => {
+                bookedSlots = data.booked_slots;
+                currentPage = 1;
+                renderList(currentPage);
+                bookedCard.classList.remove('d-none');
+                updateToggleButtonText(true);
+                isVisible = true;
+            })
+            .catch(err => {
+                alert("取得已預約時段失敗");
+                console.error(err);
+            });
+    }
+
+
+
+    const scheduledInput = document.getElementById("scheduled_time");
+    if (scheduledInput) {
+        // 設定預設時間為最近的下個整點
+        const now = new Date();
+        now.setMinutes(0);
+        now.setSeconds(0);
+        now.setMilliseconds(0);
+        now.setHours(now.getHours() + 1); // 預設為下一個整點
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // 調整為本地時間
+        scheduledInput.value = now.toISOString().slice(0, 16);
+
+        // 當使用者手動修改時，自動將分鐘改為 00
+        scheduledInput.addEventListener("input", function () {
+            const dt = new Date(this.value);
+            dt.setMinutes(0);
+            dt.setSeconds(0);
+            dt.setMilliseconds(0);
+            dt.setHours(dt.getHours()); // 維持小時不變
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset()); // 調整為本地時間
+            this.value = dt.toISOString().slice(0, 16);
+        });
+    }
+
+
+    // 初始載入
+    if (select && select.options.length > 0) {
+        updateTherapistInfo(select.options[select.selectedIndex]);
+        updateConfirmMessage();
+        updateToggleButtonText(false);
+    }
+
+    select.addEventListener("change", function () {
+        updateTherapistInfo(this.options[this.selectedIndex]);
+        updateConfirmMessage();
+
+        if (isVisible) {
+            loadBookedSlots(this.value);
+        }
+        updateToggleButtonText(isVisible);
+    });
+
     toggleBtn.addEventListener('click', () => {
-        const therapistId = therapistSelect.value;
+        const therapistId = select.value;
         if (!therapistId) {
             alert("請先選擇心理師");
             return;
         }
 
         if (!isVisible) {
-            fetch(`/api/booked_slots/${therapistId}/`)
-                .then(res => res.json())
-                .then(data => {
-                    bookedSlots = data.booked_slots;
-                    currentPage = 1;
-                    renderList(currentPage);
-                    card.classList.remove('d-none');
-                    updateToggleButtonText(true);
-                    isVisible = true;
-                })
-                .catch(err => {
-                    alert("取得已預約時段失敗");
-                    console.error(err);
-                });
+            loadBookedSlots(therapistId);
         } else {
-            card.classList.add('d-none');
+            bookedCard.classList.add('d-none');
             updateToggleButtonText(false);
             isVisible = false;
         }
     });
-
-    therapistSelect.addEventListener('change', () => {
-        updateToggleButtonText(isVisible);
-    });
-
-    updateToggleButtonText(false); // 初始化
 });
+
 </script>
+
 
 
 {% endblock %}

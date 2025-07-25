@@ -1215,16 +1215,16 @@ def share_and_schedule(request):
             return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
         user_profile = request.user.userprofile
-        appointment_cost = 1500
+        therapist_profile = therapist.userprofile
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500  # 預設1500
 
         with transaction.atomic():
             if user_profile.points < appointment_cost:
-                messages.error(request, "點數不足，無法預約。請先儲值。")
+                messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
                 return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
             try:
                 from datetime import datetime
-
                 scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
                 if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
                     messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
@@ -1233,12 +1233,11 @@ def share_and_schedule(request):
                 messages.error(request, "預約時間格式錯誤。")
                 return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-            # 🛑 時間已被預約：顯示錯誤訊息但不導頁
             if TherapyAppointment.objects.filter(therapist=therapist, scheduled_time=scheduled_dt).exists():
                 messages.error(request, "此時間已被預約，請選擇其他時間。")
                 return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-            # 正常建立預約流程
+            # 點數扣除與記錄
             user_profile.points -= appointment_cost
             user_profile.save()
 
@@ -1248,6 +1247,7 @@ def share_and_schedule(request):
                 description=f"預約心理師 {therapist.username} 諮商（1 小時）"
             )
 
+            # 分享授權
             DreamShareAuthorization.objects.update_or_create(
                 user=request.user,
                 therapist=therapist,
