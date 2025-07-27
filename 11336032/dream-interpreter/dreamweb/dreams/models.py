@@ -13,10 +13,28 @@ class UserProfile(models.Model):
     is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
+    # 訂價格
+    coin_price = models.PositiveIntegerField(default=10, help_text="每次預約所需點券數")  # 新增欄位
 
     # 新增 bio 和 avatar 字段
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
+
+    # 新增這兩個欄位，用於用戶選擇在社群中展示的稱號和徽章
+    display_title = models.ForeignKey(
+        'Achievement',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='displayed_by_title',
+        verbose_name="社群展示稱號"
+    )
+    display_badge = models.ForeignKey(
+        'Achievement',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='displayed_by_badge',
+        verbose_name="社群展示徽章"
+    )
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

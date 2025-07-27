@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
-from .forms import DreamForm, UserRegisterForm,UserProfileForm
+from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm
 import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
@@ -36,21 +36,22 @@ import io
 # 心理諮商相關
 from django.contrib.auth.models import User
 from django.db import models,transaction
-from django.db.models import Q
 from django.views.decorators.http import require_POST
 from datetime import datetime
 
 # 綠界
 import datetime
-from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from dreams.sdk.ecpay_payment_sdk import ECPayPaymentSdk
 # 個人檔案
 from dreams.achievement_helper import check_and_unlock_achievements
 
-from dreams.models import TherapyAppointment, PointTransaction
+#使用者查看已預約時段
+from django.views.decorators.http import require_GET
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import localtime #已預約時段變成台灣地區時間
 
-
+# 燈箱
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
 
@@ -120,82 +121,88 @@ def logout_success(request):
     return render(request, 'dreams/logout_success.html')  # 顯示登出成功頁面
 
 
-# 個人檔案
+# 編輯個人檔案
 @login_required
 def edit_profile(request):
     """
-    編輯用戶個人檔案的視圖。
+    編輯用戶個人檔案，心理師可額外設定點券價格。
     """
-    user_profile_instance = request.user.userprofile # 獲取當前用戶的 UserProfile 實例
+    user_profile_instance = request.user.userprofile
+
+    # 選擇對應的表單
+    form_class = TherapistProfileForm if user_profile_instance.is_therapist else UserProfileForm
 
     if request.method == 'POST':
-        form = UserProfileForm(request.POST, request.FILES, instance=user_profile_instance)
+        form = form_class(request.POST, request.FILES, instance=user_profile_instance)
         if form.is_valid():
             form.save()
             messages.success(request, '個人檔案已成功更新！')
-            return redirect('profile') # 更新成功後重定向回個人檔案頁面
+            return redirect('profile')
         else:
-            messages.error(request, '更新個人檔案失敗，請檢查您的輸入。')
+            messages.error(request, '更新失敗，請檢查輸入內容。')
     else:
-        form = UserProfileForm(instance=user_profile_instance) # GET 請求時，用現有數據填充表單
+        form = form_class(instance=user_profile_instance)
 
-    context = {
-        'form': form,
-    }
-    return render(request, 'dreams/edit_profile.html', context)
+    # 使用統一模板
+    return render(request, 'dreams/edit_profile.html', {'form': form})
 
 
+
+# 個人檔案
 @login_required
 def user_profile(request):
-    """用戶個人檔案頁面"""
     user_profile_instance, created = UserProfile.objects.get_or_create(user=request.user)
-    
-    unlocked_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement').order_by('-unlocked_at')
 
     if request.method == 'POST':
-        selected_title = request.POST.get('selected_title')
-        selected_badge = request.POST.get('selected_badge')
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile_instance, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '個人檔案和展示設定已成功更新！')
+            return redirect('profile')
+        else:
+            print(form.errors) 
+            messages.error(request, '更新個人檔案失敗，請檢查您的輸入。')
+    else:
+        form = UserProfileForm(instance=user_profile_instance, user=request.user) 
 
-        if selected_title:
-            user_profile_instance.current_title = selected_title
-        if selected_badge:
-            user_profile_instance.current_badge_icon = selected_badge
-        user_profile_instance.save()
-        messages.success(request, "您的個人檔案已更新！")
-        return redirect('profile')
-
-    available_titles = set()
-    available_badges = set()
-    for ua in unlocked_achievements:
-        if ua.achievement.title:
-            available_titles.add(ua.achievement.title)
-        if ua.achievement.badge_icon:
-            available_badges.add(ua.achievement.badge_icon)
+    unlocked_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement').order_by('-unlocked_at')
 
     context = {
         'user_profile': user_profile_instance,
         'unlocked_achievements': unlocked_achievements,
-        'available_titles': sorted(list(available_titles)),
-        'available_badges': sorted(list(available_badges)),
+        'form': form, # 將表單傳遞給模板
     }
     return render(request, 'dreams/profile.html', context)
 
+
+
+
+# 用戶成就
 @login_required
 def user_achievements(request):
     user = request.user
-    
     unlocked_achievements = UserAchievement.objects.filter(user=user).select_related('achievement').order_by('-unlocked_at')
-
-    user_parsed_dreams_count = Dream.objects.filter(user=user).count()
-
-    parse_achievements = Achievement.objects.filter(condition_key='parse_count').order_by('condition_value')
+    
+    # 獲取用戶在各種條件鍵上的當前數值
+    user_data = {
+        'parse_count': Dream.objects.filter(user=user).count(),
+        'post_count': DreamPost.objects.filter(user=user).count(),
+        'total_post_likes': PostLike.objects.filter(post__user=user).count(), 
+        'comment_count': DreamComment.objects.filter(user=user).count(), 
+        'total_comment_likes': CommentLike.objects.filter(comment__user=user).count(),
+    }
+    
+    # 獲取所有成就，並按條件值排序 - 確保這行在 for 迴圈之前
+    all_achievements = Achievement.objects.all().order_by('condition_value') # <--- 關鍵行
 
     achievements_progress = []
-    for achievement in parse_achievements:
+    for achievement in all_achievements: # 遍歷所有成就
         is_unlocked = UserAchievement.objects.filter(user=user, achievement=achievement).exists()
-        current_progress = min(user_parsed_dreams_count, achievement.condition_value)
-        percentage = (current_progress / achievement.condition_value) * 100 if achievement.condition_value > 0 else 0
         
+        current_progress = user_data.get(achievement.condition_key, 0)
+      
+        current_progress = min(current_progress, achievement.condition_value)
+        percentage = (current_progress / achievement.condition_value) * 100 if achievement.condition_value > 0 else 0  
         achievements_progress.append({
             'achievement': achievement,
             'current_progress': current_progress,
@@ -203,7 +210,6 @@ def user_achievements(request):
             'percentage': round(percentage, 2),
             'is_unlocked': is_unlocked
         })
-
     context = {
         'unlocked_achievements': unlocked_achievements,
         'achievements_progress': achievements_progress,
@@ -231,15 +237,30 @@ def profile_view(request):
     return render(request, 'dreams/profile.html', context)
 
 
+# 檢查並解鎖成就
 def check_and_unlock_achievements(user):
-    parsed_count = Dream.objects.filter(user=user).count()
-    achievements = Achievement.objects.filter(condition_key='parse_count')
+    user_data = {
+        'parse_count': Dream.objects.filter(user=user).count(),
+        'post_count': DreamPost.objects.filter(user=user).count(),
+        'comment_count': DreamComment.objects.filter(user=user).count(),
+        'total_post_likes': PostLike.objects.filter(post__user=user).count(),
+        'total_comment_likes': CommentLike.objects.filter(comment__user=user).count(),
+    }
 
-    for ach in achievements:
-        if parsed_count >= ach.condition_value:
-            already_unlocked = UserAchievement.objects.filter(user=user, achievement=ach).exists()
+    all_achievements = Achievement.objects.all()
+
+    for achievement in all_achievements: # 遍歷所有成就
+        current_progress = user_data.get(achievement.condition_key, 0)
+
+        if current_progress >= achievement.condition_value:
+            already_unlocked = UserAchievement.objects.filter(user=user, achievement=achievement).exists()
             if not already_unlocked:
-                UserAchievement.objects.create(user=user, achievement=ach, unlocked_at=timezone.now())
+                UserAchievement.objects.create(
+                    user=user,
+                    achievement=achievement,
+                    unlocked_at=timezone.now()
+                )
+                messages.info(user, f"恭喜！您解鎖了成就：『{achievement.name}』！") # 解鎖時給予通知
 
 
 # 載入環境變量
@@ -728,12 +749,12 @@ def generate_mental_health_advice(dream_content, emotion_score, happiness, anxie
 @login_required
 def get_mental_health_suggestions(request, dream_id):
     try:
-        dream = Dream.objects.get(Dream,id=dream_id, user=request.user)
-        print(f"找到夢境: {dream.dream_content}")  # 確保夢境存在
+        dream = Dream.objects.get(id=dream_id, user=request.user)
+        print(f"找到夢境: {dream.dream_content}")
 
-        # 調用解夢函數
-        mental_health_advice = interpret_dream(dream.dream_content)
-        # 返回解析後的數據
+        # ✅ FIX: interpret_dream 返回三個值，這裡也要正確解包
+        _, _, mental_health_advice = interpret_dream(dream.dream_content)
+        
         return JsonResponse({
             "mental_health_advice": mental_health_advice,
         })
@@ -743,7 +764,81 @@ def get_mental_health_suggestions(request, dream_id):
         return JsonResponse({"error": "夢境不存在"}, status=404)
 
 
+# 1. 社群主頁和全球夢境趨勢
+# ✅ FIX: 合併兩個 community 函數，確保邏輯完整且變數已定義
+def community(request):
+    sort_type = request.GET.get('sort', 'popular')
+    
+    # 預加載 userprofile 和相關的 Achievement 物件
+    # ✅ FIX: 確保 select_related 能夠正確載入 Achievement 的所有字段
+    base_query = DreamPost.objects.select_related(
+        'user__userprofile',
+        'user__userprofile__display_title', # <-- 加載 display_title 關聯的 Achievement
+        'user__userprofile__display_badge'  # <-- 加載 display_badge 關聯的 Achievement
+    ).annotate(
+        total_post_likes=Count('likes'),
+        total_comments=Count('comments')
+    )
 
+    if sort_type == 'latest':
+        dream_posts_raw = base_query.order_by('-created_at')[:10]
+    else:
+        dream_posts_raw = base_query.order_by('-view_count')[:10]
+
+    posts_for_template = []
+    for post in dream_posts_raw:
+        post.is_liked_by_user = False
+        if request.user.is_authenticated:
+            post.is_liked_by_user = PostLike.objects.filter(post=post, user=request.user).exists()
+
+        if post.user and hasattr(post.user, 'userprofile'):
+            user_profile = post.user.userprofile
+            # ✅ FIX: 從 Achievement 對象中獲取 'name' 作為稱號，'badge_icon' 作為圖標
+            post.author_display_title = user_profile.display_title.name if user_profile.display_title else None
+            post.author_display_badge_icon = user_profile.display_badge.badge_icon if user_profile.display_badge else None
+            
+            # 預加載已解鎖的成就，用於懸停卡片，同樣需要 select_related('achievement')
+            post.author_unlocked_achievements = UserAchievement.objects.filter(user=post.user).select_related('achievement').order_by('-unlocked_at')[:5]
+        else:
+            post.author_display_title = None
+            post.author_display_badge_icon = None
+            post.author_unlocked_achievements = []
+
+        posts_for_template.append(post)
+
+    # 確保 trend_data 始終有初始值
+    trend_data = {} 
+    try:
+        latest_trend = DreamTrend.objects.latest('date')
+        if latest_trend:
+            if isinstance(latest_trend.trend_data, dict):
+                trend_data = latest_trend.trend_data
+            else:
+                trend_data = json.loads(latest_trend.trend_data)
+    except DreamTrend.DoesNotExist:
+        logging.info("No DreamTrend data found.")
+    except json.JSONDecodeError:
+        logging.error("Failed to decode JSON from DreamTrend.trend_data", exc_info=True)
+
+    if trend_data:
+        trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
+
+    today = timezone.now().date()
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+    
+    top_this_week_posts = DreamPost.objects.filter(
+        created_at__date__gte=start_of_week 
+    ).annotate(
+        num_comments=Count('comments'),
+        num_likes=Count('likes')
+    ).order_by('-num_comments', '-view_count', '-num_likes')[:5]
+
+    return render(request, 'dreams/community.html', {
+        'dream_posts': posts_for_template,
+        'trend_data': trend_data,
+        'sort_type': sort_type,
+        'top_today_posts': top_this_week_posts,
+    })
 
 
 # 用這個來獲取當天的熱門趨勢
@@ -803,12 +898,34 @@ def share_dream(request):
 #查看貼文功能
 @login_required
 def my_posts(request):
-    """顯示用戶自己發佈的夢境貼文，包括匿名貼文"""
-    my_posts = DreamPost.objects.filter(
+    # 確保也預加載 userprofile 以取得稱號/徽章資訊
+    my_posts_raw = DreamPost.objects.filter(
         Q(user=request.user) | Q(is_anonymous=True, user__isnull=True)
+    ).select_related(
+        'user__userprofile__display_title',
+        'user__userprofile__display_badge'
     ).order_by('-created_at')
 
-    return render(request, 'dreams/my_posts.html', {'my_posts': my_posts})
+    posts_for_template = []
+    for post in my_posts_raw:
+        post.is_liked_by_user = False # my_posts 頁面目前沒用到這個
+        if request.user.is_authenticated:
+            post.is_liked_by_user = PostLike.objects.filter(post=post, user=request.user).exists()
+
+        if post.user and hasattr(post.user, 'userprofile'):
+            user_profile = post.user.userprofile
+            # ✅ FIX: 從 Achievement 對象中獲取 'name' 作為稱號，'badge_icon' 作為圖標
+            post.author_display_title = user_profile.display_title.name if user_profile.display_title else None
+            post.author_display_badge_icon = user_profile.display_badge.badge_icon if user_profile.display_badge else None
+            post.author_unlocked_achievements = UserAchievement.objects.filter(user=post.user).select_related('achievement').order_by('-unlocked_at')[:5]
+        else: # 處理匿名貼文的情況
+            post.author_display_title = None
+            post.author_display_badge_icon = None
+            post.author_unlocked_achievements = []
+
+        posts_for_template.append(post)
+
+    return render(request, 'dreams/my_posts.html', {'my_posts': posts_for_template})
 
 
 #編輯貼文功能
@@ -891,20 +1008,63 @@ def search_dreams(request):
     })
 
 # 4. 夢境詳情頁與評論功能
+@login_required
 def dream_post_detail(request, post_id):
-    """夢境貼文詳情頁"""
-    dream_post = get_object_or_404(DreamPost, id=post_id)
-    
-    # 增加瀏覽次數
+    # ✅ FIX: 預加載貼文作者和評論者的 userprofile、display_title 和 display_badge (深度到 Achievement)
+    dream_post = get_object_or_404(
+        DreamPost.objects.select_related(
+            'user__userprofile', # 確保載入 userprofile
+            'user__userprofile__display_title',
+            'user__userprofile__display_badge'
+        ), id=post_id
+    )
     dream_post.increase_view_count()
+
+    # 為貼文作者添加稱號和徽章資訊
+    if dream_post.user and hasattr(dream_post.user, 'userprofile'):
+        user_profile = dream_post.user.userprofile
+        dream_post.author_display_title = user_profile.display_title.name if user_profile.display_title else None
+        dream_post.author_display_badge_icon = user_profile.display_badge.badge_icon if user_profile.display_badge else None
+        dream_post.author_unlocked_achievements = UserAchievement.objects.filter(user=dream_post.user).select_related('achievement').order_by('-unlocked_at')[:5]
+    else:
+        dream_post.author_display_title = None
+        dream_post.author_display_badge_icon = None
+        dream_post.author_unlocked_achievements = []
+
+    comments = []
+    # ✅ FIX: 預加載評論者的 userprofile、display_title 和 display_badge (深度到 Achievement)
+    raw_comments = dream_post.comments.select_related(
+        'user__userprofile', # 確保載入 userprofile
+        'user__userprofile__display_title',
+        'user__userprofile__display_badge'
+    ).order_by('created_at')
     
-    # 獲取評論
-    comments = dream_post.comments.all()
-    
-    # 獲取相似夢境推薦
+    for comment in raw_comments:
+        comment_data = {
+            'id': comment.id,
+            'user': comment.user,
+            'content': comment.content,
+            'created_at': comment.created_at,
+            'likes_count': comment.likes.count(),
+            'is_liked_by_user': False,
+            'commenter_display_title': None,
+            'commenter_display_badge_icon': None,
+            'commenter_unlocked_achievements': []
+        }
+        if request.user.is_authenticated:
+            comment_data['is_liked_by_user'] = CommentLike.objects.filter(comment=comment, user=request.user).exists()
+
+        # ✅ 新增：為每個評論者添加稱號和徽章資訊
+        if comment.user and hasattr(comment.user, 'userprofile'):
+            user_profile = comment.user.userprofile
+            comment_data['commenter_display_title'] = user_profile.display_title.name if user_profile.display_title else None
+            comment_data['commenter_display_badge_icon'] = user_profile.display_badge.badge_icon if user_profile.display_badge else None
+            comment_data['commenter_unlocked_achievements'] = UserAchievement.objects.filter(user=comment.user).select_related('achievement').order_by('-unlocked_at')[:5]
+
+        comments.append(comment_data)
+
     similar_dreams = get_similar_dreams(dream_post)
-    
-    # 處理評論提交
+
     if request.method == 'POST' and request.user.is_authenticated:
         comment_content = request.POST.get('comment')
         if comment_content:
@@ -915,12 +1075,13 @@ def dream_post_detail(request, post_id):
             )
             messages.success(request, '評論已提交！')
             return redirect('dream_post_detail', post_id=post_id)
-    
+
     return render(request, 'dreams/dream_post_detail.html', {
         'dream': dream_post,
         'comments': comments,
         'similar_dreams': similar_dreams
     })
+
 
 # 5. 夢境推薦系統
 def get_similar_dreams(dream_post, limit=5):
@@ -1024,8 +1185,7 @@ def dream_news(request):
     return render(request, 'dreams/dream_news.html', {'news_results': news_results})
 
 
-# 諮商
-#分享給心理師
+# 心理諮商頁面分享夢境給心理師
 @login_required
 def share_dreams(request):
     if request.method == 'POST':
@@ -1050,7 +1210,7 @@ def share_dreams(request):
 
 
 
-#心理師可以看到分享的列表 
+#取消分享夢境 
 @login_required
 @require_POST
 def cancel_share(request, therapist_id):
@@ -1081,7 +1241,7 @@ def shared_with_me(request):
     return render(request, 'dreams/shared_users.html', {'shared_users': shares})
 
 
-
+#心理師可以看到分享的夢境
 @login_required
 def view_user_dreams(request, user_id):
     if not request.user.userprofile.is_therapist:
@@ -1125,16 +1285,16 @@ def share_and_schedule(request):
             return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
         user_profile = request.user.userprofile
-        appointment_cost = 1500
+        therapist_profile = therapist.userprofile
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500  # 預設1500
 
         with transaction.atomic():
             if user_profile.points < appointment_cost:
-                messages.error(request, "點數不足，無法預約。請先儲值。")
+                messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
                 return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
             try:
                 from datetime import datetime
-
                 scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
                 if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
                     messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
@@ -1143,12 +1303,11 @@ def share_and_schedule(request):
                 messages.error(request, "預約時間格式錯誤。")
                 return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-            # 🛑 時間已被預約：顯示錯誤訊息但不導頁
             if TherapyAppointment.objects.filter(therapist=therapist, scheduled_time=scheduled_dt).exists():
                 messages.error(request, "此時間已被預約，請選擇其他時間。")
                 return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-            # 正常建立預約流程
+            # 點數扣除與記錄
             user_profile.points -= appointment_cost
             user_profile.save()
 
@@ -1158,6 +1317,7 @@ def share_and_schedule(request):
                 description=f"預約心理師 {therapist.username} 諮商（1 小時）"
             )
 
+            # 分享授權
             DreamShareAuthorization.objects.update_or_create(
                 user=request.user,
                 therapist=therapist,
@@ -1213,6 +1373,24 @@ def user_appointments(request):
         'therapists': therapists,
         'confirmed_therapist_ids': confirmed_therapist_ids,
     })
+
+
+#使用者查看已預約時段
+@require_GET #只有使用者看得到
+def get_therapist_booked_slots(request, therapist_id):
+    appointments = TherapyAppointment.objects.filter(
+        therapist_id=therapist_id,
+        is_cancelled=False,
+        is_confirmed=True
+    )
+
+    # 修正這一行
+    booked_slots = [
+    localtime(appt.scheduled_time).strftime("%Y-%m-%dT%H:%M") 
+    for appt in appointments
+]
+
+    return JsonResponse({'booked_slots': booked_slots})
 
 
 #使用者取消未確認的預約
@@ -1286,9 +1464,10 @@ def consultation_schedule(request, user_id):
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師能查看預約資料")
 
-    # 只篩選未取消的預約
+    # 只查詢這個使用者的預約
     appointments = TherapyAppointment.objects.filter(
         therapist=request.user,
+        user__id=user_id,
         is_cancelled=False
     ).order_by('-scheduled_time')
 
@@ -1298,6 +1477,8 @@ def consultation_schedule(request, user_id):
     })
 
 
+
+# 心理師端可以看到的所有使用者預約時間
 @login_required
 def all_users_appointments(request):
     # 限制只有心理師可以使用
@@ -1682,33 +1863,6 @@ def ecpay_result(request):
 
 
 
-@login_required
-def dream_post_detail(request, post_id):
-    dream_post = get_object_or_404(DreamPost.objects.select_related('user__userprofile'), id=post_id) # 這裡您原先的代碼是 post，但html中是dream
-    # 增加瀏覽次數
-    dream_post.increase_view_count()
-    # 獲取評論
-    comments = dream_post.comments.all()
-    # 獲取相似夢境推薦
-    similar_dreams = get_similar_dreams(dream_post)
-    # 處理評論提交
-    if request.method == 'POST' and request.user.is_authenticated:
-        comment_content = request.POST.get('comment')
-        if comment_content:
-            DreamComment.objects.create(
-                dream_post=dream_post,
-                user=request.user,
-                content=comment_content
-            )
-            messages.success(request, '評論已提交！')
-            return redirect('dream_post_detail', post_id=post_id)
-    return render(request, 'dreams/dream_post_detail.html', { 
-        'dream': dream_post, 
-        'comments': comments,
-        'similar_dreams': similar_dreams
-    })
-
-
 
 
 
@@ -1738,56 +1892,13 @@ def toggle_comment_like(request, comment_id):
 
 
 
-from .models import DreamPost, DreamComment, CommentLike, DreamTrend
-@login_required
-def dream_post_detail(request, post_id):
-    dream_post = get_object_or_404(DreamPost.objects.select_related('user__userprofile'), id=post_id)
-    dream_post.increase_view_count()
-
-    # 取得評論及按讚狀態
-    comments = []
-    raw_comments = dream_post.comments.select_related('user__userprofile').order_by('created_at')
-    for comment in raw_comments:
-        comment_data = {
-            'id': comment.id,
-            'user': comment.user,
-            'content': comment.content,
-            'created_at': comment.created_at,
-            'likes_count': comment.likes.count(),
-            'is_liked_by_user': False
-        }
-        if request.user.is_authenticated:
-            comment_data['is_liked_by_user'] = CommentLike.objects.filter(comment=comment, user=request.user).exists()
-        comments.append(comment_data)
-
-    # 相似夢境推薦
-    similar_dreams = get_similar_dreams(dream_post)
-
-    # 處理評論提交
-    if request.method == 'POST' and request.user.is_authenticated:
-        comment_content = request.POST.get('comment')
-        if comment_content:
-            DreamComment.objects.create(
-                dream_post=dream_post,
-                user=request.user,
-                content=comment_content
-            )
-            messages.success(request, '評論已提交！')
-            return redirect('dream_post_detail', post_id=post_id)
-
-    return render(request, 'dreams/dream_post_detail.html', {
-        'dream': dream_post,
-        'comments': comments,
-        'similar_dreams': similar_dreams
-    })
-
 
 
 # 黃忠
 from django.db.models import Count 
 
 @login_required
-@require_POST # 只允許 POST 請求
+@require_POST
 def toggle_post_like(request, post_id):
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
@@ -1797,77 +1908,37 @@ def toggle_post_like(request, post_id):
 
     try:
         like = PostLike.objects.get(post=post, user=user)
-        like.delete() # 如果已按讚，則取消按讚
+        like.delete()
         liked = False
         message = '已取消按讚貼文'
     except PostLike.DoesNotExist:
-        PostLike.objects.create(post=post, user=user) # 如果未按讚，則按讚
+        PostLike.objects.create(post=post, user=user)
         liked = True
         message = '已按讚貼文'
 
-    # 獲取最新的按讚數量
-    likes_count = post.likes.count() # 這裡使用 post.likes，因為 PostLike 的 related_name='likes'
+    likes_count = post.likes.count()
     return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
 
 
+from django.http import JsonResponse
+@login_required
+@require_POST
+def toggle_comment_like(request, comment_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
 
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    user = request.user
 
-
-
-
-from django.utils import timezone
-import datetime
-from django.db.models import Count # 確保已導入 Count
-# 從 .models 導入相關模型，確保 DreamPost, PostLike, DreamTrend, DreamComment 等被導入
-from .models import DreamPost, PostLike, DreamTrend, DreamComment # 假設這些已經導入，若有其他模型請自行添加
-
-def community(request):
-    """夢境社群主頁"""
-    sort_type = request.GET.get('sort', 'popular') 
-    
-    base_query = DreamPost.objects.select_related('user__userprofile').annotate(
-        total_post_likes=Count('likes'),
-        total_comments=Count('comments') # 新增：計算評論數量
-    )
-
-    if sort_type == 'latest':
-        dream_posts_raw = base_query.order_by('-created_at')[:10]
-    else:
-        dream_posts_raw = base_query.order_by('-view_count')[:10]
-
-    posts_for_template = []
-    for post in dream_posts_raw:
-        post.is_liked_by_user = False # 預設為未按讚
-        if request.user.is_authenticated:
-            # 這行是關鍵，確保 CommentLike 導入正確，且 exists() 返回正確的值
-            post.is_liked_by_user = PostLike.objects.filter(post=post, user=request.user).exists()
-        posts_for_template.append(post)
-
-    # 獲取最新夢境趨勢 (保持不變，因為這個是給右側熱門主題用的)
     try:
-        latest_trend = DreamTrend.objects.latest('date')
-        trend_data = latest_trend.trend_data # 這個是關鍵詞趨勢，不是文章排行榜
-    except DreamTrend.DoesNotExist:
-        trend_data = {}
+        like = CommentLike.objects.get(comment=comment, user=user)
+        like.delete()
+        liked = False
+        message = '已取消按讚'
+    except CommentLike.DoesNotExist:
+        CommentLike.objects.create(comment=comment, user=user)
+        liked = True
+        message = '已按讚'
 
-    if trend_data:
-        trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
-
-    # --- BEGIN MODIFICATION: 獲取本週熱門文章排行榜數據 ---
-    today = timezone.now().date()
-    start_of_week = today - datetime.timedelta(days=today.weekday())
-    
-    top_this_week_posts = DreamPost.objects.filter(
-        created_at__date__gte=start_of_week 
-    ).annotate(
-        num_comments=Count('comments'),
-        num_likes=Count('likes')
-    ).order_by('-num_comments', '-view_count', '-num_likes')[:5] # 獲取前5篇
-    # --- END MODIFICATION ---
-
-    return render(request, 'dreams/community.html', {
-        'dream_posts': posts_for_template,
-        'trend_data': trend_data, # 關鍵詞趨勢，可以選擇性保留在右側或移除
-        'sort_type': sort_type,
-        'top_today_posts': top_this_week_posts, # 將變數名稱改為 top_this_week_posts
-    })
+    likes_count = comment.likes.count()
+    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})

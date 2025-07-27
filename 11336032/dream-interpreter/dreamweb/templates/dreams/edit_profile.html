@@ -1,3 +1,4 @@
+<!-- 這是編輯個人檔案 -->
 {# dreams/templates/dreams/edit_profile.html #}
 {% extends 'dreams/base.html' %}
 
@@ -78,6 +79,23 @@
                     <div class="form-text text-muted">{{ form.avatar.help_text }}</div>
                 </div>
 
+
+                {% if user.userprofile.is_therapist %}
+                <div class="mb-3">
+                    <label for="{{ form.coin_price.id_for_label }}" class="form-label">每小時點券價格</label>
+                    <input type="number" name="{{ form.coin_price.name }}" id="{{ form.coin_price.id_for_label }}"
+                        class="form-control" value="{{ form.coin_price.value|default_if_none:'' }}" min="0" step="100" placeholder="例如：1500">
+                    {% if form.coin_price.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.coin_price.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                
                 {# 稱號選擇欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.current_title.id_for_label }}" class="form-label">選擇稱號</label>
@@ -137,3 +155,5 @@
     </div>
 </div>
 {% endblock %}
+
+

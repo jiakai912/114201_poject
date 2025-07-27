@@ -1,119 +1,276 @@
 {% extends 'dreams/base.html' %}
-{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+{% load static %}
+{% load custom_filters %} {# 確保加載 custom_filters 以使用 safe_json_dumps #}
 
 {% block title %} - 個人檔案{% endblock %}
 
 {% block content %}
+<style>
+    /* 統一卡片頭部樣式 */
+    .card-header {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        padding: 15px 20px;
+        border-bottom: none;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+
+    /* 統一卡片主體樣式 */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 25px;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    /* 成就進度列表項目樣式 */
+    .achievement-progress-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        flex-direction: column; /* 讓內容垂直排列 */
+        align-items: flex-start; /* 內容左對齊 */
+    }
+    .achievement-progress-item:last-child {
+        border-bottom: none;
+    }
+    .achievement-progress-item .item-header {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 8px; /* 標題和描述間距 */
+    }
+    .achievement-progress-item .item-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+        width: 30px; /* 固定圖標寬度 */
+        text-align: center;
+        color: var(--primary-color); /* 預設圖標顏色 */
+    }
+    .achievement-progress-item .item-title-desc {
+        flex-grow: 1;
+    }
+    .achievement-progress-item .item-title {
+        font-weight: bold;
+        color: var(--text-color);
+        font-size: 1.1rem;
+    }
+    .achievement-progress-item .item-description {
+        color: #666;
+        font-size: 0.85rem;
+    }
+    .achievement-progress-item .item-badges {
+        margin-left: auto; /* 推到最右邊 */
+        flex-shrink: 0; /* 防止縮小 */
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .achievement-progress-item .item-badges .badge-title {
+        background-color: var(--info-color, #17a2b8); /* 信息藍或自定義 */
+        color: white;
+        padding: 0.4em 0.8em;
+        border-radius: 50px;
+        font-size: 0.75rem;
+    }
+    .achievement-progress-item .item-badges .badge-icon {
+        font-size: 1.4rem;
+        color: var(--warning-color, #ffc107); /* 警告黃或自定義 */
+    }
+
+    /* 進度條樣式 */
+    .achievement-progress-bar-container {
+        width: 100%; /* 進度條佔滿寬度 */
+        margin-top: 5px; /* 進度條與上方內容的間距 */
+    }
+    .progress {
+        height: 18px; /* 進度條高度 */
+        border-radius: 50px; /* 圓角進度條 */
+        background-color: #e9ecef;
+    }
+    .progress-bar {
+        background-color: var(--primary-color); /* 使用主要顏色 */
+        transition: width 0.6s ease;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+    .progress-bar.bg-success {
+        background-color: var(--success-color, #28a745) !important; /* 解鎖後綠色 */
+    }
+
+    /* 已解鎖標籤樣式 */
+    .achievement-unlocked-badge {
+        background-color: var(--success-color, #28a745);
+        color: white;
+        padding: 0.4em 0.8em;
+        border-radius: 50px;
+        font-size: 0.8rem;
+    }
+
+    /* 已解鎖成就卡片樣式 */
+    .unlocked-achievement-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* 輕微陰影 */
+        background-color: #fff;
+        transition: transform 0.2s ease;
+    }
+    .unlocked-achievement-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .unlocked-achievement-card .card-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+    }
+    .unlocked-achievement-card .card-title i {
+        font-size: 1.3rem;
+        margin-right: 8px;
+        color: var(--warning-color, #ffc107); /* 徽章圖標顏色 */
+    }
+    .unlocked-achievement-card .card-text.small {
+        font-size: 0.85rem;
+        color: #777;
+    }
+    .unlocked-achievement-card .badge-secondary {
+        background-color: #6c757d; /* 預設灰色徽章 */
+        font-size: 0.75rem;
+    }
+    .unlocked-achievement-card .unlocked-at {
+        font-size: 0.7rem;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    /* 確保 base.html 中的 --primary-color 和 --text-color 存在 */
+    :root {
+        --primary-color: #6a5acd;
+        --text-color: #333333;
+        --heart-color: #f44336;
+        --info-color: #17a2b8; /* Bootstrap info color */
+        --warning-color: #ffc107; /* Bootstrap warning color */
+        --success-color: #28a745; /* Bootstrap success color */
+        --secondary-color: #9370db; /* For progress bar perhaps */
+    }
+</style>
+
 <div class="container mt-5">
     <div class="page-header">
         <div class="dream-icon">
             <i class="fas fa-user-circle"></i>
         </div>
-        <h1>個人檔案</h1>
-        <p class="text-muted">這裡是您的個人資料頁面。</p>
+        <h1>我的個人檔案</h1>
+        <p class="text-muted">管理您的個人資訊和成就展示。</p>
     </div>
 
     <div class="row">
-        {# 左側個人資料卡片 #}
-        <div class="col-lg-6 mb-4">
-            <div class="card h-100">
+        <div class="col-md-5">
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h3><i class="fas fa-id-card me-2"></i>基本資料</h3>
+                    <h4><i class="fas fa-info-circle me-2"></i> 基本資料</h4>
                 </div>
                 <div class="card-body text-center">
-                    {# 頭像顯示 #}
                     {% if user_profile.avatar %}
-                        <img src="{{ user_profile.avatar.url }}" alt="{{ user.username }}的頭像" 
-                             class="rounded-circle mb-3 border border-3 border-primary" 
-                             style="width: 120px; height: 120px; object-fit: cover;">
+                        <img src="{{ user_profile.avatar.url }}" alt="頭像" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
                     {% else %}
-                        {# --- BEGIN MODIFICATION --- #}
-                        {# 使用ui-avatars.com作為預設頭像，更具動態性 #}
-                        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D8ABC&color=fff&size=120" 
-                             alt="{{ user.username }}的頭像" 
-                             class="rounded-circle mb-3 border border-3 border-primary" 
-                             style="width: 120px; height: 120px; object-fit: cover;">
-                        {# --- END MODIFICATION --- #}
+                        <img src="{% static 'images/default_avatar.png' %}" alt="預設頭像" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
                     {% endif %}
-
-                    <h5 class="card-title mt-3">{{ user.username }}</h5>
-                    <p class="card-text text-muted">{{ user.email }}</p>
-                    <p class="card-text small text-muted">註冊日期：{{ user.date_joined|date:"Y-m-d" }}</p>
-
-                    {# 當前稱號顯示 #}
-                    <p class="card-text">
-                        當前稱號：
-                        {% if user_profile.current_title %}
-                            <span class="badge bg-info">{{ user_profile.current_title }}</span>
+                    <h5 class="mb-1">{{ user.username }}</h5>
+                    <p class="text-muted small">{{ user.email }}</p>
+                    {# ✅ MODIFIED: 顯示目前選擇的展示稱號和徽章 (從 display_title/badge 獲取) #}
+                    <p class="card-text small text-muted">目前社群稱號：
+                        {% if user_profile.display_title %}
+                            <span class="badge bg-primary">{{ user_profile.display_title.name }}</span>
                         {% else %}
-                            <span class="badge bg-secondary">無稱號</span>
+                            <span class="badge bg-secondary">未設定</span>
                         {% endif %}
                     </p>
-                    {# 當前徽章顯示 #}
-                    <p class="card-text">
-                        當前徽章：
-                        {% if user_profile.current_badge_icon %}
-                            <i class="{{ user_profile.current_badge_icon }} fa-2x text-warning me-1"></i>
+                    <p class="card-text small text-muted">目前社群徽章：
+                        {% if user_profile.display_badge %}
+                            <i class="{{ user_profile.display_badge.badge_icon }} text-warning me-1"></i> <span class="badge bg-secondary">{{ user_profile.display_badge.name }}</span>
                         {% else %}
-                            <span class="text-muted">無徽章</span>
+                            <span class="text-muted">未設定</span>
                         {% endif %}
                     </p>
-
-                    {# 個人簡介 #}
-                    <div class="mt-4 text-start">
-                        <h6><i class="fas fa-info-circle me-1"></i>個人簡介</h6>
-                        {% if user_profile.bio %}
-                            <p class="card-text text-muted">{{ user_profile.bio|linebreaksbr }}</p>
-                        {% else %}
-                            <p class="card-text text-muted">您還沒有填寫個人簡介，點擊編輯個人資料來新增吧！</p>
-                        {% endif %}
-                    </div>
-
-                    <a href="{% url 'edit_profile' %}" class="btn btn-primary mt-4">
-                        <i class="fas fa-edit me-1"></i>編輯個人資料
-                    </a>
+                    <p class="card-text small text-muted mt-2">加入時間：{{ user.date_joined|date:"Y-m-d" }}</p>
+                    <p class="card-text">個人簡介：{{ user_profile.bio|default:"尚未填寫。" }}</p>
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary btn-sm mt-3">編輯個人檔案</a>
                 </div>
             </div>
         </div>
 
-        {# 右側統計與社群概覽 #}
-        <div class="col-lg-6 mb-4">
-            {# 最受歡迎的社群貼文 #}
-            <div class="card">
+        <div class="col-md-7">
+            {# ✅ START ADDITION: 選擇展示稱號和徽章的表單 #}
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h3><i class="fas fa-trophy me-2"></i> 我的成就</h3>
+                    <h4><i class="fas fa-paint-brush me-2"></i> 社群展示設定</h4>
                 </div>
                 <div class="card-body">
-                    {% if unlocked_achievements %}
-                        <div class="row">
+                    <form method="post" action="{% url 'profile' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.display_title.label_tag }}
+                            {{ form.display_title }}
+                            {% if form.display_title.errors %}
+                                <div class="text-danger">{{ form.display_title.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">選擇一個您已解鎖的成就，其對應的稱號將在社群中顯示。</small>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.display_badge.label_tag }}
+                            {{ form.display_badge }}
+                            {% if form.display_badge.errors %}
+                                <div class="text-danger">{{ form.display_badge.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">選擇一個您已解鎖的成就，其對應的徽章圖示將在社群中顯示。</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">保存設定</button>
+                    </form>
+                </div>
+            </div>
+            {# ✅ END ADDITION: 選擇展示稱號和徽章的表單 #}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-trophy me-2"></i> 已解鎖成就</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% if unlocked_achievements %}
                             {% for ua in unlocked_achievements %}
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100 bg-light">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            {% if ua.achievement.badge_icon %}
-                                                <i class="{{ ua.achievement.badge_icon }} me-2 text-success"></i>
-                                            {% endif %}
-                                            {{ ua.achievement.name }}
-                                        </h5>
-                                        <p class="card-text">{{ ua.achievement.description }}</p>
-                                        {% if ua.achievement.title %}
-                                            <p class="card-text small text-muted">獲得稱號：<span class="badge bg-secondary">{{ ua.achievement.title }}</span></p>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if ua.achievement.badge_icon %}
+                                            <i class="{{ ua.achievement.badge_icon }} me-2 text-warning"></i>
                                         {% endif %}
-                                        <p class="card-text small text-muted">解鎖於：{{ ua.unlocked_at|date:"Y-m-d" }}</p>
+                                        <strong>{{ ua.achievement.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ ua.achievement.description }}</small>
                                     </div>
-                                </div>
-                            </div>
+                                    <span class="badge bg-success">已解鎖</span>
+                                </li>
                             {% endfor %}
-                        </div>
-                        <div class="text-center mt-3">
-                            <a href="{% url 'user_achievements' %}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-trophy me-1"></i>查看所有成就
-                            </a>
-                        </div>
-                    {% else %}
-                        <p class="text-center">您還沒有解鎖任何成就。開始探索夢境，解鎖您的第一個成就吧！</p>
-                    {% endif %}
+                        {% else %}
+                            <li class="list-group-item text-center text-muted">您還沒有解鎖任何成就。</li>
+                        {% endif %}
+                    </ul>
+                    <div class="text-end mt-3">
+                        <a href="{% url 'user_achievements' %}" class="btn btn-outline-primary btn-sm">查看所有成就進度</a>
+                    </div>
                 </div>
             </div>
         </div>

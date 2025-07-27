@@ -1,4 +1,6 @@
 {% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+{% load custom_filters %} {# 確保加載 custom_filters 以使用 safe_json_dumps #}
 
 {% block title %}我的夢境貼文{% endblock %}
 
@@ -9,7 +11,7 @@
             <i class="fas fa-pencil-alt"></i>
         </div>
         <h1>我的夢境貼文</h1>
-        <p class="text-muted">與其他用戶分享夢境、交流分析，並尋找相似的夢境經歷。</p>
+        <p class="text-muted">在這裡管理您在社群中發布的夢境貼文。</p>
     </div>
     <div class="row">
         <nav class="col-md-3">
@@ -47,24 +49,39 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    {# --- BEGIN MODIFICATION --- #}
+                                    {# ✅ MODIFIED: 發文者頭像、用戶名、稱號和徽章的顯示邏輯 #}
                                     <div class="d-flex align-items-center mb-3">
-                                        {% if post.user and post.user.userprofile.avatar %}
-                                            <img src="{{ post.user.userprofile.avatar.url }}" alt="{{ post.user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
-                                        {% elif post.user %}
-                                            <img src="https://ui-avatars.com/api/?name={{ post.user.username }}&background=random&color=fff&size=30" alt="{{ post.user.username }}" class="rounded-circle me-2">
-                                        {% else %}
+                                        {% if post.is_anonymous %}
                                             <i class="fas fa-user-secret fa-2x text-muted me-2"></i>
+                                            <small class="text-muted">匿名發佈 <span class="badge bg-info ms-2">您的匿名貼文</span></small>
+                                        {% else %}
+                                            <div class="user-info-trigger d-flex align-items-center"
+                                                data-user-id="{{ post.user.id }}"
+                                                data-username="{{ post.user.username }}"
+                                                data-avatar-url="{% if post.user.userprofile.avatar %}{{ post.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
+                                                data-profile-url="{% url 'profile' %}" {# 注意: 'profile' 現在是當前用戶的，如要顯示他人資料需另設 URL #}
+                                                data-display-title="{{ post.author_display_title|default_if_none:'' }}"
+                                                data-display-badge-icon="{{ post.author_display_badge_icon|default_if_none:'' }}"
+                                                data-unlocked-achievements="{{ post.author_unlocked_achievements|safe_json_dumps }}"
+                                            >
+                                                <div class="dcard-avatar me-2">
+                                                    <img src="{% if post.user.userprofile.avatar %}{{ post.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
+                                                         alt="{{ post.user.username }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                                </div>
+                                                <div class="dcard-author-info flex-grow-1">
+                                                    <div class="dcard-author-name">
+                                                        {{ post.user.username }}
+                                                        {% if post.author_display_badge_icon %}
+                                                            <i class="{{ post.author_display_badge_icon }} display-badge" title="展示徽章"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="dcard-post-time text-muted small">
+                                                        </div>   
+                                                </div>
+                                            </div>
                                         {% endif %}
-                                        <small class="text-muted">
-                                            {% if post.is_anonymous %}匿名發佈{% else %}{{ post.user.username }}{% endif %}
-                                            {% if post.user and post.user.userprofile.current_title %}
-                                                <span class="badge bg-info ms-2">{{ post.user.userprofile.current_title }}</span>
-                                            {% endif %}
-                                        </small>
                                     </div>
-                                    {# --- END MODIFICATION --- #}
-                                    <p>{{ post.content|truncatewords:20 }}</p>
+                                    <p>{{ post.content|truncatechars:50 }}</p>
                                     <small class="text-muted">
                                         發佈時間：{{ post.created_at|date:"Y-m-d H:i" }} |
                                         {% if post.is_anonymous %}
