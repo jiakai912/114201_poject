@@ -1,3 +1,4 @@
+<!-- 這是編輯個人檔案 -->
 {# dreams/templates/dreams/edit_profile.html #}
 {% extends 'dreams/base.html' %}
 
@@ -28,10 +29,12 @@
                     <div class="form-text text-muted">用戶名通常不允許直接修改。</div>
                 </div>
 
-                {# 電子郵件欄位 - 直接渲染 form 字段，因為您已在 forms.py 中設定 widget #}
+                {# 電子郵件欄位 - 手動添加 class 和 placeholder #}
                 <div class="mb-3">
                     <label for="{{ form.email.id_for_label }}" class="form-label">電子郵件</label>
-                    {{ form.email }}
+                    <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" 
+                           class="form-control" value="{{ form.email.value|default_if_none:'' }}" 
+                           placeholder="{{ form.email.field.widget.attrs.placeholder|default:'您的電子郵件地址' }}" {% if form.email.field.required %}required{% endif %}>
                     {% if form.email.errors %}
                         <div class="text-danger mt-1">
                             {% for error in form.email.errors %}
@@ -41,10 +44,12 @@
                     {% endif %}
                 </div>
 
-                {# 個人簡介欄位 - 直接渲染 form 字段，因為您已在 forms.py 中設定 widget #}
+                {# 個人簡介欄位 - 手動添加 class 和 placeholder #}
                 <div class="mb-3">
                     <label for="{{ form.bio.id_for_label }}" class="form-label">個人簡介</label>
-                    {{ form.bio }}
+                    <textarea name="{{ form.bio.name }}" id="{{ form.bio.id_for_label }}" 
+                              class="form-control" rows="{{ form.bio.field.widget.attrs.rows|default:'4' }}" 
+                              placeholder="{{ form.bio.field.widget.attrs.placeholder|default:'寫一些關於您自己的內容...' }}">{{ form.bio.value|default_if_none:'' }}</textarea>
                     {% if form.bio.errors %}
                         <div class="text-danger mt-1">
                             {% for error in form.bio.errors %}
@@ -54,7 +59,7 @@
                     {% endif %}
                 </div>
 
-                {# 頭像上傳欄位 - 直接渲染 form 字段，因為您已在 forms.py 中設定 widget #}
+                {# 頭像上傳欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.avatar.id_for_label }}" class="form-label">頭像</label>
                     {% if form.instance.avatar %}
@@ -63,7 +68,7 @@
                             <p class="form-text text-muted">當前頭像</p>
                         </div>
                     {% endif %}
-                    {{ form.avatar }} {# 這將渲染 <input type="file"> #}
+                    <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" class="form-control">
                     {% if form.avatar.errors %}
                         <div class="text-danger mt-1">
                             {% for error in form.avatar.errors %}
@@ -74,10 +79,37 @@
                     <div class="form-text text-muted">{{ form.avatar.help_text }}</div>
                 </div>
 
-                {# 稱號選擇欄位 - 直接渲染 form 字段，並利用 forms.py 中設定的 widget #}
+
+                {% if user.userprofile.is_therapist %}
+                <div class="mb-3">
+                    <label for="{{ form.coin_price.id_for_label }}" class="form-label">每小時點券價格</label>
+                    <input type="number" name="{{ form.coin_price.name }}" id="{{ form.coin_price.id_for_label }}"
+                        class="form-control" value="{{ form.coin_price.value|default_if_none:'' }}" min="0" step="100" placeholder="例如：1500">
+                    {% if form.coin_price.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.coin_price.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                
+                {# 稱號選擇欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.current_title.id_for_label }}" class="form-label">選擇稱號</label>
-                    {{ form.current_title }} {# 這會渲染 <select> 和 <option>，forms.py 會自動加 class="form-select" #}
+                    {# 直接渲染表單字段，並用 JavaScript 確保添加 Bootstrap class #}
+                    {{ form.current_title }}
+                    <script>
+                        // 為 select 標籤手動添加 Bootstrap class
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const currentTitleSelect = document.getElementById('{{ form.current_title.id_for_label }}');
+                            if (currentTitleSelect) {
+                                currentTitleSelect.classList.add('form-select');
+                            }
+                        });
+                    </script>
                     {% if form.current_title.errors %}
                         <div class="text-danger mt-1">
                             {% for error in form.current_title.errors %}
@@ -87,10 +119,20 @@
                     {% endif %}
                 </div>
 
-                {# 徽章選擇欄位 - 直接渲染 form 字段，並利用 forms.py 中設定的 widget #}
+                {# 徽章選擇欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.current_badge_icon.id_for_label }}" class="form-label">選擇徽章</label>
-                    {{ form.current_badge_icon }} {# 這會渲染 <select> 和 <option>，forms.py 會自動加 class="form-select" #}
+                    {# 直接渲染表單字段，並用 JavaScript 確保添加 Bootstrap class #}
+                    {{ form.current_badge_icon }}
+                    <script>
+                        // 為 select 標籤手動添加 Bootstrap class
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const currentBadgeSelect = document.getElementById('{{ form.current_badge_icon.id_for_label }}');
+                            if (currentBadgeSelect) {
+                                currentBadgeSelect.classList.add('form-select');
+                            }
+                        });
+                    </script>
                     {% if form.current_badge_icon.errors %}
                         <div class="text-danger mt-1">
                             {% for error in form.current_badge_icon.errors %}
@@ -113,3 +155,5 @@
     </div>
 </div>
 {% endblock %}
+
+

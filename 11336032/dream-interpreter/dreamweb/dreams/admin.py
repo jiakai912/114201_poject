@@ -18,28 +18,27 @@ class DreamAdmin(admin.ModelAdmin):
         ("基本信息", {
             'fields': ('user', 'dream_content', 'interpretation', 'created_at')
         }),
-        # ✅ FIX: 修正 fieldsets 中的情緒字段名稱以匹配 models.py
         ("心理分析", {
-            'fields': ('stress_index', 'emotion_score', 'Happiness', 'Anxiety', 'Fear', 'Excitement', 'Sadness', 'advice')
+            'fields': ('stress_index', 'emotion_score',  'Happiness', 'Anxiety', 'Fear', 'Excitement', 'Sadness', 'advice', 'surprise', 'hope', 'confusion')
         }),
     )
 
+
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    # ✅ FIX: 更新 list_display 顯示新的 display_title 和 display_badge
     list_display = (
-        'user', 'points', 'is_therapist', 'is_verified_therapist', 'get_display_title_name', 'get_display_badge_name'
+        'user', 'points', 'is_therapist', 'is_verified_therapist','get_display_title_name', 'get_display_badge_name',
+        'current_title', 'current_badge_icon', 'coin_price'  # ✅ 加入這行
     )
     list_filter = ('is_therapist', 'is_verified_therapist')
-    search_fields = ('user__username', 'bio') # ✅ FIX: 移除不存在的 current_title
-    
-    # ✅ FIX: 更新 fieldsets 顯示新的 display_title 和 display_badge
+    search_fields = ('user__username', 'current_title', 'bio')
+
     fieldsets = (
         (None, {
-            'fields': ('user', 'points', 'is_therapist', 'is_verified_therapist')
+            'fields': ('user', 'points', 'is_therapist', 'is_verified_therapist', 'coin_price')  # ✅ 加入這行
         }),
         ("個人資料", {
-            'fields': ('bio', 'avatar', 'display_title', 'display_badge') # ✅ FIX: 使用新的字段
+            'fields': ('bio', 'avatar', 'display_title', 'display_badge','current_title', 'current_badge_icon')
         }),
     )
 
@@ -51,7 +50,6 @@ class UserProfileAdmin(admin.ModelAdmin):
     def get_display_badge_name(self, obj):
         return obj.display_badge.name if obj.display_badge else '-'
     get_display_badge_name.short_description = '社群展示徽章' # 定義欄位標題
-
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):

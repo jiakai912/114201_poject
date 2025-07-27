@@ -26,12 +26,6 @@ class DreamForm(forms.ModelForm):
         fields = ['dream_content', 'audio_file']
 
 
-# dreams/forms.py
-from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from .models import Dream, UserProfile, Achievement, UserAchievement
-
 # 用戶註冊表單，包含心理師身份選項
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -110,3 +104,14 @@ class UserProfileForm(forms.ModelForm):
         if commit:
             user_profile.save()
         return user_profile
+
+class TherapistProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['coin_price']
+        labels = {
+            'coin_price': '每小時點券價格',
+        }
+        widgets = {
+            'coin_price': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+        }

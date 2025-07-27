@@ -76,12 +76,12 @@
                                                         {% endif %}
                                                     </div>
                                                     <div class="dcard-post-time text-muted small">
-                                                        </div>
+                                                        </div>   
                                                 </div>
                                             </div>
                                         {% endif %}
                                     </div>
-                                    <p>{{ post.content|truncatewords:20 }}</p>
+                                    <p>{{ post.content|truncatechars:50 }}</p>
                                     <small class="text-muted">
                                         發佈時間：{{ post.created_at|date:"Y-m-d H:i" }} |
                                         {% if post.is_anonymous %}

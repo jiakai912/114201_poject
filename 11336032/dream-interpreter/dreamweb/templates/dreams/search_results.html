@@ -163,11 +163,11 @@
                                     {# Content Snippet #}
                                     <p class="dcard-search-card-content text-muted mb-0">
                                         {# --- BEGIN MODIFICATION: Truncate characters and add ellipsis --- #}
-                                        {{ dream.content|truncatechars:60 }} {# Truncate to 60 characters for ~20 Chinese words #}
+                                        {{ dream.content|truncatechars:40 }} {# Truncate to 60 characters for ~20 Chinese words #}
                                         {# --- END MODIFICATION --- #}
                                     </p>
                                 </div>
-                            </div>
+                            </div>   
                         </div>
                     {% endfor %}
                 </div>
