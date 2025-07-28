@@ -4,7 +4,7 @@ from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-
+    
 # 心理諮商個人資料擴展模型
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -19,6 +19,22 @@ class UserProfile(models.Model):
     # 新增 bio 和 avatar 字段
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
+
+    # 新增這兩個欄位，用於用戶選擇在社群中展示的稱號和徽章
+    display_title = models.ForeignKey(
+        'Achievement',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='displayed_by_title',
+        verbose_name="社群展示稱號"
+    )
+    display_badge = models.ForeignKey(
+        'Achievement',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='displayed_by_badge',
+        verbose_name="社群展示徽章"
+    )
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

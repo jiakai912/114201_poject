@@ -19,14 +19,15 @@ class DreamAdmin(admin.ModelAdmin):
             'fields': ('user', 'dream_content', 'interpretation', 'created_at')
         }),
         ("心理分析", {
-            'fields': ('stress_index', 'emotion_score', 'anxiety', 'fear', 'surprise', 'hope', 'confusion')
+            'fields': ('stress_index', 'emotion_score',  'Happiness', 'Anxiety', 'Fear', 'Excitement', 'Sadness', 'advice', 'surprise', 'hope', 'confusion')
         }),
     )
+
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
-        'user', 'points', 'is_therapist', 'is_verified_therapist',
+        'user', 'points', 'is_therapist', 'is_verified_therapist','get_display_title_name', 'get_display_badge_name',
         'current_title', 'current_badge_icon', 'coin_price'  # ✅ 加入這行
     )
     list_filter = ('is_therapist', 'is_verified_therapist')
@@ -37,15 +38,23 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('user', 'points', 'is_therapist', 'is_verified_therapist', 'coin_price')  # ✅ 加入這行
         }),
         ("個人資料", {
-            'fields': ('bio', 'avatar', 'current_title', 'current_badge_icon')
+            'fields': ('bio', 'avatar', 'display_title', 'display_badge','current_title', 'current_badge_icon')
         }),
     )
 
+    # ✅ ADD: 定義方法來顯示 ForeignKey 關聯的名稱，因為 list_display 無法直接顯示外鍵的屬性
+    def get_display_title_name(self, obj):
+        return obj.display_title.name if obj.display_title else '-'
+    get_display_title_name.short_description = '社群展示稱號' # 定義欄位標題
+
+    def get_display_badge_name(self, obj):
+        return obj.display_badge.name if obj.display_badge else '-'
+    get_display_badge_name.short_description = '社群展示徽章' # 定義欄位標題
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'title', 'condition_key', 'condition_value')
-    search_fields = ('name', 'category', 'condition_key')
+    list_display = ('name', 'category', 'title', 'badge_icon', 'condition_key', 'condition_value') # ✅ FIX: 增加 badge_icon 顯示
+    search_fields = ('name', 'category', 'condition_key', 'title') # ✅ FIX: 增加 title 到搜尋
     list_filter = ('category',)
 
 
