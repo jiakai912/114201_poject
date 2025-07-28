@@ -87,4 +87,7 @@ urlpatterns = [
     path('pointshop/', views.pointshop, name='pointshop'),
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
+
+
+    path('profile/<int:user_id>/', views.profile_view_other, name='profile_view_other'),
 ]
