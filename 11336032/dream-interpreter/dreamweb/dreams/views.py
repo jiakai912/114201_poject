@@ -990,8 +990,6 @@ def delete_dream_post(request, post_id):
 def search_dreams(request):
     """搜索夢境"""
     query = request.GET.get('q', '')
-    
-    # 初步獲取所有夢境
     dreams = DreamPost.objects.all()
 
     # 根據搜尋關鍵字過濾夢境
@@ -1001,9 +999,13 @@ def search_dreams(request):
             Q(title__icontains=query)
         )
     
-    # 傳遞資料到模板
+    # ✅ 新增：分頁邏輯
+    paginator = Paginator(dreams.order_by('-created_at'), 9) # 每頁顯示 9 個貼文
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'dreams/search_results.html', {
-        'dreams': dreams,
+        'page_obj': page_obj,  # ✅ 傳遞分頁物件，而不是原始的 'dreams'
         'query': query
     })
 
@@ -1942,3 +1944,31 @@ def toggle_comment_like(request, comment_id):
 
     likes_count = comment.likes.count()
     return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+
+
+
+
+@login_required
+def profile_view_other(request, user_id):
+    """
+    查看其他使用者的個人檔案。
+    """
+    target_user = get_object_or_404(User, id=user_id)
+    
+    # 防止用戶查看自己的 profile_view_other (可選，但通常會導向標準的 profile 頁面)
+    if target_user == request.user:
+        return redirect('profile') # 導向自己的個人檔案頁面
+
+    try:
+        user_profile_instance = target_user.userprofile
+    except UserProfile.DoesNotExist:
+        user_profile_instance = None 
+    unlocked_achievements = UserAchievement.objects.filter(user=target_user).select_related('achievement').order_by('-unlocked_at')
+
+    context = {
+        'target_user': target_user,
+        'user_profile': user_profile_instance,
+        'unlocked_achievements': unlocked_achievements,
+        'is_other_user_profile': True, # 用於模板判斷是否顯示編輯按鈕等
+    }
+    return render(request, 'dreams/profile_view_other.html', context)
