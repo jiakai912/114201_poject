@@ -285,23 +285,25 @@
                         {% if user.userprofile.is_therapist and user.userprofile.is_verified_therapist %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'shared_with_me' %}">
-                            <i class="fas fa-user-friends me-1"></i>心理師專屬後台
+                            <i class="fas fa-user-friends me-1"></i>心理師後台
                             </a>
                         </li>
                         {% endif %}
 
                         <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownSettings" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-cog me-1"></i>設定
+                            {% if user.is_authenticated and user.userprofile.avatar %}
+                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user-circle me-1"></i> {# Default icon if no avatar #}
+                            {% endif %}
+                            <span>{{ user.username }}</span> {# Display username next to avatar #}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownSettings" style="min-width: 160px;">
-                            <!-- 點券餘額區塊：圖示上方，數字下方置中 -->
                             <li class="px-3 py-3 d-flex flex-column align-items-center" style="background:rgb(255, 255, 255); border-bottom: 1px solid #dee2e6; min-width: 140px;">
-                            <i class="fas fa-coins text-warning fs-1 mb-2"></i>
-                            <span class="badge bg-primary  fs-6 px-3 py-2">{{ request.user.userprofile.points }}</span>
+                                <i class="fas fa-coins text-warning fs-1 mb-2"></i>
+                                <span class="badge bg-primary fs-6 px-3 py-2">{{ request.user.userprofile.points }}</span>
                             </li>
-                            
-                            <!-- 功能選單 -->
                             <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2"></i>個人檔案</a></li>
                             <li><a class="dropdown-item d-flex align-items-center" href="{% url 'pointshop' %}"><i class="fas fa-coins me-2"></i>點券商店</a></li>
                             <li><a class="dropdown-item d-flex align-items-center" href="{% url 'achievements' %}"><i class="fas fa-trophy me-2"></i>成就</a></li>

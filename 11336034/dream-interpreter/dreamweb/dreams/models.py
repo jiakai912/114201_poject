@@ -20,6 +20,8 @@ class UserProfile(models.Model):
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
 
+    allow_contact_by_therapist = models.BooleanField(default=False)
+
     # 新增這兩個欄位，用於用戶選擇在社群中展示的稱號和徽章
     display_title = models.ForeignKey(
         'Achievement',
@@ -38,7 +40,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
-
+    
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -285,3 +287,20 @@ class PostLike(models.Model):
 
     def __str__(self):
         return f"{self.user.username} 喜歡 {self.post.title} 貼文"
+    
+
+
+class ChatInvitation(models.Model):
+    therapist = models.ForeignKey(User, related_name='sent_invitations', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='received_invitations', on_delete=models.CASCADE)
+    status_choices = [
+        ('pending', '待回覆'),
+        ('accepted', '接受'),
+        ('rejected', '拒絕'),
+    ]
+    status = models.CharField(max_length=10, choices=status_choices, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('therapist', 'user')

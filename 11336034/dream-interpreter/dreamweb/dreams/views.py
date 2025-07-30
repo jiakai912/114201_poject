@@ -51,6 +51,10 @@ from django.views.decorators.http import require_GET
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import localtime #已預約時段變成台灣地區時間
 
+
+
+
+
 # 燈箱
 def welcome_page(request):
     return render(request, 'dreams/welcome.html')
@@ -238,7 +242,8 @@ def profile_view(request):
 
 
 # 檢查並解鎖成就
-def check_and_unlock_achievements(user):
+def check_and_unlock_achievements(request):
+    user = request.user
     user_data = {
         'parse_count': Dream.objects.filter(user=user).count(),
         'post_count': DreamPost.objects.filter(user=user).count(),
@@ -249,7 +254,7 @@ def check_and_unlock_achievements(user):
 
     all_achievements = Achievement.objects.all()
 
-    for achievement in all_achievements: # 遍歷所有成就
+    for achievement in all_achievements:  # 遍歷所有成就
         current_progress = user_data.get(achievement.condition_key, 0)
 
         if current_progress >= achievement.condition_value:
@@ -260,7 +265,7 @@ def check_and_unlock_achievements(user):
                     achievement=achievement,
                     unlocked_at=timezone.now()
                 )
-                messages.info(user, f"恭喜！您解鎖了成就：『{achievement.name}』！") # 解鎖時給予通知
+                messages.info(request, f"恭喜！您解鎖了成就：『{achievement.name}』！")  # 解鎖時給予通知
 
 
 # 載入環境變量
@@ -332,7 +337,7 @@ def dream_form(request):
                 )
 
                 # ✅ 解鎖成就
-                check_and_unlock_achievements(request.user)
+                check_and_unlock_achievements(request)
 
                 # ✅ 扣除 20 點券
                 user_profile.points -= 20
@@ -990,8 +995,6 @@ def delete_dream_post(request, post_id):
 def search_dreams(request):
     """搜索夢境"""
     query = request.GET.get('q', '')
-    
-    # 初步獲取所有夢境
     dreams = DreamPost.objects.all()
 
     # 根據搜尋關鍵字過濾夢境
@@ -1001,9 +1004,13 @@ def search_dreams(request):
             Q(title__icontains=query)
         )
     
-    # 傳遞資料到模板
+    # ✅ 新增：分頁邏輯
+    paginator = Paginator(dreams.order_by('-created_at'), 9) # 每頁顯示 9 個貼文
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'dreams/search_results.html', {
-        'dreams': dreams,
+        'page_obj': page_obj,  # ✅ 傳遞分頁物件，而不是原始的 'dreams'
         'query': query
     })
 
@@ -1227,18 +1234,65 @@ def cancel_share(request, therapist_id):
 
 
 #心理師可以看到分享的列表    
+from django.db.models import Max
+from django.db.models.functions import Greatest
+
+from django.http import HttpResponseForbidden
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Dream, DreamShareAuthorization, ChatInvitation, User
+
 @login_required
 def shared_with_me(request):
-    """心理師查看所有曾經分享過的使用者（包含取消分享）"""
+    """心理師查看所有曾經分享過的使用者（包含取消分享），並顯示情緒指數排行榜與聊天室邀請狀態"""
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看分享名單")
 
+    # 所有曾經分享的使用者（包含取消）
     shares = DreamShareAuthorization.objects.filter(
         therapist=request.user,
-        # is_active=True  # 改成全部都抓
     ).select_related('user')
 
-    return render(request, 'dreams/shared_users.html', {'shared_users': shares})
+    # 情緒指數排行榜（所有使用者，不限是否分享）
+    leaderboard_qs = (
+        Dream.objects.values('user_id')
+        .annotate(
+            max_anxiety=Max('Anxiety'),
+            max_fear=Max('Fear'),
+            max_sadness=Max('Sadness'),
+        )
+        .annotate(
+            max_emotion=Greatest('max_anxiety', 'max_fear', 'max_sadness')
+        )
+        .order_by('-max_emotion')[:10]
+    )
+
+    # 取聊天室邀請狀態（僅限排行榜上的人）
+    leaderboard_user_ids = [entry['user_id'] for entry in leaderboard_qs]
+    invitations = ChatInvitation.objects.filter(
+        therapist=request.user,
+        user_id__in=leaderboard_user_ids
+    )
+    invitation_status_dict = {inv.user_id: inv.status for inv in invitations}
+
+    # 組合排行榜資料
+    leaderboard = []
+    for i, entry in enumerate(leaderboard_qs, start=1):
+        leaderboard.append({
+            'anonymous_name': f"User#{str(i).zfill(3)}",
+            'user_id': entry['user_id'],
+            'max_anxiety': entry['max_anxiety'],
+            'max_fear': entry['max_fear'],
+            'max_sadness': entry['max_sadness'],
+            'max_emotion': entry['max_emotion'],
+            'invitation_status': invitation_status_dict.get(entry['user_id'], 'none'),
+        })
+
+    return render(request, 'dreams/shared_users.html', {
+        'shared_users': shares,
+        'leaderboard': leaderboard,
+    })
+
 
 
 #心理師可以看到分享的夢境
@@ -1583,14 +1637,14 @@ def my_clients(request):
 def chat_with_client(request, user_id):
     chat_user = get_object_or_404(User, id=user_id)
 
-    # 先檢查授權
-    authorized = DreamShareAuthorization.objects.filter(
-        therapist=request.user,
-        user=chat_user,
-        is_active=True
-    ).exists()
-    if not authorized:
-        return HttpResponseForbidden("尚未獲得該使用者授權")
+    # 移除授權檢查，心理師可以跟所有使用者聊天
+    # authorized = DreamShareAuthorization.objects.filter(
+    #     therapist=request.user,
+    #     user=chat_user,
+    #     is_active=True
+    # ).exists()
+    # if not authorized:
+    #     return HttpResponseForbidden("尚未獲得該使用者授權")
 
     messages = ChatMessage.objects.filter(
         Q(sender=request.user, receiver=chat_user) |
@@ -1607,6 +1661,7 @@ def chat_with_client(request, user_id):
         'messages': messages,
         'chat_user': chat_user,
     })
+
 
 
 @login_required
@@ -1942,3 +1997,130 @@ def toggle_comment_like(request, comment_id):
 
     likes_count = comment.likes.count()
     return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+
+@login_required
+def profile_view_other(request, user_id):
+    """
+    查看其他使用者的個人檔案。
+    """
+    target_user = get_object_or_404(User, id=user_id)
+    
+    # 防止用戶查看自己的 profile_view_other (可選，但通常會導向標準的 profile 頁面)
+    if target_user == request.user:
+        return redirect('profile') # 導向自己的個人檔案頁面
+
+    try:
+        user_profile_instance = target_user.userprofile
+    except UserProfile.DoesNotExist:
+        user_profile_instance = None 
+    unlocked_achievements = UserAchievement.objects.filter(user=target_user).select_related('achievement').order_by('-unlocked_at')
+
+    context = {
+        'target_user': target_user,
+        'user_profile': user_profile_instance,
+        'unlocked_achievements': unlocked_achievements,
+        'is_other_user_profile': True, # 用於模板判斷是否顯示編輯按鈕等
+    }
+    return render(request, 'dreams/profile_view_other.html', context)
+
+
+# 聊天室邀請
+from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+
+@login_required
+@require_POST
+def send_chat_invitation(request):
+    if not request.user.userprofile.is_therapist:
+        return HttpResponseForbidden("只有心理師可以發送邀請")
+
+    user_id = request.POST.get('user_id')
+    if not user_id:
+        return JsonResponse({'error': '缺少 user_id'}, status=400)
+
+    try:
+        target_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': '使用者不存在'}, status=404)
+
+    invitation, created = ChatInvitation.objects.get_or_create(
+        therapist=request.user,
+        user=target_user,
+        defaults={'status': 'pending'}
+    )
+
+    if not created and invitation.status == 'pending':
+        return JsonResponse({'message': '邀請已送出，等待使用者回覆'})
+
+    if invitation.status in ['accepted', 'rejected']:
+        # 可以選擇更新狀態或拒絕重複邀請，這裡示範更新為 pending
+        invitation.status = 'pending'
+        invitation.save()
+        return JsonResponse({'message': '邀請已重新送出'})
+
+    return JsonResponse({'message': '邀請送出成功'})
+
+@login_required
+def leaderboard_view(request):
+    # 取得排行榜資料（你原本邏輯）
+    leaderboard = get_leaderboard_data()
+
+    # 取心理師對每位使用者的邀請狀態
+    if request.user.userprofile.is_therapist:
+        invitations = ChatInvitation.objects.filter(
+            therapist=request.user,
+            user_id__in=[u.user_id for u in leaderboard]
+        )
+        invitation_dict = {inv.user_id: inv for inv in invitations}
+    else:
+        invitation_dict = {}
+
+    return render(request, 'dreams/leaderboard.html', {
+        'leaderboard': leaderboard,
+        'chat_invitations': invitation_dict,
+    })
+
+
+@login_required
+def therapist_list(request):
+    therapists = User.objects.filter(userprofile__is_therapist=True)
+
+    # 使用者登入狀態且非心理師，才給他邀請列表
+    chat_invitations = []
+    if not request.user.userprofile.is_therapist:
+        chat_invitations = ChatInvitation.objects.filter(user=request.user).order_by('-created_at')
+
+    return render(request, 'dreams/therapist_list.html', {
+        'therapists': therapists,
+        'chat_invitations': chat_invitations,
+    })
+
+
+from django.views.decorators.http import require_POST
+from django.utils.timezone import now
+
+@require_POST
+@login_required
+def respond_invitation(request, invitation_id):
+    action = request.POST.get('action')
+    try:
+        invitation = ChatInvitation.objects.get(id=invitation_id, user=request.user)
+    except ChatInvitation.DoesNotExist:
+        return HttpResponseForbidden("無效的邀請")
+
+    if invitation.status != 'pending':
+        return redirect('therapist_list')
+
+
+    if action == 'accept':
+        invitation.status = 'accepted'
+    elif action == 'reject':
+        invitation.status = 'rejected'
+    else:
+        return HttpResponseForbidden("無效操作")
+
+    invitation.responded_at = now()
+    invitation.save()
+    return redirect('therapist_list')
+

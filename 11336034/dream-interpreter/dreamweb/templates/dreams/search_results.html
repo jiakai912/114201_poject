@@ -1,5 +1,6 @@
 {% extends 'dreams/base.html' %}
-{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+{% load static %}
+{% load app_filters %} {# ✅ 新增這行來載入自定義濾鏡，請確保你已按照說明創建了 dreams/templatetags/app_filters.py #}
 
 {% block title %} - 夢境搜尋結果{% endblock %}
 
@@ -15,6 +16,7 @@
         background-color: white; /* Ensure card background is white */
         display: flex; /* Make card content flex to push footer down */
         flex-direction: column; /* Arrange content vertically */
+        position: relative; /* ✅ 新增：為了 stretched-link 正確作用 */
     }
 
     .dcard-search-card:hover {
@@ -46,12 +48,12 @@
     }
 
     /* Adjustments for the search input group */
-    .search-form .input-group-lg .form-control {
+    .search-form .input-group .form-control { /* ✅ 移除了 input-group-lg */
         border-color: var(--primary-color); /* Match border color to primary */
         box-shadow: none; /* Remove default focus shadow */
     }
 
-    .search-form .input-group-lg .form-control:focus {
+    .search-form .input-group .form-control:focus { /* ✅ 移除了 input-group-lg */
         border-color: var(--primary-color);
         box-shadow: 0 0 0 0.25rem rgba(106, 90, 205, 0.25); /* Custom focus shadow */
     }
@@ -87,7 +89,7 @@
         </div>
         <h1>夢境搜尋結果</h1>
         {% if query %}
-            <p class="text-muted">根據您的搜尋條件：**"{{ query }}"**，共找到 **{{ dreams|length }}** 篇相關夢境。</p>
+            <p class="text-muted">根據您的搜尋條件：**"{{ query }}"**，共找到 **{{ page_obj.paginator.count }}** 篇相關夢境。</p>
         {% else %}
             <p class="text-muted">請輸入關鍵字進行搜尋。</p>
         {% endif %}
@@ -117,7 +119,7 @@
 
         <main class="col-md-9">
             <form method="get" class="search-form mb-5">
-                <div class="input-group input-group-lg">
+                <div class="input-group"> {# ✅ 移除了 input-group-lg 類 #}
                     <input type="text" name="q" value="{{ query|default:'' }}" class="form-control rounded-start-pill py-3" placeholder="搜尋夢境..." />
                     <button type="submit" class="btn btn-primary rounded-end-pill px-4">
                         <i class="fas fa-search me-2"></i> 搜尋
@@ -125,16 +127,17 @@
                 </div>
             </form>
 
-            {% if dreams %}
+            {% if page_obj.object_list %} {# ✅ 使用 page_obj.object_list 來檢查是否有內容 #}
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                    {% for dream in dreams %}
+                    {% for dream in page_obj.object_list %} {# ✅ 迭代 page_obj.object_list 而不是原始的 dreams #}
                         <div class="col">
-                            <div class="card h-100 dcard-search-card">
+                            <div class="card h-100 dcard-search-card"> {# ✅ 添加 position-relative 樣式已內聯在上面，這裡不用重複添加 #}
+                                <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="stretched-link text-decoration-none text-dark"></a> {# ✅ 將連結放在這裡，並使用 stretched-link #}
                                 <div class="card-body p-4">
                                     {# User Info Block #}
                                     <div class="d-flex align-items-center mb-3">
                                         {% if dream.is_anonymous %}
-                                            <i class="fas fa-user-secret fa-2x text-muted me-3" style="width: 45px; height: 45px;"></i> {# Adjusted size for better visual balance #}
+                                            <i class="fas fa-user-secret fa-2x text-muted me-3" style="width: 45px; height: 45px;"></i>
                                             <div class="dcard-user-info-meta">
                                                 <small class="fw-bold text-muted d-block">匿名發佈</small>
                                                 <small class="text-muted d-block">{{ dream.created_at|date:"Y-m-d H:i" }}</small>
@@ -142,35 +145,76 @@
                                         {% else %}
                                             {% if dream.user.userprofile.avatar %}
                                                 <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
-                                                     class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;"> {# Larger avatar #}
+                                                     class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
                                             {% else %}
                                                 <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=45"
-                                                     alt="{{ dream.user.username }}" class="rounded-circle me-3"> {# Larger default avatar #}
+                                                     alt="{{ dream.user.username }}" class="rounded-circle me-3">
                                             {% endif %}
                                             <div class="dcard-user-info-meta">
-                                                <small class="fw-bold text-dark d-block">{{ dream.user.username }}</small>
+                                                <small class="fw-bold text-dark d-block">
+                                                    {# 用戶名 hover card 觸發器 - 這個 span 需要保持在 a 標籤裡面，以便 hover card 功能正常 #}
+                                                    <span class="user-info-trigger"
+                                                        data-user-id="{{ dream.user.id }}"
+                                                        data-username="{{ dream.user.username }}"
+                                                        data-avatar-url="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{{ 'https://ui-avatars.com/api/?name='|add:dream.user.username|urlencode:'@ /'|add:'&background=0D8ABC&color=fff&size=45' }}{% endif %}"
+                                                        data-display-title="{{ dream.author_display_title|default:'' }}"
+                                                        data-unlocked-achievements="{{ dream.author_unlocked_achievements|safe_json }}"
+                                                        data-profile-url="{% url 'profile_view_other' dream.user.id %}" {# 請確保你有這個 URL #}
+                                                    >
+                                                        {{ dream.user.username }}
+                                                        {% if dream.author_display_badge_icon %}
+                                                            <i class="{{ dream.author_display_badge_icon }} display-badge"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </small>
                                                 <small class="text-muted d-block">{{ dream.created_at|date:"Y-m-d H:i" }}</small>
                                             </div>
                                         {% endif %}
                                     </div>
                                     
-                                    {# Post Title #}
+                                    {# Post Title - 這裡不再有 a 標籤 #}
                                     <h5 class="dcard-search-card-title mb-2">
-                                        <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="text-decoration-none text-dark" style="font-weight: bold;">
-                                            {{ dream.title }}
-                                        </a>
+                                        {{ dream.title }}
                                     </h5>
                                     {# Content Snippet #}
                                     <p class="dcard-search-card-content text-muted mb-0">
-                                        {# --- BEGIN MODIFICATION: Truncate characters and add ellipsis --- #}
-                                        {{ dream.content|truncatechars:50 }} {# Truncate to 60 characters for ~20 Chinese words #}
-                                        {# --- END MODIFICATION --- #}
+                                        {{ dream.content|truncatechars:40 }}
                                     </p>
                                 </div>
-                            </div>
+                            </div>   
                         </div>
                     {% endfor %}
                 </div>
+
+                {# ✅ 新增：分頁導航 #}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?q={{ query|urlencode }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="?q={{ query|urlencode }}&page={{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?q={{ query|urlencode }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+
             {% else %}
                 <div class="alert alert-warning" role="alert">
                     <h4 class="alert-heading">沒有找到相關夢境。</h4>

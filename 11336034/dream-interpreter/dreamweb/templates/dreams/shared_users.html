@@ -1,5 +1,3 @@
-<!-- 這是心理師看到的使用者資料 -->
-
 {% extends 'dreams/base.html' %}
 
 {% block title %}已與您分享夢境的使用者{% endblock %}
@@ -7,46 +5,197 @@
 {% block content %}
 <div class="container mt-5">
 
-    <div class="page-header">
-        <div class="dream-icon">
-            <i class="fas fa-user-friends"></i>
-        </div>
-        <h1>已與您分享夢境的使用者</h1>
-        <p class="text-muted">在這裡查看哪些使用者與您分享了他們的夢境。</p>
-        <a href="{% url 'all_users_appointments' %}" class="btn btn-outline-dark rounded-pill shadow-sm mt-2">
-            <i class="fas fa-calendar-alt me-1"></i> 查看所有使用者預約總覽
-        </a>
+  <div class="page-header text-center mb-4">
+    <div class="dream-icon">
+      <i class="fas fa-user-friends"></i>
     </div>
+    <h1>已與您分享夢境的使用者</h1>
+    <p class="text-muted">在這裡查看哪些使用者與您分享了他們的夢境。</p>
+    <a href="{% url 'all_users_appointments' %}" class="btn btn-outline-purple rounded-pill shadow-sm mt-2">
+      <i class="fas fa-calendar-alt me-1"></i> 查看所有使用者預約總覽
+    </a>
+  </div>
 
-    <!-- dreams/shared_users.html -->
-    <ul class="list-group">
-    {% for share in shared_users %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ share.user.username }}</span>
+  <div class="card shadow-lg rounded-4 border-0 mb-5">
+    <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-top-4">
+      <h5  class="mb-0"><i class="fas fa-chart-line me-2"></i>匿名情緒指數排行榜（全體使用者）</h5>
+    </div>
+    <div class="card-body bg-light rounded-bottom-4">
+
+      <!-- 搜尋與篩選 -->
+      <div class="row mb-3 gx-2 gy-2 align-items-center">
+        <div class="col-md-4">
+          <input id="searchInput" type="search" class="form-control" style="font-size:16px; height:34px;" placeholder="搜尋匿名名稱" oninput="filterTable()">
+        </div>
+        <div class="col-md-2">
+          <input id="minAnxiety" type="number" min="0" max="100" class="form-control" style="font-size:16px; height:34px;" placeholder="焦慮 ≥" oninput="filterTable()">
+        </div>
+        <div class="col-md-2">
+          <input id="minFear" type="number" min="0" max="100" class="form-control" style="font-size:16px; height:34px;" placeholder="恐懼 ≥" oninput="filterTable()">
+        </div>
+        <div class="col-md-2">
+          <input id="minSadness" type="number" min="0" max="100" class="form-control" style="font-size:16px; height:34px;" placeholder="悲傷 ≥" oninput="filterTable()">
+        </div>
+      </div>
+
+      {% if leaderboard %}
+      <div class="table-responsive">
+        <table id="leaderboardTable" class="table table-hover align-middle text-center">
+          <thead class="table-primary">
+            <tr>
+              <th>名次</th>
+              <th>匿名名稱</th>
+              <th>情緒總分</th>
+              <th>焦慮</th>
+              <th>恐懼</th>
+              <th>悲傷</th>
+              <th>等級</th>
+              <th>聊天室</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in leaderboard %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td class="username">{{ user.anonymous_name }}</td>
+              <td><strong>{{ user.max_emotion }}</strong></td>
+              <td class="anxiety">{{ user.max_anxiety }}</td>
+              <td class="fear">{{ user.max_fear }}</td>
+              <td class="sadness">{{ user.max_sadness }}</td>
+              <td>
+                {% if user.max_emotion >= 80 %}
+                  <span class="badge bg-danger"><i class="fas fa-bolt"></i> 高</span>
+                {% elif user.max_emotion >= 50 %}
+                  <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle"></i> 中</span>
+                {% else %}
+                  <span class="badge bg-success"><i class="fas fa-smile"></i> 低</span>
+                {% endif %}
+              </td>
+                {% for user in leaderboard %}
+                <tr>
+                    <td>{{ user.anonymous_name }}</td>
+                    <td>{{ user.max_emotion }}</td>
+                    <td>
+                    {% if user.invitation_status == 'pending' %}
+                        已邀請（等待回覆）
+                    {% elif user.invitation_status == 'accepted' %}
+                        已接受
+                    {% elif user.invitation_status == 'rejected' %}
+                        已拒絕
+                    {% else %}
+                        <form method="post" action="{% url 'send_chat_invitation' %}" class="d-inline-block send-invitation-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                        <button type="submit" class="btn btn-sm btn-primary">邀請聊天</button>
+                        </form>
+                    {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> 排行榜目前沒有資料。
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+    <!-- 已分享夢境使用者列表 -->
+    <div class="card shadow rounded-4">
+    <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-top-4 d-flex align-items-center justify-content-between">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i>與您分享夢境的使用者</h5>
+        <small class="text-white-50">共 {{ shared_users|length }} 位使用者</small>
+    </div>
+    <ul class="list-group list-group-flush rounded-bottom-4">
+        {% for share in shared_users %}
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
         <div>
-            <a href="{% url 'consultation_schedule' user_id=share.user.id %}" class="btn btn-sm btn-outline-info mb-1">
-            查看預約時間
+            <strong class="me-2">{{ share.user.username }}</strong>
+            {% if not share.is_active %}
+            <span class="badge bg-secondary ms-1" title="已取消分享夢境"><i class="fas fa-ban"></i> 已取消</span>
+            {% endif %}
+        </div>
+        <div class="btn-group btn-group-sm" role="group" aria-label="操作按鈕群組">
+            <a href="{% url 'consultation_schedule' user_id=share.user.id %}" class="btn btn-outline-info" title="查看預約時間">
+            <i class="fas fa-calendar-alt me-1"></i> 預約時間
             </a>
 
             {% if share.is_active %}
-            <a href="{% url 'view_user_dreams' share.user.id %}" class="btn btn-sm btn-outline-primary me-2">
-                查看夢境紀錄
+            <a href="{% url 'view_user_dreams' share.user.id %}" class="btn btn-outline-primary" title="查看夢境紀錄">
+            <i class="fas fa-book-open me-1"></i> 夢境紀錄
             </a>
             {% else %}
-            <button class="btn btn-sm btn-secondary me-2" disabled>已取消分享夢境</button>
+            <button class="btn btn-secondary" disabled title="已取消分享夢境">
+            <i class="fas fa-lock me-1"></i> 已取消
+            </button>
             {% endif %}
 
-            <a href="{% url 'chat_with_client' share.user.id %}" class="btn btn-sm btn-outline-success">
-            進入聊天室
+            <a href="{% url 'chat_with_client' share.user.id %}" class="btn btn-outline-success" title="進入聊天室">
+            <i class="fas fa-comments me-1"></i> 聊天室
             </a>
         </div>
         </li>
-    {% empty %}
-        <li class="list-group-item text-muted">目前尚無使用者與您分享夢境。</li>
-    {% endfor %}
+        {% empty %}
+        <li class="list-group-item text-muted text-center fst-italic py-4">目前尚無使用者與您分享夢境。</li>
+        {% endfor %}
     </ul>
+    </div>
+
 </div>
+
+<style>
+  .btn-outline-purple {
+    border: 1px solid #8f75db;
+    color: #8f75db;
+    transition: all 0.3s ease;
+  }
+  .btn-outline-purple:hover {
+    background-color: #8f75db;
+    color: white;
+  }
+  .animation-fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #leaderboardTable th {
+  padding-left: 1.25rem;   /* 左邊距離增加 */
+  padding-right: 1.25rem;  /* 右邊距離增加 */
+  white-space: nowrap;     /* 避免標題換行 */
+  letter-spacing: 0.03em;  /* 增加字母間距，更好看 */
+  font-weight: 600;        /* 讓標題字更醒目 */
+  font-size: 0.95rem;      /* 微調字體大小 */
+}
+
+</style>
+
+<script>
+  function filterTable() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const minAnxiety = parseFloat(document.getElementById("minAnxiety").value) || 0;
+    const minFear = parseFloat(document.getElementById("minFear").value) || 0;
+    const minSadness = parseFloat(document.getElementById("minSadness").value) || 0;
+
+    const rows = document.querySelectorAll("#leaderboardTable tbody tr");
+    rows.forEach(row => {
+      const name = row.querySelector(".username").textContent.toLowerCase();
+      const anxiety = parseFloat(row.querySelector(".anxiety").textContent) || 0;
+      const fear = parseFloat(row.querySelector(".fear").textContent) || 0;
+      const sadness = parseFloat(row.querySelector(".sadness").textContent) || 0;
+
+      const show = name.includes(search) && anxiety >= minAnxiety && fear >= minFear && sadness >= minSadness;
+      row.style.display = show ? "" : "none";
+    });
+  }
+</script>
+
 {% endblock %}
-
-
-

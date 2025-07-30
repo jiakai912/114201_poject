@@ -103,24 +103,50 @@
                         {% for dream in dream_posts %}
                             <li class="list-group-item d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
                                 <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="d-flex align-items-center text-decoration-none">
+
+                                    <!-- 頭像區塊 -->
                                     {% if dream.is_anonymous %}
-                                        <div class="anonymous-avatar rounded-circle me-3 d-flex justify-content-center align-items-center" style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px;">
+                                        <div class="anonymous-avatar rounded-circle me-3 d-flex justify-content-center align-items-center"
+                                            style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px;">
                                             匿名
                                         </div>
                                     {% else %}
                                         {% if dream.user.userprofile.avatar %}
-                                            <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                            <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
+                                                class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
                                         {% else %}
-                                            <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=random&color=fff&size=50" alt="{{ dream.user.username }}" class="rounded-circle me-3">
+                                            <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=random&color=fff&size=50"
+                                                alt="{{ dream.user.username }}" class="rounded-circle me-3">
                                         {% endif %}
                                     {% endif %}
-                                    <div>
-                                        <h5 class="dream-title text-dark">{{ dream.title }}</h5>
+
+                                    <!-- 文字與時間區塊 -->
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <strong class="me-2 text-dark">
+                                                {% if dream.is_anonymous %}
+                                                    匿名
+                                                {% else %}
+                                                    {{ dream.user.username }}
+                                                {% endif %}
+                                            </strong>
+
+                                            {% if dream.author_display_badge_icon %}
+                                                <i class="{{ dream.author_display_badge_icon }} display-badge me-2" title="展示徽章"></i>
+                                            {% endif %}
+                                            
+                                            <small class="text-muted">{{ dream.created_at|timesince }} 前發布</small>
+                                        </div>
+                                        
+                                        <h5 class="mb-1 text-dark">{{ dream.title }}</h5>
+                                        
                                         <p class="text-muted mb-0">
                                             {{ dream.content|slice:":20" }}{% if dream.content|length > 20 %}...{% endif %}
                                         </p>
                                     </div>
+
                                 </a>
+                                
 
 
 
@@ -147,7 +173,7 @@
                                     </span>
                                     <span class="dcard-engagement-item d-flex align-items-center">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dcard-icon-button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dcard-icon-button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-share-alt me-1"></i> 分享
                                         </button>
                                         <ul class="dropdown-menu">
