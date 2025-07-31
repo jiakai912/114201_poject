@@ -55,6 +55,8 @@ urlpatterns = [
     path('view_user_dreams/<int:user_id>/', views.view_user_dreams, name='view_user_dreams'),
     path('share_and_schedule/', views.share_and_schedule, name='share_and_schedule'),
     path('therapists/chat_list/', views.therapist_list_with_chat, name='therapist_list_with_chat'),
+    path('chat/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
+
 
     #使用者看到的預約狀態及取消預約按鈕及已預約時段
     path('my_appointments/', views.user_appointments, name='user_appointments'),
@@ -93,6 +95,8 @@ urlpatterns = [
     # urls.py
     path('invitation/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
     path('send_chat_invitation/', views.send_chat_invitation, name='send_chat_invitation'),
+    path('invitation/delete/<int:invitation_id>/', views.delete_invitation, name='delete_invitation'),
+path('chat/invitation/delete/<int:user_id>/', views.delete_chat_invitation, name='delete_chat_invitation'),
 
 ]
     

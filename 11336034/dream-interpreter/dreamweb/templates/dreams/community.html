@@ -106,19 +106,23 @@
 
                                     <!-- 頭像區塊 -->
                                     {% if dream.is_anonymous %}
-                                        <div class="anonymous-avatar rounded-circle me-3 d-flex justify-content-center align-items-center"
-                                            style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px;">
+                                        <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                            style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
                                             匿名
                                         </div>
                                     {% else %}
                                         {% if dream.user.userprofile.avatar %}
                                             <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
-                                                class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                class="rounded-circle me-3 shadow"
+                                                style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
                                         {% else %}
-                                            <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=random&color=fff&size=50"
-                                                alt="{{ dream.user.username }}" class="rounded-circle me-3">
+                                            <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                                {{ dream.user.username|slice:":1"|upper }}
+                                            </div>
                                         {% endif %}
                                     {% endif %}
+
 
                                     <!-- 文字與時間區塊 -->
                                     <div class="flex-grow-1">

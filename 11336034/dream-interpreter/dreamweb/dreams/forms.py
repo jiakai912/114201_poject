@@ -115,3 +115,20 @@ class TherapistProfileForm(forms.ModelForm):
         widgets = {
             'coin_price': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
         }
+
+
+class TherapistFullProfileForm(UserProfileForm):
+    coin_price = forms.IntegerField(
+        required=False,
+        label="每小時點券價格",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 0})
+    )
+    specialties = forms.CharField(
+        required=False,
+        label="專長領域",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': '用逗號分隔多個專長，如：焦慮治療, 兒童心理, 認知行為療法'}),
+        help_text="用逗號分隔多個專長"
+    )
+
+    class Meta(UserProfileForm.Meta):
+        fields = UserProfileForm.Meta.fields + ['coin_price', 'specialties']

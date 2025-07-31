@@ -59,16 +59,40 @@
                     {% endif %}
                 </div>
 
+                <div class="mb-3">
+                    <label for="{{ form.specialties.id_for_label }}" class="form-label">{{ form.specialties.label }}</label>
+                    {{ form.specialties }}
+                    {% if form.specialties.help_text %}
+                        <div class="form-text">{{ form.specialties.help_text }}</div>
+                    {% endif %}
+                    {% if form.specialties.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.specialties.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+
                 {# 頭像上傳欄位 - 手動添加 class #}
                 <div class="mb-3">
                     <label for="{{ form.avatar.id_for_label }}" class="form-label">頭像</label>
+
                     {% if form.instance.avatar %}
-                        <div class="mb-2">
-                            <img src="{{ form.instance.avatar.url }}" alt="當前頭像" class="img-thumbnail" style="max-width: 150px; border-radius: 50%;">
-                            <p class="form-text text-muted">當前頭像</p>
+                        <div class="d-flex align-items-start mb-2">
+                            <img src="{{ form.instance.avatar.url }}" alt="當前頭像" class="img-thumbnail me-3" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;">
+                            <div>
+                                <p class="form-text text-muted mb-1">當前頭像</p>
+                                <button type="submit" name="remove_avatar" value="true" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt me-1"></i> 移除頭像
+                                </button>
+                            </div>
                         </div>
                     {% endif %}
-                    <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" class="form-control">
+
+                    <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" class="form-control mt-1">
+                    
                     {% if form.avatar.errors %}
                         <div class="text-danger mt-1">
                             {% for error in form.avatar.errors %}
@@ -76,8 +100,10 @@
                             {% endfor %}
                         </div>
                     {% endif %}
+
                     <div class="form-text text-muted">{{ form.avatar.help_text }}</div>
                 </div>
+
 
 
                 {% if user.userprofile.is_therapist %}
