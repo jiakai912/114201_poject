@@ -40,10 +40,14 @@ class UserProfile(models.Model):
 
     # 新增專長領域欄位 (用逗號分隔)
     specialties = models.TextField(blank=True, null=True, verbose_name="專長領域", help_text="用逗號分隔多個專長，例如：焦慮治療, 兒童心理, 認知行為療法")
-
+    
     def get_specialties_list(self):
         if self.specialties:
-            return [s.strip() for s in self.specialties.split(',') if s.strip()]
+            # 同時支援逗號或換行拆分
+            lines = []
+            for part in self.specialties.split(','):
+                lines.extend(part.splitlines())
+            return [s.strip() for s in lines if s.strip()]
         return []
 
     def __str__(self):

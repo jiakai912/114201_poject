@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
 from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm
+
 import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
@@ -50,8 +51,6 @@ from dreams.achievement_helper import check_and_unlock_achievements
 from django.views.decorators.http import require_GET
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import localtime #已預約時段變成台灣地區時間
-
-
 
 
 # 燈箱
@@ -658,19 +657,31 @@ def mental_health_dashboard(request):
     mental_health_advice = None
     emotion_alert = None
     therapist = None
-    all_therapists = []
-    # 取得用戶 profile
+    all_therapists = User.objects.filter(userprofile__is_therapist=True)
     user_profile = UserProfile.objects.get(user=request.user)
-    therapist_specialties = user_profile.get_specialties_list() if user_profile.specialties else []
 
+    # 取得所有心理師（for 下拉選單）
+    all_therapists = User.objects.filter(userprofile__is_therapist=True)
+
+    # 預設 therapist 是第一個心理師或 None
+    therapist = all_therapists.first() if all_therapists.exists() else None
+    therapist_specialties = therapist.userprofile.get_specialties_list() if therapist and therapist.userprofile.specialties else []
+
+    # 如果有授權，就以授權心理師為準
+    share = DreamShareAuthorization.objects.filter(user=request.user, is_active=True).first()
+    if share:
+        therapist = User.objects.select_related('userprofile').filter(id=share.therapist.id).first()
+        if therapist and therapist.userprofile.specialties:
+            therapist_specialties = therapist.userprofile.get_specialties_list()
+
+
+    
 
 
     if request.method == 'POST':
         dream_id = request.POST.get('dream_id')
         try:
             selected_dream = Dream.objects.get(id=dream_id, user=request.user)
-
-            # AI 建議
             mental_health_advice = generate_mental_health_advice(
                 selected_dream.dream_content,
                 selected_dream.emotion_score,
@@ -681,23 +692,13 @@ def mental_health_dashboard(request):
                 selected_dream.Sadness
             )
 
-            # 情緒警報
             if (selected_dream.Anxiety >= 70 or 
                 selected_dream.Fear >= 70 or 
                 selected_dream.Sadness >= 70):
                 emotion_alert = "🚨 <strong>情緒警報：</strong> 您的夢境顯示 <strong>焦慮、恐懼或悲傷</strong> 指數偏高，建議您多關注自己的心理健康，必要時可尋求專業協助。"
 
-            share = DreamShareAuthorization.objects.filter(user=request.user, is_active=True).first()
-            if share:
-                therapist = User.objects.select_related('userprofile').get(id=share.therapist.id)
-                if therapist.userprofile.specialties:
-                    therapist_specialties = therapist.userprofile.get_specialties_list()
-
         except Dream.DoesNotExist:
             selected_dream = None
-
-    # 所有已分享的心理師（下拉用）
-    all_therapists = User.objects.filter(userprofile__is_therapist=True)
 
     return render(request, 'dreams/mental_health_dashboard.html', {
         'dreams': dreams,
@@ -706,9 +707,10 @@ def mental_health_dashboard(request):
         'emotion_alert': emotion_alert,
         'therapist': therapist,
         'therapists': all_therapists,
-        'user_profile': user_profile,  # 新增這行，讓模板能取用頭像等資訊
-        'therapist_specialties': therapist_specialties,  # ✅ 修正為來自心理師
+        'user_profile': user_profile,
+        'therapist_specialties': therapist_specialties,
     })
+
 
 
 

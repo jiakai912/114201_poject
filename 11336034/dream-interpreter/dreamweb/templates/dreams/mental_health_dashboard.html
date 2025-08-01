@@ -158,17 +158,16 @@
                             <label for="therapistSelect" class="form-label fw-bold">選擇心理師</label>
                             <select class="form-select rounded-pill px-3 py-2" name="therapist_id" id="therapistSelect" required>
                             {% for t in therapists %}
-                                <option value="{{ t.id }}"
-                                        {% if forloop.first %}selected{% endif %}
-                                        data-username="{{ t.username }}"
-                                        data-coin_price="{{ t.userprofile.coin_price }}"
-                                        data-specialty="{{ t.userprofile.specialty|default:'未提供' }}"
-                                        data-bio="{{ t.userprofile.bio|default:'尚未提供自我介紹' }}">
-                                    {{ t.username }}
-                                    {% if t.userprofile.specialty %}（{{ t.userprofile.specialty }}）{% endif %}
-                                    （每1小時 {{ t.userprofile.coin_price }} 點券）
-                                </option>
-                            {% endfor %}
+                                    <option value="{{ t.id }}"
+                                            {% if forloop.first %}selected{% endif %}
+                                            data-username="{{ t.username }}"
+                                            data-coin_price="{{ t.userprofile.coin_price }}"
+                                            data-specialty="{{ t.userprofile.specialties|default:'未提供' }}"
+                                            data-bio="{{ t.userprofile.bio|default:'尚未提供自我介紹' }}">
+                                        {{ t.username }}
+                                        （每1小時 {{ t.userprofile.coin_price }} 點券）
+                                    </option>
+                                {% endfor %}
                             </select>
                         </div>
 
@@ -208,28 +207,22 @@
                                 <h5 class="ms-3 mb-0" id="therapistName">{{ user.get_full_name|default:user.username }}</h5>
                             </div>
 
-                            <hr>
                             <!-- 自我介紹 -->
-                            <h6 class="fw-bold text-primary mb-3 d-flex align-items-center">
+                            <h6 class="fw-bold text-primary mb-2 d-flex align-items-center">
                                 <i class="fas fa-user-circle me-2 text-info"></i> 自我介紹
                             </h6>
-                            <div id="therapistBio" class="text-secondary" style="line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">
-                                <!-- 預設提示 -->
-                                <p class="fst-italic text-muted">請選擇心理師以顯示詳細介紹</p>
+                            <div id="therapistBio" class="text-secondary" style="line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 1rem;">
+                                <p class="fst-italic text-muted mb-1">請選擇心理師以顯示詳細介紹</p>
                             </div>
 
                             <!-- 專長領域 -->
-                            <h6 class="fw-bold text-primary mb-3 d-flex align-items-center">
+                            <h6 class="fw-bold text-primary mb-2 d-flex align-items-center">
                                 <i class="fas fa-star me-2 text-warning"></i> 專長領域
                             </h6>
-                            <div id="therapistSpecialty" class="mb-4">
-                                <p class="text-muted fst-italic">請選擇心理師以顯示專業領域</p>
+                            <div id="therapistSpecialty" class="text-secondary" style="line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 1rem;">
+                                <p class="text-muted fst-italic mb-1">請選擇心理師以顯示專業領域</p>
                             </div>
 
-                            <div id="therapistSpecialty" class="mb-4">
-                                <!-- 假如還沒選擇心理師，顯示提示 -->
-                                <p class="text-muted fst-italic">請選擇心理師以顯示專業領域</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -311,27 +304,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const itemsPerPage = 10;
     let currentPage = 1;
 
-
-    
     function updateTherapistInfo(option) {
-        
+        // 更新心理師姓名
         nameEl.textContent = option.getAttribute("data-username") || "心理師姓名";
-        bioEl.textContent = option.getAttribute("data-bio") || "尚未提供自我介紹";
 
-        // 先清空原本內容
-        specialtyEl.innerHTML = "";
+        // 更新自我介紹，保留換行
+        const bio = option.getAttribute("data-bio");
+        bioEl.innerHTML = bio ? bio.replace(/\r?\n/g, '<br>') : "<p class='fst-italic text-muted'>尚未提供自我介紹</p>";
 
+        // 更新專長領域
         const specialtyData = option.getAttribute("data-specialty");
-        if (specialtyData) {
-            
+        specialtyEl.innerHTML = "";  // 先清空
+
+        if (specialtyData && specialtyData !== "未提供") {
+            // 拆成陣列並去除空字串
             const specialties = specialtyData.split(',').map(s => s.trim()).filter(s => s.length > 0);
             if (specialties.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = "list-unstyled mb-0";
                 specialties.forEach(spec => {
-                    const span = document.createElement('span');
-                    span.className = 'badge bg-purple-500 text-white me-1';
-                    span.textContent = spec;
-                    specialtyEl.appendChild(span);
+                    const li = document.createElement('li');
+                    li.textContent = "• " + spec;
+                    ul.appendChild(li);
                 });
+                specialtyEl.appendChild(ul);
             } else {
                 specialtyEl.innerHTML = "<p class='text-muted fst-italic'>尚未填寫專長領域</p>";
             }
@@ -340,7 +336,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         card.classList.remove("d-none");
+        
     }
+
+        // 呼叫初始化與事件監聽器設定
+        if (select && select.options.length > 0) {
+            updateTherapistInfo(select.options[select.selectedIndex]);
+        }
+
+        select.addEventListener("change", function () {
+            updateTherapistInfo(this.options[this.selectedIndex]);
+    });
+
 
     function updateConfirmMessage() {
         if (!submitBtn || !priceDisplay) return;
