@@ -91,7 +91,7 @@
                 </div>
                 <div>
                   {% if ts.is_active %}
-                    <a href="{% url 'chat_with_therapist' therapist.id %}" class="btn btn-outline-primary me-2">
+                    <a href="{% url 'chat_with_user' user_id=ts.therapist.id %}" class="btn btn-outline-primary me-2"><!-- #更改 -->
                       進入聊天室
                     </a>
                     <form method="post" action="{% url 'cancel_share' therapist.id %}" style="display:inline;" onsubmit="return confirm('確定要取消分享嗎？');">

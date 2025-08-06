@@ -137,7 +137,10 @@
                                     {# User Info Block #}
                                     <div class="d-flex align-items-center mb-3">
                                         {% if dream.is_anonymous %}
-                                            <i class="fas fa-user-secret fa-2x text-muted me-3" style="width: 45px; height: 45px;"></i>
+                                            <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                style="width: 45px; height: 45px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
+                                                匿名
+                                            </div>
                                             <div class="dcard-user-info-meta">
                                                 <small class="fw-bold text-muted d-block">匿名發佈</small>
                                                 <small class="text-muted d-block">{{ dream.created_at|date:"Y-m-d H:i" }}</small>
@@ -145,21 +148,23 @@
                                         {% else %}
                                             {% if dream.user.userprofile.avatar %}
                                                 <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
-                                                     class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
+                                                    class="rounded-circle me-3 shadow"
+                                                    style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #dee2e6;">
                                             {% else %}
-                                                <img src="https://ui-avatars.com/api/?name={{ dream.user.username }}&background=0D8ABC&color=fff&size=45"
-                                                     alt="{{ dream.user.username }}" class="rounded-circle me-3">
+                                                <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                    style="width: 45px; height: 45px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                                    {{ dream.user.username|slice:":1"|upper }}
+                                                </div>
                                             {% endif %}
                                             <div class="dcard-user-info-meta">
                                                 <small class="fw-bold text-dark d-block">
-                                                    {# 用戶名 hover card 觸發器 - 這個 span 需要保持在 a 標籤裡面，以便 hover card 功能正常 #}
                                                     <span class="user-info-trigger"
                                                         data-user-id="{{ dream.user.id }}"
                                                         data-username="{{ dream.user.username }}"
                                                         data-avatar-url="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{{ 'https://ui-avatars.com/api/?name='|add:dream.user.username|urlencode:'@ /'|add:'&background=0D8ABC&color=fff&size=45' }}{% endif %}"
                                                         data-display-title="{{ dream.author_display_title|default:'' }}"
                                                         data-unlocked-achievements="{{ dream.author_unlocked_achievements|safe_json }}"
-                                                        data-profile-url="{% url 'profile_view_other' dream.user.id %}" {# 請確保你有這個 URL #}
+                                                        data-profile-url="{% url 'profile_view_other' dream.user.id %}"
                                                     >
                                                         {{ dream.user.username }}
                                                         {% if dream.author_display_badge_icon %}
@@ -171,15 +176,14 @@
                                             </div>
                                         {% endif %}
                                     </div>
-                                    
-                                    {# Post Title - 這裡不再有 a 標籤 #}
+
                                     <h5 class="dcard-search-card-title mb-2">
                                         {{ dream.title }}
                                     </h5>
-                                    {# Content Snippet #}
                                     <p class="dcard-search-card-content text-muted mb-0">
                                         {{ dream.content|truncatechars:40 }}
                                     </p>
+
                                 </div>
                             </div>   
                         </div>

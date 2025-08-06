@@ -4,6 +4,31 @@ from . import views
 from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
+    # ✅ 管理員
+    # 管理使用者
+    path('admin_dashboard/users/', views.manage_users, name='manage_users'),
+    path('admin_dashboard/users/block/<int:user_id>/', views.block_user, name='block_user'),
+    path('admin_dashboard/users/unblock/<int:user_id>/', views.unblock_user, name='unblock_user'),
+    path('admin_dashboard/users/<int:user_id>/', views.view_user_detail, name='view_user_detail'),
+    
+    # 管理夢境
+    path('admin_manage-dreams/', views.manage_dreams, name='manage_dreams'),
+    path('admin_manage-dreams/<int:dream_id>/delete/', views.delete_dream, name='delete_dream'),
+    path('admin_manage-dreams/<int:dream_id>/toggle-flag/', views.toggle_flag_dream, name='toggle_flag_dream'),
+    path('admin_manage-dreams/<int:dream_id>/', views.dream_detail, name='dream_detail'),
+
+
+    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin_dashboard/therapists/', views.manage_therapists, name='manage_therapists'),
+    path('admin_dashboard/flagged_posts/', views.manage_flagged_posts, name='manage_flagged_posts'),
+    path('admin_dashboard/chat_messages/', views.manage_chat_messages, name='manage_chat_messages'),
+    path('admin_dashboard/points/', views.manage_points, name='manage_points'),
+    
+    
+
+
+
+
     path('', views.welcome_page, name='welcome'),
     path('dream_form/', views.dream_form, name='dream_form'),  # ✅ 修正
     path('register/', views.register, name='register'),
@@ -39,7 +64,6 @@ urlpatterns = [
     path('profile/<int:user_id>/', views.profile_view_other, name='profile_view_other'),
 
     # 個人檔案
-    path('profile/', views.user_profile, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('achievements/', views.user_achievements, name='achievements'),
     path('achievements/', views.user_achievements, name='user_achievements'),
@@ -96,7 +120,7 @@ urlpatterns = [
     path('invitation/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
     path('send_chat_invitation/', views.send_chat_invitation, name='send_chat_invitation'),
     path('invitation/delete/<int:invitation_id>/', views.delete_invitation, name='delete_invitation'),
-path('chat/invitation/delete/<int:user_id>/', views.delete_chat_invitation, name='delete_chat_invitation'),
+    path('chat/invitation/delete/<int:user_id>/', views.delete_chat_invitation, name='delete_chat_invitation'),
 
 ]
     

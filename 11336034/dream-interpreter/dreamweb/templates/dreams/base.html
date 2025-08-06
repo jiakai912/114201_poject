@@ -290,6 +290,16 @@
                         </li>
                         {% endif %}
 
+                        {# 💡 管理員專屬選單 #}
+                        {% if user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                                <i class="fas fa-tools me-1"></i>系統維護面板
+                            </a>
+                        </li>
+                        {% endif %}
+
+
                         <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownSettings" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             {% if user.is_authenticated and user.userprofile.avatar %}
@@ -338,15 +348,9 @@
     </nav>
 
     <div class="container mt-5 animation-fade-in">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-        
+
+            
+        {# ✅ FIX: Remove extra '{' #}
         {% block content %}{% endblock %}
     </div>
 
@@ -360,9 +364,9 @@
                 <div class="col-md-6 text-md-end text-center">
                     <p>&copy; 2025 夢境解析</p>
                     <div class="mt-2">
-                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.facebook.com/hu.jia.kai.360963" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.instagram.com/_jk.0912/" class="text-white"><i class="fab fa-instagram"></i></a>
                     </div>
                 </div>
             </div>
@@ -388,6 +392,77 @@
             cards.forEach(card => {
                 observer.observe(card);
             });
+
+            // ✅ START: Add JavaScript for user info hover card
+            document.querySelectorAll('.user-info-trigger').forEach(trigger => {
+                let timeoutId;
+                const userId = trigger.dataset.userId; // Not used in this basic hover, but good for potential AJAX
+                let hoverCard = trigger.querySelector('.user-info-hover-card');
+
+                // If the hover card HTML is not already in the DOM, create it dynamically
+                if (!hoverCard) {
+                    hoverCard = document.createElement('div');
+                    hoverCard.classList.add('user-info-hover-card');
+                    trigger.appendChild(hoverCard);
+                }
+
+                function showHoverCard() {
+                    clearTimeout(timeoutId); // Clear any pending hide
+                    
+                    const username = trigger.dataset.username;
+                    const avatarUrl = trigger.dataset.avatarUrl;
+                    const displayTitle = trigger.dataset.displayTitle || ''; // Use || '' to handle null/undefined
+                    const profileUrl = trigger.dataset.profileUrl;
+                    
+                    let badgesHtml = '';
+                    if (trigger.dataset.unlockedAchievements) {
+                        try {
+                            const achievements = JSON.parse(trigger.dataset.unlockedAchievements);
+                            achievements.forEach(ach => {
+                                if (ach.badge_icon) {
+                                    badgesHtml += `<div class="badge-item"><i class="${ach.badge_icon}"></i><span>${ach.name}</span></div>`;
+                                }
+                            });
+                        } catch (e) {
+                            console.error("Error parsing unlocked achievements:", e);
+                        }
+                    }
+
+                    hoverCard.innerHTML = `
+                        <div class="header">
+                            <img src="${avatarUrl}" alt="${username}" class="avatar">
+                            <div>
+                                <div class="username">${username}</div>
+                                ${displayTitle ? <div class="title">${displayTitle}</div> : ''}
+                            </div>
+                        </div>
+                        <div class="body">
+                            ${badgesHtml ? <div class="badges">${badgesHtml}</div> : '<p class="small text-muted">尚未解鎖更多徽章。</p>'}
+                            <a href="${profileUrl}" class="mt-2 d-block">查看完整個人檔案 &raquo;</a>
+                        </div>
+                    `;
+                    // Position the hover card if needed (e.g., relative to trigger)
+                    // You might need to adjust 'left' and 'top' based on your layout
+                    hoverCard.style.left = '0'; // Align left with the trigger
+                    hoverCard.style.top = '100%'; // Position below the trigger
+                    hoverCard.classList.add('show');
+                }
+
+                function hideHoverCard() {
+                    // Set a timeout to hide, allowing cursor to move to the card
+                    timeoutId = setTimeout(() => {
+                        hoverCard.classList.remove('show');
+                    }, 200); // Adjust delay as needed
+                }
+
+                trigger.addEventListener('mouseenter', showHoverCard);
+                trigger.addEventListener('mouseleave', hideHoverCard);
+                
+                // Keep the card visible if the mouse moves onto the card itself
+                hoverCard.addEventListener('mouseenter', () => clearTimeout(timeoutId));
+                hoverCard.addEventListener('mouseleave', hideHoverCard);
+            });
+            // ✅ END: Add JavaScript
         });
     </script>
 </body>

@@ -1,0 +1,37 @@
+{% extends 'dreams/base.html' %}
+{% block title %}審核夢境貼文{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">審核被標記的夢境貼文</h3>
+  {% if flagged_posts %}
+    <table class="table table-hover">
+    <thead class="table-dark">
+        <tr>
+        <th>使用者</th>
+        <th>內容摘要</th>
+        <th>標記原因</th>
+        <th>時間</th>
+        <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for post in flagged_posts %}
+        <tr>
+        <td>{{ post.user.username }}</td>
+        <td>{{ post.content|truncatewords:20 }}</td>
+        <td>{{ post.flag_reason }}</td>
+        <td>{{ post.created_at|date:"Y-m-d H:i" }}</td>
+        <td>
+            <a href="{% url 'review_post' post.id %}" class="btn btn-sm btn-success">查看/處理</a>
+        </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+
+  {% else %}
+    <p>目前沒有被標記的夢境貼文。</p>
+  {% endif %}
+</div>
+{% endblock %}

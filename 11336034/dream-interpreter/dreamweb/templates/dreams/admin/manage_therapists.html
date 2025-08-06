@@ -1,0 +1,41 @@
+{% extends 'dreams/base.html' %}
+{% block title %}心理師申請審核{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">心理師申請列表</h3>
+  {% if therapist_applications %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>申請者</th>
+          <th>申請日期</th>
+          <th>狀態</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for app in therapist_applications %}
+        <tr>
+          <td>{{ app.user.username }}</td>
+          <td>{{ app.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ app.status }}</td>
+          <td>
+            <form method="post" action="{% url 'admin:approve_therapist' app.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-primary">核准</button>
+            </form>
+            <form method="post" action="{% url 'admin:reject_therapist' app.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-danger">拒絕</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>目前沒有心理師申請。</p>
+  {% endif %}
+</div>
+{% endblock %}

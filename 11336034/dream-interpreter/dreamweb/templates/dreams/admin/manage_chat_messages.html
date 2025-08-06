@@ -1,0 +1,49 @@
+{% extends 'dreams/base.html' %}
+{% block title %}聊天室訊息管理{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">搜尋與管理聊天室訊息</h3>
+
+  <form method="get" class="mb-3">
+    <input type="text" name="q" placeholder="搜尋訊息關鍵字" value="{{ request.GET.q }}" class="form-control" style="max-width:400px; display:inline-block;">
+    <button class="btn btn-secondary ms-2">搜尋</button>
+  </form>
+
+  {% if chat_messages %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>訊息ID</th>
+          <th>發送者</th>
+          <th>訊息內容</th>
+          <th>時間</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for msg in chat_messages %}
+        <tr>
+          <td>{{ msg.id }}</td>
+          <td>{{ msg.sender.username }}</td>
+          <td>{{ msg.content|truncatechars:60 }}</td>
+          <td>{{ msg.timestamp|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% if not msg.sender.is_blocked %}
+            <form method="post" action="{% url 'admin:block_user' msg.sender.id %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-danger">封鎖帳號</button>
+            </form>
+            {% else %}
+              <span class="text-danger fw-bold">已封鎖</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>沒有找到相關訊息。</p>
+  {% endif %}
+</div>
+{% endblock %}

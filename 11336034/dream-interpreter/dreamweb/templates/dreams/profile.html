@@ -217,6 +217,7 @@
                     {{ user_profile.bio|default:"尚未填寫。" }}
                     </p>
 
+                    {% if user.userprofile.is_therapist %}
                     <p class="card-text">
                     <h6 class="fw-semibold text-info mb-2">專長領域：</h6>
                     {% if user_profile.specialties %}
@@ -227,6 +228,7 @@
                         尚未填寫專長領域
                     {% endif %}
                     </p>
+                    {% endif %}
 
                     <a href="{% url 'edit_profile' %}" class="btn btn-primary btn-sm mt-3">編輯個人檔案</a>
                 </div>
@@ -234,36 +236,6 @@
         </div>
 
         <div class="col-md-7">
-            {# ✅ START ADDITION: 選擇展示稱號和徽章的表單 #}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4><i class="fas fa-paint-brush me-2"></i> 社群展示設定</h4>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'profile' %}">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            {{ form.display_title.label_tag }}
-                            {{ form.display_title }}
-                            {% if form.display_title.errors %}
-                                <div class="text-danger">{{ form.display_title.errors }}</div>
-                            {% endif %}
-                            <small class="form-text text-muted">選擇一個您已解鎖的成就，其對應的稱號將在社群中顯示。</small>
-                        </div>
-                        <div class="mb-3">
-                            {{ form.display_badge.label_tag }}
-                            {{ form.display_badge }}
-                            {% if form.display_badge.errors %}
-                                <div class="text-danger">{{ form.display_badge.errors }}</div>
-                            {% endif %}
-                            <small class="form-text text-muted">選擇一個您已解鎖的成就，其對應的徽章圖示將在社群中顯示。</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary">保存設定</button>
-                    </form>
-                </div>
-            </div>
-            {# ✅ END ADDITION: 選擇展示稱號和徽章的表單 #}
-            
             <div class="card">
                 <div class="card-header">
                     <h4><i class="fas fa-trophy me-2"></i> 已解鎖成就</h4>

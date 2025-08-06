@@ -4,6 +4,27 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Dream, UserProfile, Achievement, UserAchievement
 
+# 管理員編輯
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email', 'is_active']
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['is_therapist', 'is_verified_therapist', 'points']
+        widgets = {
+            'is_therapist': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_verified_therapist': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'points': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+
 # 用戶註冊表單，包含心理師身份選項
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)

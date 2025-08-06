@@ -236,16 +236,18 @@ class TherapyMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} → {self.receiver.username}：{self.content[:20]}"
-
+    
 
 class ChatMessage(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sent')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_received')
-    message = models.TextField()
+    message = models.TextField(blank=True, null=True) # 訊息內容可以為空，因為可能有貼圖或檔案
+    file = models.FileField(upload_to='chat_files/', blank=True, null=True, verbose_name="檔案") # 新增
+    sticker = models.CharField(max_length=255, blank=True, null=True, verbose_name="貼圖") # 新增
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.sender.username} → {self.receiver.username}: {self.message[:20]}"
+        return f"{self.sender.username} -> {self.receiver.username}: {self.message[:20]}"
 
 
 # 點券使用記錄

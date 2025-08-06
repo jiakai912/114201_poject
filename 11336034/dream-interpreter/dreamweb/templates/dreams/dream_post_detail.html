@@ -33,31 +33,51 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <div class="d-flex align-items-center">
-                        {# ✅ MODIFIED: 貼文作者顯示邏輯 #}
+                        <!-- 頭像區塊 -->
                         {% if dream.is_anonymous %}
-                            <img src="{% static 'images/default_avatar.png' %}" class="rounded-circle me-2" width="50" height="50" alt="匿名使用者">
+                            <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
+                                匿名
+                            </div>
                             <h5 class="mb-0 text-white">匿名使用者</h5>
                         {% else %}
-                            <div class="user-info-trigger d-flex align-items-center"
-                                data-user-id="{{ dream.user.id }}"
-                                data-username="{{ dream.user.username }}"
-                                data-avatar-url="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
-                                data-profile-url="{% url 'profile' %}" {# 注意: 'profile' 現在是當前用戶的，如要顯示他人資料需另設 URL #}
-                                data-display-title="{{ dream.author_display_title|default_if_none:'' }}"
-                                data-display-badge-icon="{{ dream.author_display_badge_icon|default_if_none:'' }}"
-                                data-unlocked-achievements="{{ dream.author_unlocked_achievements|safe_json_dumps }}"
+                            <!-- 頭像與名稱包在 a 標籤，支援浮動視窗 -->
+                            <a href="{% url 'profile_view_other' dream.user.id %}"
+                            class="user-popover-trigger d-flex align-items-center text-decoration-none"
+                            data-user-id="{{ dream.user.id }}"
+                            data-username="{{ dream.user.username }}"
+                            data-avatar-url="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
+                            data-display-title="{{ dream.author_display_title|default_if_none:'' }}"
+                            data-display-badge-icon="{{ dream.author_display_badge_icon|default_if_none:'' }}"
+                            data-bio="{{ dream.user.userprofile.bio|default_if_none:'' }}"
+                            data-specialties="{{ dream.user.userprofile.specialties|default_if_none:'' }}"
                             >
-                                <img src="{% if dream.user.userprofile.avatar %}{{ dream.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
-                                    class="rounded-circle me-2" width="50" height="50" alt="{{ dream.user.username }}">
-                                <h5 class="mb-0 text-white">{{ dream.user.username }}</h5>
-                                {% if dream.author_display_badge_icon %}
-                                    <i class="{{ dream.author_display_badge_icon }} display-badge" style="color: white; margin-left: 8px;" title="展示徽章"></i> {# 這裡為了適應 header 背景，徽章顏色設為白色 #}
+                                {% if dream.user.userprofile.avatar %}
+                                    <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
+                                        class="rounded-circle me-3 shadow"
+                                        style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
+                                {% else %}
+                                    <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                        {{ dream.user.username|slice:":1"|upper }}
+                                    </div>
                                 {% endif %}
-                            </div>
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-0 text-white">{{ dream.user.username }}</h5>
+                                    {% if dream.author_display_badge_icon %}
+                                        <i class="{{ dream.author_display_badge_icon }} display-badge" style="color: white; margin-left: 8px;" title="展示徽章"></i>
+                                    {% endif %}
+                                </div>
+                            </a>
                         {% endif %}
+
+
+                        <!-- 發文時間 -->
                         <small class="text-white-50 ms-auto">{{ dream.created_at|date:"Y-m-d H:i" }}</small>
                     </div>
                 </div>
+
+
                 <div class="card-body">
                     <h2 class="card-title mb-3">{{ dream.title }}</h2>
                     <p class="card-text">{{ dream.content|linebreaksbr }}</p>
@@ -98,36 +118,54 @@
                         </div>
                         <div class="card-body">
                             {% if comments %}
-                                {% for comment in comments %}
-                                    <div class="d-flex mb-3 align-items-start">
-                                        {# ✅ MODIFIED: 評論者顯示邏輯 #}
-                                        <div class="user-info-trigger d-flex align-items-center"
+                            {% for comment in comments %}
+                                <div class="d-flex mb-3 align-items-start">
+
+                                    <!-- 名稱、徽章與內容 -->
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <a href="{% url 'profile_view_other' comment.user.id %}" 
+                                            class="user-popover-trigger d-flex align-items-center text-decoration-none text-dark"
                                             data-user-id="{{ comment.user.id }}"
                                             data-username="{{ comment.user.username }}"
                                             data-avatar-url="{% if comment.user.userprofile.avatar %}{{ comment.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
-                                            data-profile-url="{% url 'profile' %}" {# 同上，根據需求調整 #}
                                             data-display-title="{{ comment.commenter_display_title|default_if_none:'' }}"
                                             data-display-badge-icon="{{ comment.commenter_display_badge_icon|default_if_none:'' }}"
-                                            data-unlocked-achievements="{{ comment.commenter_unlocked_achievements|safe_json_dumps }}"
-                                        >
-                                            <img src="{% if comment.user.userprofile.avatar %}{{ comment.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
-                                                class="rounded-circle me-2" width="40" height="40" alt="{{ comment.user.username }}">
-                                            <h6 class="mb-0">{{ comment.user.username }}</h6>
+                                            data-bio="{{ comment.user.userprofile.bio|default_if_none:'' }}"
+                                            data-specialties="{{ comment.user.userprofile.specialties|default_if_none:'' }}"
+                                            >
+                                                {% if comment.user.userprofile.avatar %}
+                                                    <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}"
+                                                        class="rounded-circle shadow me-2"
+                                                        style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
+                                                {% else %}
+                                                    <div class="rounded-circle d-flex justify-content-center align-items-center shadow me-2"
+                                                        style="width: 40px; height: 40px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 16px; border: 2px solid #dee2e6;">
+                                                        {{ comment.user.username|slice:":1"|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <h6 class="mb-0">{{ comment.user.username }}</h6>
+                                            </a>
+
                                             {% if comment.commenter_display_badge_icon %}
-                                                <i class="{{ comment.commenter_display_badge_icon }} display-badge" title="展示徽章"></i>
+                                                <i class="{{ comment.commenter_display_badge_icon }} display-badge ms-2" title="展示徽章"></i>
                                             {% endif %}
                                         </div>
-                                        <div class="ms-3 flex-grow-1">
-                                            <p class="mb-1">{{ comment.content|linebreaksbr }}</p>
-                                            <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
-                                            <span class="ms-3">
-                                                <a href="#" class="text-decoration-none {% if comment.is_liked_by_user %}text-danger{% else %}text-muted{% endif %}" onclick="event.preventDefault(); toggleCommentLike({{ comment.id }});">
-                                                    <i class="fas fa-heart me-1"></i><span id="comment-likes-count-{{ comment.id }}">{{ comment.likes_count }}</span>
-                                                </a>
-                                            </span>
-                                        </div>
+
+                                        <p class="mb-1">{{ comment.content|linebreaksbr }}</p>
+                                        <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                                        <span class="ms-3">
+                                            <a href="#" class="text-decoration-none {% if comment.is_liked_by_user %}text-danger{% else %}text-muted{% endif %}" onclick="event.preventDefault(); toggleCommentLike({{ comment.id }});">
+                                                <i class="fas fa-heart me-1"></i><span id="comment-likes-count-{{ comment.id }}">{{ comment.likes_count }}</span>
+                                            </a>
+                                        </span>
                                     </div>
-                                {% endfor %}
+                                </div>
+                            {% endfor %}
+                            {% if comments|length == 0 %}
+                                <p class="text-center text-muted">目前沒有評論。</p>
+                            {% endif %}
+
                             {% else %}
                                 <p class="text-center text-muted">目前沒有評論。</p>
                             {% endif %}
@@ -242,4 +280,74 @@
         .catch(error => console.error('Error:', error));
     }
 </script>
+
+
+<!-- 放在 body 底部 -->
+<div id="user-popover-card" class="card shadow rounded-4 position-absolute d-none" style="width: 250px; z-index: 1050;"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const popover = document.getElementById("user-popover-card");
+
+    document.querySelectorAll('.user-popover-trigger').forEach(trigger => {
+        trigger.addEventListener('mouseenter', function (e) {
+            const rect = this.getBoundingClientRect();
+            const username = this.dataset.username;
+            const avatarUrl = this.dataset.avatarUrl;
+            const title = this.dataset.displayTitle;
+            const badgeIcon = this.dataset.displayBadgeIcon;
+            const bio = this.dataset.bio;
+            const specialties = this.dataset.specialties;
+            const profileUrl = this.href;
+
+            let avatarHtml = '';
+            if (avatarUrl && !avatarUrl.includes('default_avatar.png')) {
+                avatarHtml = `<img src="${avatarUrl}" class="rounded-circle me-2" width="50" height="50" style="object-fit: cover;">`;
+            } else {
+                const initial = username ? username.charAt(0).toUpperCase() : '?';
+                avatarHtml = `
+                    <div class="rounded-circle me-2 d-flex justify-content-center align-items-center shadow"
+                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 20px; border: 2px solid #dee2e6;">
+                        ${initial}
+                    </div>`;
+            }
+
+            popover.innerHTML = `
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        ${avatarHtml}
+                        <div>
+                            <strong>${username}</strong>
+                            ${badgeIcon ? `<i class="${badgeIcon} ms-1" title="徽章"></i>` : ''}
+                            ${title ? `<div class="text-muted small">${title}</div>` : ''}
+                        </div>
+                    </div>
+                    ${bio ?`<div class="mb-1"><strong>個人簡介：</strong> ${bio}</div>` : ''}
+                    ${specialties ? `<div class="text-muted small"><strong>專長：</strong>${specialties}</div>` : ''}
+                </div>
+            `;
+
+
+            popover.classList.remove('d-none');
+            popover.style.top = (rect.bottom + window.scrollY - 200) + 'px';
+            popover.style.left = (rect.right + window.scrollX + 5) + 'px';
+        });
+
+        trigger.addEventListener('mouseleave', function () {
+            setTimeout(() => {
+                popover.classList.add('d-none');
+            }, 300); // 延遲避免滑到卡片瞬間消失
+        });
+    });
+
+    popover.addEventListener('mouseenter', () => {
+        clearTimeout(hideTimeout);
+    });
+    popover.addEventListener('mouseleave', () => {
+        popover.classList.add('d-none');
+    });
+});
+</script>
+
+
 {% endblock %}

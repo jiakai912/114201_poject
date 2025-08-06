@@ -2,12 +2,11 @@ import json
 import os
 from dotenv import load_dotenv
 from django.shortcuts import render, redirect,get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
-from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm
-
+from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm
 import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
@@ -51,6 +50,176 @@ from dreams.achievement_helper import check_and_unlock_achievements
 from django.views.decorators.http import require_GET
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import localtime #已預約時段變成台灣地區時間
+
+# 聊天室
+from django.utils.timezone import now
+
+# 管理夢境
+from django.contrib.admin.views.decorators import staff_member_required
+
+
+# 管理員
+def is_admin(user):
+    return user.is_authenticated and user.is_superuser  # ✅ 只允許超級使用者進入
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def admin_dashboard(request):
+    today = now().date()
+    context = {
+        'user_count': User.objects.count(),
+        'dream_count': Dream.objects.count(),
+        'post_count': DreamPost.objects.count(),
+        'appointments_today': TherapyAppointment.objects.filter(scheduled_time__date=today).count(),
+        'unverified_therapists': UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False).count(),
+        'flagged_posts': DreamPost.objects.filter(is_flagged=True).count(),
+        'total_chat_messages': ChatMessage.objects.count(),
+        'total_points': UserProfile.objects.aggregate(total=models.Sum('points'))['total'] or 0,
+    }
+    return render(request, 'dreams/admin/admin_dashboard.html', context)
+
+# 管理使用者
+@user_passes_test(lambda u: u.is_superuser)
+def manage_users(request):
+    query = request.GET.get('q')
+    users = User.objects.all()
+    if query:
+        users = users.filter(username__icontains=query) | users.filter(email__icontains=query)
+    return render(request, 'dreams/admin/manage_users.html', {'users': users})
+
+@user_passes_test(lambda u: u.is_superuser)
+def block_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = False
+    user.save()
+    return redirect('manage_users')
+
+@user_passes_test(lambda u: u.is_superuser)
+def unblock_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = True
+    user.save()
+    return redirect('manage_users')
+
+
+def view_user_detail(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    return render(request, 'dreams/admin/user_detail.html', {'user': user})
+
+
+def view_user_detail(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    profile = user.userprofile
+
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        role = request.POST.get('role')
+        points = request.POST.get('points')
+        is_active = 'is_active' in request.POST
+
+        user.email = email
+        user.is_active = is_active
+
+        if role == 'admin':
+            user.is_superuser = True
+            profile.is_therapist = False
+            profile.is_verified_therapist = False
+        elif role == 'therapist':
+            user.is_superuser = False
+            profile.is_therapist = True
+            profile.is_verified_therapist = False
+        elif role == 'verified':
+            user.is_superuser = False
+            profile.is_therapist = True
+            profile.is_verified_therapist = True
+        else:
+            user.is_superuser = False
+            profile.is_therapist = False
+            profile.is_verified_therapist = False
+
+        try:
+            profile.points = int(points)
+        except ValueError:
+            profile.points = 0
+
+        user.save()
+        profile.save()
+
+        return redirect('manage_users')
+
+    user_form = UserEditForm(instance=user)
+    profile_form = UserProfileForm(instance=profile)
+
+    return render(request, 'dreams/admin/user_detail.html', {
+        'user': user,
+        'user_form': user_form,
+        'profile_form': profile_form,
+    })
+
+# 管理夢境
+@staff_member_required
+def manage_dreams(request):
+    dream_list = Dream.objects.select_related('user').order_by('-created_at')
+
+    query = request.GET.get('q')
+    if query:
+        dream_list = dream_list.filter(
+            Q(dream_content__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+
+    paginator = Paginator(dream_list, 10)  # 每頁 10 筆
+    page_number = request.GET.get('page')
+    dreams = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_dreams.html', {
+        'page_obj': dreams,
+        'dreams': dreams,
+        'query': query,
+    })
+
+
+@staff_member_required
+def dream_detail(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+    return render(request, 'dreams/admin/dream_detail.html', {'dream': dream})
+
+@staff_member_required
+def delete_dream(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+    dream.delete()
+    return redirect('manage_dreams')
+
+@staff_member_required
+def toggle_flag_dream(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+    dream.flagged = not dream.flagged  # 假設你的模型有個 flagged 欄位
+    dream.save()
+    return redirect('manage_dreams')
+
+
+
+
+# 管理使用者
+@user_passes_test(lambda u: u.is_superuser)
+def manage_therapists(request):
+    therapists = UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False)
+    return render(request, 'dreams/admin/manage_therapists.html', {'therapists': therapists})
+
+@user_passes_test(lambda u: u.is_superuser)
+def manage_flagged_posts(request):
+    posts = DreamPost.objects.filter(is_flagged=True)
+    return render(request, 'dreams/admin/manage_flagged_posts.html', {'posts': posts})
+
+@user_passes_test(lambda u: u.is_superuser)
+def manage_chat_messages(request):
+    messages = ChatMessage.objects.select_related('sender', 'receiver').order_by('-timestamp')[:100]
+    return render(request, 'dreams/admin/manage_chat_messages.html', {'messages': messages})
+
+@user_passes_test(lambda u: u.is_superuser)
+def manage_points(request):
+    users = UserProfile.objects.order_by('-points')[:100]
+    return render(request, 'dreams/admin/manage_points.html', {'users': users})
 
 
 # 燈箱
@@ -1536,14 +1705,7 @@ def therapist_list_with_chat(request):
         'chat_invitations': chat_invitations,  # ✅ 一定要補上這行
     })
 
-from django.views.decorators.http import require_POST
-from django.utils.timezone import now
 
-from django.shortcuts import redirect
-from django.utils.timezone import now
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
 
 @require_POST
 @login_required
