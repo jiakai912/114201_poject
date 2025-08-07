@@ -74,7 +74,6 @@
                 </td>
                 <td class="align-middle">
                 <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-
                     {% if user.invitation_status == 'pending' %}
                     <span class="text-primary">已邀請（等待回覆）</span>
                     <form method="post" action="{% url 'delete_chat_invitation' user.user_id %}" class="delete-invitation-form d-inline-block" style="margin:0;">
@@ -111,7 +110,6 @@
                         <button type="submit" class="btn btn-sm btn-primary" title="邀請聊天">邀請聊天</button>
                     </form>
                     {% endif %}
-
                 </div>
                 </td>
             </tr>

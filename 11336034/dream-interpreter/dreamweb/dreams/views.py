@@ -179,6 +179,46 @@ def manage_dreams(request):
     })
 
 
+
+# 管理貼文
+@staff_member_required
+def manage_posts(request):
+    query = request.GET.get('q', '')
+    post_list = DreamPost.objects.all()
+
+    if query:
+        post_list = post_list.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+
+    paginator = Paginator(post_list, 10)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_posts.html', {
+        'posts': posts,
+        'query': query,
+    })
+
+
+@staff_member_required
+def delete_post(request, post_id):
+    post = get_object_or_404(DreamPost, id=post_id)
+    post.delete()
+    return redirect('manage_posts')
+
+
+@staff_member_required
+def toggle_flag_post(request, post_id):
+    post = get_object_or_404(DreamPost, id=post_id)
+    post.is_flagged = not post.is_flagged  # 確保欄位名稱一致
+    post.save()
+    return redirect('manage_posts')
+
+
+# 管理夢境
 @staff_member_required
 def dream_detail(request, dream_id):
     dream = get_object_or_404(Dream, id=dream_id)

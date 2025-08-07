@@ -19,9 +19,7 @@
               <i class="fas fa-users fa-3x text-primary mb-3"></i>
               <h5 class="card-title">用戶總數</h5>
               <p class="fs-2 fw-bold">{{ user_count }}</p>
-            </div>
-            <div class="card-footer bg-transparent border-0 text-center pb-3">
-              <a href="{% url 'manage_users' %}" class="btn btn-outline-primary">
+              <a href="{% url 'manage_users' %}" class="btn btn-outline-primary mt-3">
                 管理用戶 
               </a>
             </div>
@@ -35,10 +33,7 @@
               <i class="fas fa-bed fa-3x text-success mb-3"></i>
               <h5 class="card-title">夢境總數</h5>
               <p class="fs-2 fw-bold">{{ dream_count }}</p>
-            </div>
-
-            <div class="card-footer bg-transparent border-0 text-center pb-3">
-              <a href="{% url 'manage_dreams' %}" class="btn btn-outline-primary">
+              <a href="{% url 'manage_dreams' %}" class="btn btn-outline-primary mt-3">
                 管理夢境
               </a>
             </div>
@@ -52,20 +47,25 @@
               <i class="fas fa-file-alt fa-3x text-warning mb-3"></i>
               <h5 class="card-title">貼文總數</h5>
               <p class="fs-2 fw-bold">{{ post_count }}</p>
+               <a href="{% url 'manage_posts' %}" class="btn btn-outline-primary mt-3">
+                管理貼文
+              </a>
             </div>
           </div>
         </div>
 
-        <!-- 今日預約 -->
+        <!-- 危險貼文 -->
         <div class="col-md-3 col-sm-6">
-          <div class="card dream-card">
+          <div class="card dream-card d-flex flex-column justify-content-center">
             <div class="card-body text-center">
-              <i class="fas fa-calendar-check fa-3x text-danger mb-3"></i>
-              <h5 class="card-title">今日預約</h5>
-              <p class="fs-2 fw-bold">{{ appointments_today }}</p>
+              <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+              <h5 class="card-title">危險貼文</h5>
+              <p class="fs-2 fw-bold">{{ flagged_posts }}</p>
+              <a href="{% url 'manage_flagged_posts' %}" class="btn btn-outline-primary mt-3">查看貼文</a>
             </div>
           </div>
         </div>
+        
 
         <!-- 待審心理師 -->
         <div class="col-md-3 col-sm-6">
@@ -79,14 +79,13 @@
           </div>
         </div>
 
-        <!-- 危險貼文 -->
+        <!-- 今日預約 -->
         <div class="col-md-3 col-sm-6">
-          <div class="card dream-card d-flex flex-column justify-content-center">
+          <div class="card dream-card">
             <div class="card-body text-center">
-              <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-              <h5 class="card-title">危險貼文</h5>
-              <p class="fs-2 fw-bold">{{ flagged_posts }}</p>
-              <a href="{% url 'manage_flagged_posts' %}" class="btn btn-outline-primary mt-3">查看貼文</a>
+              <i class="fas fa-calendar-check fa-3x text-danger mb-3"></i>
+              <h5 class="card-title">今日預約</h5>
+              <p class="fs-2 fw-bold">{{ appointments_today }}</p>
             </div>
           </div>
         </div>
