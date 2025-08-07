@@ -1,40 +1,85 @@
 {% extends 'dreams/base.html' %}
-{% block title %}點數管理{% endblock %}
+{% block title %}點券管理{% endblock %}
 
 {% block content %}
+<div class="container py-5">
+  <div class="card shadow rounded-4">
+    <div class="card-header btn-primary text-white d-flex justify-content-between align-items-center px-4 py-3 ">
+      <h4 class="mb-0"><i class="fas fa-coins me-2"></i>點券管理</h4>
+      <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
+        <div class="input-group">
+          <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者名稱、Email 或說明" value="{{ query }}">
+          <button class="btn btn-light btn-sm" type="submit">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </form>
+    </div>
 
-<div class="container py-4">
-  <h3 class="mb-4">用戶點數管理</h3>
+    <div class="card-body table-responsive p-0">
+      <table class="table table-hover align-middle mb-0 text-center">
+        <thead class="table-secondary small text-nowrap">
+          <tr>
+            <th style="width: 15%;">使用者</th>
+            <th style="width: 25%;">Email</th>
+            <th style="width: 10%;">點數</th>
+            <th style="width: 35%;">使用說明</th>
+            <th style="width: 15%;">時間</th>
+          </tr>
+        </thead>
+        <tbody class="small align-middle text-nowrap">
+          {% for tx in page_obj %}
+            <tr>
+              <td class="fw-semibold py-3">{{ tx.user.username }}</td>
+              <td class="text-truncate py-3" style="max-width: 240px;">{{ tx.user.email }}</td>
+              <td class="fw-bold py-3 {% if tx.is_gain %}text-success{% else %}text-danger{% endif %}">
+                {% if tx.is_gain %}+{% else %}-{% endif %}{{ tx.amount }}
+              </td>
+              <td class="py-3 px-3 text-wrap" style="max-width: 100%;">{{ tx.description|default:"（無描述）" }}</td>
+              <td class="text-muted py-3">{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                <i class="fas fa-user-slash fa-lg me-2"></i>查無交易紀錄
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-  <form method="get" class="mb-3">
-    <input type="text" name="q" placeholder="搜尋用戶" value="{{ request.GET.q }}" class="form-control" style="max-width:300px; display:inline-block;">
-    <button class="btn btn-secondary ms-2">搜尋</button>
-    <a href="{% url 'admin:export_points_csv' %}" class="btn btn-outline-success ms-3">導出CSV</a>
-  </form>
-
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>用戶名</th>
-        <th>點數</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for user in users %}
-      <tr>
-        <td>{{ user.username }}</td>
-        <td>{{ user.userprofile.points }}</td>
-        <td>
-          <form method="post" action="{% url 'admin:update_points' user.id %}" class="d-flex">
-            {% csrf_token %}
-            <input type="number" name="points" value="{{ user.userprofile.points }}" class="form-control form-control-sm me-2" style="width:100px;">
-            <button class="btn btn-sm btn-primary">修改</button>
-          </form>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+    {% if page_obj.has_other_pages %}
+      <div class="card-footer bg-white border-top-0 py-3">
+        <nav aria-label="分頁導航">
+          <ul class="pagination justify-content-center mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}" aria-label="上一頁">上一頁</a>
+              </li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}" aria-current="{% if page_obj.number == num %}page{% endif %}">
+                  <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+                </li>
+              {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                <li class="page-item">
+                  <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+                </li>
+              {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}" aria-label="下一頁">下一頁</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

@@ -16,13 +16,6 @@ urlpatterns = [
     path('admin_manage-dreams/<int:dream_id>/delete/', views.delete_dream, name='delete_dream'),
     path('admin_manage-dreams/<int:dream_id>/toggle-flag/', views.toggle_flag_dream, name='toggle_flag_dream'),
     path('admin_manage-dreams/<int:dream_id>/', views.dream_detail, name='dream_detail'),
-
-    # 管理夢境
-    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('admin_dashboard/therapists/', views.manage_therapists, name='manage_therapists'),
-    path('admin_dashboard/flagged_posts/', views.manage_flagged_posts, name='manage_flagged_posts'),
-    path('admin_dashboard/chat_messages/', views.manage_chat_messages, name='manage_chat_messages'),
-    path('admin_dashboard/points/', views.manage_points, name='manage_points'),
     
     # 管理貼文
     path('admin_manage-posts/', views.manage_posts, name='manage_posts'),
@@ -31,8 +24,25 @@ urlpatterns = [
     path('admin_posts/<int:post_id>/toggle-flag/', views.toggle_flag_post, name='toggle_flag_post'),
     path('admin_posts/<int:post_id>/delete/', views.delete_post, name='delete_post'),
     
+    # 管理評論
+    path('admin_manage-comments/', views.manage_comments, name='manage_comments'),
+    path('admin_manage-comments/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
 
-    
+
+
+    # 管理夢境
+
+    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin_dashboard/therapists/', views.manage_therapists, name='manage_therapists'),
+    path('admin_dashboard/flagged_posts/', views.manage_flagged_posts, name='manage_flagged_posts'),
+    path('admin_dashboard/chat_messages/', views.manage_chat_messages, name='manage_chat_messages'),
+    path('admin_dashboard/points/', views.manage_points, name='manage_points'),
+
+    # 核准/拒絕心理師申請
+    path('manage/therapists/approve/<int:user_id>/', views.approve_therapist, name='approve_therapist'),
+    path('manage/therapists/reject/<int:user_id>/', views.reject_therapist, name='reject_therapist'),
+    # 預約管理
+    path('admin_dashboard/appointments/', views.manage_appointments, name='manage_appointments'),
 
 
 

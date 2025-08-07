@@ -1,0 +1,87 @@
+{% extends 'dreams/base.html' %}
+{% block title %}預約管理{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow rounded-4">
+        <div class="card-header btn-primary text-white d-flex justify-content-between align-items-center px-4 py-3">
+        <h4 class="mb-0">
+            <i class="fas fa-calendar-alt me-2"></i>預約管理
+        </h4>
+        <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
+            <div class="input-group">
+            <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者或心理師..." value="{{ request.GET.q }}">
+            <button type="submit" class="btn btn-light btn-sm">
+                <i class="fas fa-search"></i>
+            </button>
+            </div>
+        </form>
+        </div>
+
+
+        <div class="card-body table-responsive p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-secondary small text-center">
+            <tr>
+                <th>使用者</th>
+                <th>Email</th>
+                <th>心理師</th>
+                <th>預約時間</th>
+                <th>申請日期</th>
+                <th>狀態</th>
+            </tr>
+            </thead>
+            <tbody class="small text-center">
+            {% for appt in all_appointments %}
+                <tr>
+                <td>{{ appt.user.username }}</td>
+                <td class="text-muted">{{ appt.user.email }}</td>
+                <td>{{ appt.therapist.username }}</td>
+                <td>{{ appt.scheduled_time|date:"Y-m-d H:i" }}</td>
+                <td>{{ appt.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if appt.is_confirmed %}
+                    <span class="badge bg-success px-2 py-1"><i class="fas fa-check-circle me-1"></i>已確認</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-hourglass-half me-1"></i>待確認</span>
+                    {% endif %}
+                </td>
+                </tr>
+            {% empty %}
+                <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <i class="fas fa-calendar-times fa-lg me-2"></i>目前沒有預約記錄
+                </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+
+        <!-- 分頁 -->
+        {% if all_appointments.has_other_pages %}
+        <div class="card-footer bg-white border-top-0">
+            <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if all_appointments.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?q={{ request.GET.q }}&page={{ all_appointments.previous_page_number }}">上一頁</a>
+                </li>
+                {% endif %}
+                {% for num in all_appointments.paginator.page_range %}
+                <li class="page-item {% if all_appointments.number == num %}active{% endif %}">
+                    <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if all_appointments.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?q={{ request.GET.q }}&page={{ all_appointments.next_page_number }}">下一頁</a>
+                </li>
+                {% endif %}
+            </ul>
+            </nav>
+        </div>
+        {% endif %}
+  </div>
+</div>
+{% endblock %}

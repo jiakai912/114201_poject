@@ -47,24 +47,25 @@
               <i class="fas fa-file-alt fa-3x text-warning mb-3"></i>
               <h5 class="card-title">貼文總數</h5>
               <p class="fs-2 fw-bold">{{ post_count }}</p>
-               <a href="{% url 'manage_posts' %}" class="btn btn-outline-primary mt-3">
+              <a href="{% url 'manage_posts' %}" class="btn btn-outline-primary mt-3">
                 管理貼文
               </a>
             </div>
           </div>
         </div>
 
-        <!-- 危險貼文 -->
+        <!-- 評論總數 -->
         <div class="col-md-3 col-sm-6">
-          <div class="card dream-card d-flex flex-column justify-content-center">
+          <div class="card dream-card">
             <div class="card-body text-center">
-              <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-              <h5 class="card-title">危險貼文</h5>
-              <p class="fs-2 fw-bold">{{ flagged_posts }}</p>
-              <a href="{% url 'manage_flagged_posts' %}" class="btn btn-outline-primary mt-3">查看貼文</a>
+              <i class="fas fa-comments fa-3x text-info mb-3"></i>
+              <h5 class="card-title">評論總數</h5>
+              <p class="fs-2 fw-bold">{{ comment_count }}</p>
+              <a href="{% url 'manage_comments' %}" class="btn btn-outline-primary mt-3">管理評論</a>
             </div>
           </div>
         </div>
+
         
 
         <!-- 待審心理師 -->
@@ -84,8 +85,9 @@
           <div class="card dream-card">
             <div class="card-body text-center">
               <i class="fas fa-calendar-check fa-3x text-danger mb-3"></i>
-              <h5 class="card-title">今日預約</h5>
-              <p class="fs-2 fw-bold">{{ appointments_today }}</p>
+              <h5 class="card-title">所有預約</h5>
+              <p class="fs-2 fw-bold">{{ appointments_all }}</p>
+              <a href="{% url 'manage_appointments' %}" class="btn btn-outline-primary mt-3">管理預約</a>
             </div>
           </div>
         </div>
@@ -102,17 +104,18 @@
           </div>
         </div>
 
-        <!-- 總點券餘額 -->
+        <!-- 總點數記錄 -->
         <div class="col-md-3 col-sm-6">
           <div class="card dream-card d-flex flex-column justify-content-center">
             <div class="card-body text-center">
-              <i class="fas fa-coins fa-3x text-dark mb-3"></i>
-              <h5 class="card-title">總點券餘額</h5>
-              <p class="fs-2 fw-bold">{{ total_points }}</p>
-              <a href="{% url 'manage_points' %}" class="btn btn-outline-primary mt-3">管理點券</a>
+              <i class="fas fa-history fa-3x text-dark mb-3"></i>
+              <h5 class="card-title">總點數記錄</h5>
+              <p class="fs-2 fw-bold">{{ total_point_transactions }}</p>
+              <a href="{% url 'manage_points' %}" class="btn btn-outline-primary mt-3">管理點數</a>
             </div>
           </div>
         </div>
+
 
       </div>
     </div>

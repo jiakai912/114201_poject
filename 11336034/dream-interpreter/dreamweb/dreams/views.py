@@ -57,6 +57,9 @@ from django.utils.timezone import now
 # 管理夢境
 from django.contrib.admin.views.decorators import staff_member_required
 
+# 管理預約
+from django.utils.timezone import localdate
+
 
 # 管理員
 def is_admin(user):
@@ -70,14 +73,16 @@ def admin_dashboard(request):
         'user_count': User.objects.count(),
         'dream_count': Dream.objects.count(),
         'post_count': DreamPost.objects.count(),
+        'comment_count': DreamComment.objects.count(),
         'appointments_today': TherapyAppointment.objects.filter(scheduled_time__date=today).count(),
+        'appointments_all': TherapyAppointment.objects.count(),  # 新增全部預約數
         'unverified_therapists': UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False).count(),
         'flagged_posts': DreamPost.objects.filter(is_flagged=True).count(),
+        'total_point_transactions': PointTransaction.objects.count(),
         'total_chat_messages': ChatMessage.objects.count(),
         'total_points': UserProfile.objects.aggregate(total=models.Sum('points'))['total'] or 0,
     }
     return render(request, 'dreams/admin/admin_dashboard.html', context)
-
 # 管理使用者
 @user_passes_test(lambda u: u.is_superuser)
 def manage_users(request):
@@ -217,6 +222,34 @@ def toggle_flag_post(request, post_id):
     post.save()
     return redirect('manage_posts')
 
+# 管理評論
+@staff_member_required
+def manage_comments(request):
+    query = request.GET.get('q', '')
+    comment_list = DreamComment.objects.select_related('user', 'dream_post')
+
+    if query:
+        comment_list = comment_list.filter(
+            Q(content__icontains=query) |
+            Q(user__username__icontains=query) |
+            Q(dream_post__title__icontains=query)
+        )
+
+    paginator = Paginator(comment_list, 10)
+    page_number = request.GET.get('page')
+    comments = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_comments.html', {
+        'comments': comments,
+        'query': query,
+    })
+
+@staff_member_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    comment.delete()
+    return redirect('manage_comments')
+
 
 # 管理夢境
 @staff_member_required
@@ -239,27 +272,121 @@ def toggle_flag_dream(request, dream_id):
 
 
 
-
 # 管理使用者
+# ✅ 心理師申請管理
 @user_passes_test(lambda u: u.is_superuser)
 def manage_therapists(request):
-    therapists = UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False)
-    return render(request, 'dreams/admin/manage_therapists.html', {'therapists': therapists})
+    therapist_applications = UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False)
+    return render(request, 'dreams/admin/manage_therapists.html', {'therapist_applications': therapist_applications})
 
+@user_passes_test(lambda u: u.is_superuser)
+def manage_therapists(request):
+    q = request.GET.get('q', '').strip()
+    queryset = UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False)
+    if q:
+        queryset = queryset.filter(
+            user__username__icontains=q
+        ) | queryset.filter(
+            user__email__icontains=q
+        )
+    return render(request, 'dreams/admin/manage_therapists.html', {'therapist_applications': queryset})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def approve_therapist(request, user_id):
+    profile = get_object_or_404(UserProfile, user__id=user_id, is_therapist=True)
+    profile.is_verified_therapist = True
+    profile.save()
+    messages.success(request, f"{profile.user.username} 的心理師資格已核准。")
+    return redirect('manage_therapists')
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def reject_therapist(request, user_id):
+    profile = get_object_or_404(UserProfile, user__id=user_id, is_therapist=True)
+    profile.is_therapist = False
+    profile.save()
+    messages.warning(request, f"{profile.user.username} 的心理師申請已拒絕。")
+    return redirect('manage_therapists')
+
+# ✅ 預約管理
+@user_passes_test(lambda u: u.is_superuser)
+@login_required
+def manage_appointments(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("只有管理員可以查看此頁面")
+
+    query = request.GET.get('q', '')
+
+    appointments = TherapyAppointment.objects.select_related('user', 'therapist').order_by('-scheduled_time')
+
+    if query:
+        appointments = appointments.filter(
+            Q(user__username__icontains=query) |
+            Q(user__email__icontains=query) |
+            Q(therapist__username__icontains=query) |
+            Q(therapist__email__icontains=query)
+        )
+
+    # 分頁設定：每頁 10 筆
+    paginator = Paginator(appointments, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_appointments.html', {
+        'all_appointments': page_obj
+    })
+
+
+# ✅ 檢舉夢境管理
 @user_passes_test(lambda u: u.is_superuser)
 def manage_flagged_posts(request):
     posts = DreamPost.objects.filter(is_flagged=True)
     return render(request, 'dreams/admin/manage_flagged_posts.html', {'posts': posts})
 
+# ✅ 聊天訊息管理
 @user_passes_test(lambda u: u.is_superuser)
 def manage_chat_messages(request):
-    messages = ChatMessage.objects.select_related('sender', 'receiver').order_by('-timestamp')[:100]
-    return render(request, 'dreams/admin/manage_chat_messages.html', {'messages': messages})
+    q = request.GET.get('q', '').strip()
+    queryset = ChatMessage.objects.select_related('sender', 'receiver').order_by('-timestamp')
 
+    if q:
+        queryset = queryset.filter(
+            Q(sender__username__icontains=q) |
+            Q(receiver__username__icontains=q) |
+            Q(message__icontains=q)  # 這裡加上訊息內容的搜尋
+        )
+
+    paginator = Paginator(queryset, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_chat_messages.html', {
+        'messages': page_obj,
+    })
+
+# ✅ 點數排行管理
 @user_passes_test(lambda u: u.is_superuser)
 def manage_points(request):
-    users = UserProfile.objects.order_by('-points')[:100]
-    return render(request, 'dreams/admin/manage_points.html', {'users': users})
+    query = request.GET.get('q', '').strip()
+
+    transactions = PointTransaction.objects.select_related('user', 'user__userprofile').order_by('-created_at')
+    if query:
+        transactions = transactions.filter(
+            Q(user__username__icontains=query) | 
+            Q(user__email__icontains=query) |
+            Q(description__icontains=query)   # 加入說明欄位的搜尋
+        )
+
+    paginator = Paginator(transactions, 15)  # 每頁15筆交易
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_points.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
 
 
 # 燈箱

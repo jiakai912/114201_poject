@@ -2,48 +2,92 @@
 {% block title %}聊天室訊息管理{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <h3 class="mb-4">搜尋與管理聊天室訊息</h3>
+<div class="container py-5">
+  <div class="card shadow rounded-4">
+    <div class="card-header btn-primary text-white d-flex justify-content-between align-items-center px-4 py-3">
+      <h4 class="mb-0"><i class="fas fa-comments me-2"></i>聊天室訊息管理</h4>
+      <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
+        <div class="input-group">
+          <input type="text" name="q" class="form-control me-2" placeholder="搜尋發送者、接收者名稱或訊息內容" value="{{ request.GET.q }}">
+          <button class="btn btn-light btn-sm" type="submit ">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="card-body table-responsive p-0">
+      <table class="table table-hover align-middle mb-0 text-center">
+        <thead class="table-secondary small">
+          <tr>
+            <th style="width: 15%;">發送者</th>
+            <th style="width: 15%;">發送者 Email</th>
+            <th style="width: 15%;">接收者</th>
+            <th style="width: 15%;">接收者 Email</th>
+            <th style="width: 15%;">訊息內容</th>
+            <th style="width: 15%;">發送時間</th>
+          </tr>
+        </thead>
+        <tbody class="small align-middle">
+          {% for msg in messages %}
+            <tr>
+              <td class="fw-semibold py-3">{{ msg.sender.username }}</td>
+              <td class="text-truncate py-3" style="max-width: 180px;">{{ msg.sender.email }}</td>
+              <td class="fw-semibold py-3">{{ msg.receiver.username }}</td>
+              <td class="text-truncate py-3" style="max-width: 180px;">{{ msg.receiver.email }}</td>
+              <td class=" text-truncate py-3 px-3" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {% if msg.message %}
+                   {{ msg.message|truncatechars:10 }}
+                {% elif msg.file %}
+                  <i class="fas fa-file me-1"></i> 檔案
+                {% else %}
+                  <span class="text-muted fst-italic">[無訊息]</span>
+                {% endif %}
+              </td>
+              <td class="py-3">{{ msg.timestamp|date:"Y-m-d H:i" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                <i class="fas fa-comment-slash fa-lg me-2"></i>目前沒有聊天訊息
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-  <form method="get" class="mb-3">
-    <input type="text" name="q" placeholder="搜尋訊息關鍵字" value="{{ request.GET.q }}" class="form-control" style="max-width:400px; display:inline-block;">
-    <button class="btn btn-secondary ms-2">搜尋</button>
-  </form>
-
-  {% if chat_messages %}
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>訊息ID</th>
-          <th>發送者</th>
-          <th>訊息內容</th>
-          <th>時間</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for msg in chat_messages %}
-        <tr>
-          <td>{{ msg.id }}</td>
-          <td>{{ msg.sender.username }}</td>
-          <td>{{ msg.content|truncatechars:60 }}</td>
-          <td>{{ msg.timestamp|date:"Y-m-d H:i" }}</td>
-          <td>
-            {% if not msg.sender.is_blocked %}
-            <form method="post" action="{% url 'admin:block_user' msg.sender.id %}">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-danger">封鎖帳號</button>
-            </form>
-            {% else %}
-              <span class="text-danger fw-bold">已封鎖</span>
+    {% if messages.has_other_pages %}
+      <div class="card-footer bg-white border-top-0 py-3">
+        <nav>
+          <ul class="pagination justify-content-center mb-0">
+            {% if messages.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?q={{ request.GET.q }}&page={{ messages.previous_page_number }}">上一頁</a>
+              </li>
             {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>沒有找到相關訊息。</p>
-  {% endif %}
+            {% for num in messages.paginator.page_range %}
+              {% if num >= messages.number|add:'-2' and num <= messages.number|add:'2' %}
+                <li class="page-item {% if messages.number == num %}active{% endif %}">
+                  <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+                </li>
+              {% elif num == 1 or num == messages.paginator.num_pages %}
+                <li class="page-item">
+                  <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+                </li>
+              {% elif num == messages.number|add:'-3' or num == messages.number|add:'3' %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+              {% endif %}
+            {% endfor %}
+            {% if messages.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?q={{ request.GET.q }}&page={{ messages.next_page_number }}">下一頁</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
