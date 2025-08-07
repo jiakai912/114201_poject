@@ -10,7 +10,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     points = models.IntegerField(default=0)  # 點券餘額
     is_therapist = models.BooleanField(default=False)
-    is_verified_therapist = models.BooleanField(default=False) # ✅ 審核心理師註冊
+    is_verified_therapist = models.BooleanField(default=False)  # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
     # 訂價格
@@ -19,6 +19,8 @@ class UserProfile(models.Model):
     # 新增 bio 和 avatar 字段
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
+
+    allow_contact_by_therapist = models.BooleanField(default=False)
 
     # 新增這兩個欄位，用於用戶選擇在社群中展示的稱號和徽章
     display_title = models.ForeignKey(
@@ -36,9 +38,22 @@ class UserProfile(models.Model):
         verbose_name="社群展示徽章"
     )
 
+    # 新增專長領域欄位 (用逗號分隔)
+    specialties = models.TextField(blank=True, null=True, verbose_name="專長領域", help_text="用逗號分隔多個專長，例如：焦慮治療, 兒童心理, 認知行為療法")
+    
+    def get_specialties_list(self):
+        if self.specialties:
+            # 同時支援逗號或換行拆分
+            lines = []
+            for part in self.specialties.split(','):
+                lines.extend(part.splitlines())
+            return [s.strip() for s in lines if s.strip()]
+        return []
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
+    
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -221,16 +236,18 @@ class TherapyMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} → {self.receiver.username}：{self.content[:20]}"
-
+    
 
 class ChatMessage(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sent')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_received')
-    message = models.TextField()
+    message = models.TextField(blank=True, null=True) # 訊息內容可以為空，因為可能有貼圖或檔案
+    file = models.FileField(upload_to='chat_files/', blank=True, null=True, verbose_name="檔案") # 新增
+    sticker = models.CharField(max_length=255, blank=True, null=True, verbose_name="貼圖") # 新增
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.sender.username} → {self.receiver.username}: {self.message[:20]}"
+        return f"{self.sender.username} -> {self.receiver.username}: {self.message[:20]}"
 
 
 # 點券使用記錄
@@ -285,3 +302,20 @@ class PostLike(models.Model):
 
     def __str__(self):
         return f"{self.user.username} 喜歡 {self.post.title} 貼文"
+    
+
+
+class ChatInvitation(models.Model):
+    therapist = models.ForeignKey(User, related_name='sent_invitations', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='received_invitations', on_delete=models.CASCADE)
+    status_choices = [
+        ('pending', '待回覆'),
+        ('accepted', '接受'),
+        ('rejected', '拒絕'),
+    ]
+    status = models.CharField(max_length=10, choices=status_choices, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('therapist', 'user')

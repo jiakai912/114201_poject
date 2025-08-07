@@ -185,11 +185,16 @@
                 </div>
                 <div class="card-body text-center">
                     {% if user_profile.avatar %}
-                        <img src="{{ user_profile.avatar.url }}" alt="頭像" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                        <img src="{{ user_profile.avatar.url }}" alt="{{ user.username }}" 
+                            class="rounded-circle mb-3 shadow"
+                            style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #dee2e6;">
                     {% else %}
-                        <img src="{% static 'images/default_avatar.png' %}" alt="預設頭像" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                        <div class="rounded-circle mb-3 d-flex justify-content-center align-items-center mx-auto shadow"
+                            style="width: 120px; height: 120px; background: linear-gradient(135deg, #b790f5ff, #55b1fcff); color: white; font-weight: 600; font-size: 36px; border: 3px solid #dee2e6;">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
                     {% endif %}
-                    <h5 class="mb-1">{{ user.username }}</h5>
+                    <h5 class="mb-1 fw-semibold text-dark">{{ user.username }}</h5>
                     <p class="text-muted small">{{ user.email }}</p>
                     {# ✅ MODIFIED: 顯示目前選擇的展示稱號和徽章 (從 display_title/badge 獲取) #}
                     <p class="card-text small text-muted">目前社群稱號：
@@ -207,7 +212,24 @@
                         {% endif %}
                     </p>
                     <p class="card-text small text-muted mt-2">加入時間：{{ user.date_joined|date:"Y-m-d" }}</p>
-                    <p class="card-text">個人簡介：{{ user_profile.bio|default:"尚未填寫。" }}</p>
+                    <h6 class="fw-semibold text-info mb-2">個人簡介：</h6>
+                    <p class="card-text" style="word-break: break-all; white-space: normal;">
+                    {{ user_profile.bio|default:"尚未填寫。" }}
+                    </p>
+
+                    {% if user.userprofile.is_therapist %}
+                    <p class="card-text">
+                    <h6 class="fw-semibold text-info mb-2">專長領域：</h6>
+                    {% if user_profile.specialties %}
+                        {% for specialty in user_profile.get_specialties_list %}
+                        {{ specialty }}<br>
+                        {% endfor %}
+                    {% else %}
+                        尚未填寫專長領域
+                    {% endif %}
+                    </p>
+                    {% endif %}
+
                     <a href="{% url 'edit_profile' %}" class="btn btn-primary btn-sm mt-3">編輯個人檔案</a>
                 </div>
             </div>
@@ -261,15 +283,15 @@
                                         <br>
                                         <small class="text-muted">{{ ua.achievement.description }}</small>
                                     </div>
-                                    <span class="badge bg-success">已解鎖</span>
-                                </li>
+                                     <span class="badge bg-success">已解鎖</span>
+                                    </li>
                             {% endfor %}
                         {% else %}
                             <li class="list-group-item text-center text-muted">您還沒有解鎖任何成就。</li>
                         {% endif %}
                     </ul>
                     <div class="text-end mt-3">
-                        <a href="{% url 'user_achievements' %}" class="btn btn-outline-primary btn-sm">查看所有成就進度</a>
+                        <a href="{% url 'achievements' %}" class="btn btn-outline-primary btn-sm">查看所有成就進度</a>
                     </div>
                 </div>
             </div>

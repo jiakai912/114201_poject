@@ -52,35 +52,35 @@
                                     {# ✅ MODIFIED: 發文者頭像、用戶名、稱號和徽章的顯示邏輯 #}
                                     <div class="d-flex align-items-center mb-3">
                                         {% if post.is_anonymous %}
-                                            <i class="fas fa-user-secret fa-2x text-muted me-2"></i>
-                                            <small class="text-muted">匿名發佈 <span class="badge bg-info ms-2">您的匿名貼文</span></small>
+                                            <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
+                                                匿名
+                                            </div>
+                                            <small class="text-muted">匿名發佈 </small>
                                         {% else %}
-                                            <div class="user-info-trigger d-flex align-items-center"
-                                                data-user-id="{{ post.user.id }}"
-                                                data-username="{{ post.user.username }}"
-                                                data-avatar-url="{% if post.user.userprofile.avatar %}{{ post.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
-                                                data-profile-url="{% url 'profile' %}" {# 注意: 'profile' 現在是當前用戶的，如要顯示他人資料需另設 URL #}
-                                                data-display-title="{{ post.author_display_title|default_if_none:'' }}"
-                                                data-display-badge-icon="{{ post.author_display_badge_icon|default_if_none:'' }}"
-                                                data-unlocked-achievements="{{ post.author_unlocked_achievements|safe_json_dumps }}"
-                                            >
-                                                <div class="dcard-avatar me-2">
-                                                    <img src="{% if post.user.userprofile.avatar %}{{ post.user.userprofile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
-                                                         alt="{{ post.user.username }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                            {% if post.user.userprofile.avatar %}
+                                                <img src="{{ post.user.userprofile.avatar.url }}" alt="{{ post.user.username }}"
+                                                    class="rounded-circle me-3 shadow"
+                                                    style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
+                                            {% else %}
+                                                <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                    style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                                    {{ post.user.username|slice:":1"|upper }}
                                                 </div>
-                                                <div class="dcard-author-info flex-grow-1">
-                                                    <div class="dcard-author-name">
-                                                        {{ post.user.username }}
-                                                        {% if post.author_display_badge_icon %}
-                                                            <i class="{{ post.author_display_badge_icon }} display-badge" title="展示徽章"></i>
-                                                        {% endif %}
-                                                    </div>
-                                                    <div class="dcard-post-time text-muted small">
-                                                        </div>   
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ post.user.username }}
+                                                    {% if post.author_display_badge_icon %}
+                                                        <i class="{{ post.author_display_badge_icon }} display-badge" title="展示徽章"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <!-- 放置貼文時間或其他資訊 -->
                                                 </div>
                                             </div>
                                         {% endif %}
                                     </div>
+
                                     <p>{{ post.content|truncatechars:50 }}</p>
                                     <small class="text-muted">
                                         發佈時間：{{ post.created_at|date:"Y-m-d H:i" }} |
