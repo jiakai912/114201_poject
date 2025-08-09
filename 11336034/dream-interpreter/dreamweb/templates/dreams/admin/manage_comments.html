@@ -34,7 +34,14 @@
         <tbody>
           {% for comment in comments %}
           <tr>
-            <td>{{ comment.user.username }}</td>
+            <td>
+              {% if comment.user.username|length > 1 %}
+                {{ comment.user.username|slice:":1" }}*{{ comment.user.username|slice:"2:" }}
+              {% else %}
+                {{ comment.user.username }}
+              {% endif %}
+            </td>
+
             <td>{{ comment.dream_post.title }}</td>
             <td>
               {% if comment.dream_post.is_anonymous %}

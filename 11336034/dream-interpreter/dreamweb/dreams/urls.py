@@ -16,7 +16,7 @@ urlpatterns = [
     path('admin_manage-dreams/<int:dream_id>/delete/', views.delete_dream, name='delete_dream'),
     path('admin_manage-dreams/<int:dream_id>/toggle-flag/', views.toggle_flag_dream, name='toggle_flag_dream'),
     path('admin_manage-dreams/<int:dream_id>/', views.dream_detail, name='dream_detail'),
-    
+    path('admin_dreams/<int:dream_id>/', views.dream_manage_detail, name='dream_manage_detail'),# 詳細夢境
     # 管理貼文
     path('admin_manage-posts/', views.manage_posts, name='manage_posts'),
     path('admin_manage-posts/<int:post_id>/delete/', views.delete_post, name='delete_post'),
@@ -31,10 +31,8 @@ urlpatterns = [
 
 
     # 管理夢境
-
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin_dashboard/therapists/', views.manage_therapists, name='manage_therapists'),
-    path('admin_dashboard/flagged_posts/', views.manage_flagged_posts, name='manage_flagged_posts'),
     path('admin_dashboard/chat_messages/', views.manage_chat_messages, name='manage_chat_messages'),
     path('admin_dashboard/points/', views.manage_points, name='manage_points'),
 

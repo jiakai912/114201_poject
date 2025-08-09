@@ -9,7 +9,7 @@
       <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
         <div class="input-group">
           <input type="text" name="q" class="form-control me-2" placeholder="搜尋發送者、接收者名稱或訊息內容" value="{{ request.GET.q }}">
-          <button class="btn btn-light btn-sm" type="submit ">
+          <button class="btn btn-light btn-sm" type="submit">
             <i class="fas fa-search"></i>
           </button>
         </div>
@@ -20,22 +20,30 @@
       <table class="table table-hover align-middle mb-0 text-center">
         <thead class="table-secondary small">
           <tr>
-            <th style="width: 15%;">發送者</th>
-            <th style="width: 15%;">發送者 Email</th>
-            <th style="width: 15%;">接收者</th>
-            <th style="width: 15%;">接收者 Email</th>
-            <th style="width: 15%;">訊息內容</th>
-            <th style="width: 15%;">發送時間</th>
+            <th style="width: 20%;">發送者</th>
+            <th style="width: 20%;">接收者</th>
+            <th style="width: 40%;">訊息內容</th>
+            <th style="width: 20%;">發送時間</th>
           </tr>
         </thead>
         <tbody class="small align-middle">
           {% for msg in messages %}
             <tr>
-              <td class="fw-semibold py-3">{{ msg.sender.username }}</td>
-              <td class="text-truncate py-3" style="max-width: 180px;">{{ msg.sender.email }}</td>
-              <td class="fw-semibold py-3">{{ msg.receiver.username }}</td>
-              <td class="text-truncate py-3" style="max-width: 180px;">{{ msg.receiver.email }}</td>
-              <td class=" text-truncate py-3 px-3" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <td class="fw-semibold py-3">
+                {% if msg.sender.username|length > 1 %}
+                  {{ msg.sender.username|slice:":1" }}*{{ msg.sender.username|slice:"2:" }}
+                {% else %}
+                  {{ msg.sender.username }}
+                {% endif %}
+              </td>
+              <td class="fw-semibold py-3">
+                {% if msg.receiver.username|length > 1 %}
+                  {{ msg.receiver.username|slice:":1" }}*{{ msg.receiver.username|slice:"2:" }}
+                {% else %}
+                  {{ msg.receiver.username }}
+                {% endif %}
+              </td>
+              <td class="text-truncate py-3 px-3" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 {% if msg.message %}
                    {{ msg.message|truncatechars:10 }}
                 {% elif msg.file %}
@@ -48,7 +56,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="6" class="text-center text-muted py-4">
+              <td colspan="4" class="text-center text-muted py-4">
                 <i class="fas fa-comment-slash fa-lg me-2"></i>目前沒有聊天訊息
               </td>
             </tr>

@@ -38,10 +38,27 @@
         <tbody>
           {% for dream in page_obj %}
           <tr>
-            <td>{{ dream.user.username }}</td>
+            <td>
+              {% if dream.user.username|length > 1 %}
+                {{ dream.user.username|slice:":1" }}*{{ dream.user.username|slice:"2:" }}
+              {% else %}
+                {{ dream.user.username }}
+              {% endif %}
+            </td>
+
             <td>{{ dream.id }}</td>
-            <td>{{ dream.dream_content|truncatechars:10|default:"(無內容)" }}</td>
-            <td>{{ dream.interpretation|truncatechars:10|default:"(無解析)" }}</td>
+            <td>
+              <a href="{% url 'dream_manage_detail' dream.id %}" class="text-decoration-none" title="查看完整夢境內容">
+                {{ dream.dream_content|truncatechars:10|default:"(無內容)" }}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'dream_manage_detail' dream.id %}" class="text-decoration-none" title="查看完整解析結果">
+                {{ dream.interpretation|truncatechars:10|default:"(無解析)" }}
+              </a>
+            </td>
+
+
             <td>{{ dream.Happiness|floatformat:2 }}</td>
             <td>{{ dream.Anxiety|floatformat:2 }}</td>
             <td>{{ dream.Fear|floatformat:2 }}</td>

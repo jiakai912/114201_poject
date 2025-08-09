@@ -10,7 +10,7 @@
       </h4>
       <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
         <div class="input-group">
-          <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者名稱或 Email" value="{{ request.GET.q|default:'' }}">
+          <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者名稱" value="{{ request.GET.q|default:'' }}">
           <button class="btn btn-light btn-sm" type="submit">
             <i class="fas fa-search"></i>
           </button>
@@ -23,7 +23,6 @@
         <thead class="table-secondary small text-nowrap">
           <tr>
             <th>名稱</th>
-            <th>Email</th>
             <th>申請時間</th>
             <th>目前狀態</th>
             <th class="text-center">操作</th>
@@ -32,8 +31,13 @@
         <tbody>
           {% for profile in therapist_applications %}
           <tr class="transition hover-shadow-sm">
-            <td class="fw-semibold text-dark">{{ profile.user.username }}</td>
-            <td>{{ profile.user.email }}</td>
+            <td class="fw-semibold text-dark">
+              {% if profile.user.username|length > 1 %}
+                {{ profile.user.username|slice:":1" }}*{{ profile.user.username|slice:"2:" }}
+              {% else %}
+                {{ profile.user.username }}
+              {% endif %}
+            </td>
             <td>{{ profile.user.date_joined|date:"Y-m-d H:i" }}</td>
             <td>
               {% if profile.is_verified_therapist %}
@@ -63,7 +67,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5" class="text-center text-muted py-4">
+            <td colspan="4" class="text-center text-muted py-4">
               <i class="fas fa-user-slash fa-lg me-2"></i>目前沒有待審核的心理師申請。
             </td>
           </tr>

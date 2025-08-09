@@ -18,13 +18,11 @@
         </form>
         </div>
 
-
         <div class="card-body table-responsive p-0">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-secondary small text-center">
             <tr>
                 <th>使用者</th>
-                <th>Email</th>
                 <th>心理師</th>
                 <th>預約時間</th>
                 <th>申請日期</th>
@@ -34,9 +32,20 @@
             <tbody class="small text-center">
             {% for appt in all_appointments %}
                 <tr>
-                <td>{{ appt.user.username }}</td>
-                <td class="text-muted">{{ appt.user.email }}</td>
-                <td>{{ appt.therapist.username }}</td>
+                <td>
+                    {% if appt.user.username|length > 1 %}
+                        {{ appt.user.username|slice:":1" }}*{{ appt.user.username|slice:"2:" }}
+                    {% else %}
+                        {{ appt.user.username }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if appt.therapist.username|length > 1 %}
+                        {{ appt.therapist.username|slice:":1" }}*{{ appt.therapist.username|slice:"2:" }}
+                    {% else %}
+                        {{ appt.therapist.username }}
+                    {% endif %}
+                </td>
                 <td>{{ appt.scheduled_time|date:"Y-m-d H:i" }}</td>
                 <td>{{ appt.created_at|date:"Y-m-d H:i" }}</td>
                 <td>
@@ -49,7 +58,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                <td colspan="7" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     <i class="fas fa-calendar-times fa-lg me-2"></i>目前沒有預約記錄
                 </td>
                 </tr>

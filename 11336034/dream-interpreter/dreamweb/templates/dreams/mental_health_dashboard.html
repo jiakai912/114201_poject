@@ -163,7 +163,9 @@
                                             data-username="{{ t.username }}"
                                             data-coin_price="{{ t.userprofile.coin_price }}"
                                             data-specialty="{{ t.userprofile.specialties|default:'未提供' }}"
-                                            data-bio="{{ t.userprofile.bio|default:'尚未提供自我介紹' }}">
+                                            data-bio="{{ t.userprofile.bio|default:'尚未提供自我介紹' }}"
+                                            data-avatar="{% if t.userprofile.avatar %}{{ t.userprofile.avatar.url }}{% endif %}"
+                                            data-initial="{{ t.username|slice:":1"|upper }}">
                                         {{ t.username }}
                                         （每1小時 {{ t.userprofile.coin_price }} 點券）
                                     </option>
@@ -193,17 +195,21 @@
                     <div id="therapistInfoCard" class="card border-info shadow-sm d-none">
                         <div class="card-body">
                             
+
                             <div class="d-flex align-items-center mb-3">
-                                {% if user_profile.avatar %}
-                                    <img src="{{ user_profile.avatar.url }}" alt="{{ user.username }}"
-                                        class="rounded-circle shadow"
-                                        style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
-                                {% else %}
-                                    <div class="rounded-circle d-flex justify-content-center align-items-center shadow"
-                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5ff, #55b1fcff); color: white; font-weight: bold; font-size: 20px; border: 2px solid #dee2e6;">
-                                        {{ user.username|slice:":1"|upper }}
-                                    </div>
-                                {% endif %}
+                                <!-- 有頭像用的圖片 -->
+                                <img id="therapistAvatar"
+                                    src=""
+                                    alt="心理師頭像"
+                                    class="rounded-circle shadow me-3"
+                                    style="display: none; width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
+
+                                <!-- 無頭像用的首字母圓圈 -->
+                                <div id="therapistInitial"
+                                    class="rounded-circle shadow me-3 d-flex justify-content-center align-items-center"
+                                    style="display: none; width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                    A
+                                </div>
                                 <h5 class="ms-3 mb-0" id="therapistName">{{ user.get_full_name|default:user.username }}</h5>
                             </div>
 
@@ -316,6 +322,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const specialtyData = option.getAttribute("data-specialty");
         specialtyEl.innerHTML = "";  // 先清空
 
+        const avatarEl = document.getElementById("therapistAvatar");
+        const initialEl = document.getElementById("therapistInitial");
+        const avatarUrl = option.getAttribute("data-avatar");
+        const initial = option.getAttribute("data-initial");
+
+        // 有頭像
+        if (avatarUrl && avatarUrl.trim() !== "") {
+            avatarEl.src = avatarUrl;
+            avatarEl.style.display = "block";
+            initialEl.style.setProperty("display", "none", "important");
+
+        } else {
+            initialEl.textContent = initial;
+            initialEl.style.display = "flex";  // ✅ 顯示首字母
+            avatarEl.style.display = "none";   // ✅ 隱藏圖片
+        }
+
         if (specialtyData && specialtyData !== "未提供") {
             // 拆成陣列並去除空字串
             const specialties = specialtyData.split(',').map(s => s.trim()).filter(s => s.length > 0);
@@ -349,15 +372,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
+
     function updateConfirmMessage() {
         if (!submitBtn || !priceDisplay) return;
         const selectedOption = select.options[select.selectedIndex];
         const selectedPrice = selectedOption.getAttribute('data-coin_price') || '1500';
 
-        // 更新 confirm 提示訊息
-        submitBtn.setAttribute('onclick', `return confirm('預約將扣除 ${selectedPrice} 點券，是否確定預約？');`);
         // 更新按鈕內價格顯示
         priceDisplay.textContent = selectedPrice;
+    }
+    
+
+    const form = document.getElementById('appointmentForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const selectedOption = select.options[select.selectedIndex];
+            const price = selectedOption.getAttribute('data-coin_price') || '1500';
+            if (!confirm(`預約將扣除 ${price} 點券，是否確定預約？`)) {
+                e.preventDefault();  // 使用者取消就阻止送出
+            }
+        });
     }
 
     function getSelectedTherapistName() {

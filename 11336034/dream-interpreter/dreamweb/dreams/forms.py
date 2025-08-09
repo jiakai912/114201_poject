@@ -14,6 +14,36 @@ class UserEditForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+
+
+# 用戶註冊表單，包含心理師身份選項
+class UserRegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    is_therapist = forms.BooleanField(required=False, label="我是心理師")
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2', 'is_therapist']
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if len(username) < 2 or len(username) > 8:
+            raise forms.ValidationError("用戶名必須介於 2 到 8 個字之間")
+        return username
+
+class DreamForm(forms.ModelForm):
+    audio_file = forms.FileField(required=False)
+    dream_content = forms.CharField(widget=forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': '請詳細描述您的夢境...',
+                'rows': 8,
+            }), required=False)
+
+    class Meta:
+        model = Dream
+        fields = ['dream_content', 'audio_file']
+
+
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
@@ -23,57 +53,8 @@ class UserProfileForm(forms.ModelForm):
             'is_verified_therapist': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'points': forms.NumberInput(attrs={'class': 'form-control'}),
         }
-
-
-# 用戶註冊表單，包含心理師身份選項
-class UserRegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    is_therapist = forms.BooleanField(required=False, label="我是心理師")
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password1', 'password2', 'is_therapist']
-
-class DreamForm(forms.ModelForm):
-    audio_file = forms.FileField(required=False)
-    dream_content = forms.CharField(widget=forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': '請詳細描述您的夢境...',
-                'rows': 8,
-            }), required=False)
-
-    class Meta:
-        model = Dream
-        fields = ['dream_content', 'audio_file']
-
-
-# 用戶註冊表單，包含心理師身份選項
-class UserRegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    is_therapist = forms.BooleanField(required=False, label="我是心理師")
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password1', 'password2', 'is_therapist']
-
-class DreamForm(forms.ModelForm):
-    audio_file = forms.FileField(required=False)
-    dream_content = forms.CharField(widget=forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': '請詳細描述您的夢境...',
-                'rows': 8,
-            }), required=False)
-
-    class Meta:
-        model = Dream
-        fields = ['dream_content', 'audio_file']
-
-
+        
 class UserProfileForm(forms.ModelForm):
-    # ✅ FIX: 移除 email 字段，因為它屬於 User 模型，而不是 UserProfile
-    # email = forms.EmailField(required=True, label="電子郵件",
-    #                          widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': '您的電子郵件地址'}))
-
     bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': '寫一些關於您自己的內容...'}), required=False)
     avatar = forms.ImageField(required=False, help_text="上傳您的頭像圖片")
 
@@ -119,12 +100,26 @@ class UserProfileForm(forms.ModelForm):
             if self.instance.display_badge:
                 self.fields['display_badge'].initial = self.instance.display_badge.id
 
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data.get('avatar')
+        if avatar:
+            # 檔案大小限制 (2MB)
+            if avatar.size > 2 * 1024 * 1024:
+                raise ValidationError("上傳的圖片檔案不能超過 2MB。")
+
+            # 檔案類型限制
+            if not avatar.content_type.startswith('image/'):
+                raise ValidationError("請上傳有效的圖片檔案（例如 JPG, PNG）。")
+        return avatar
+    
     def save(self, commit=True):
         user_profile = super().save(commit=False)
 
         if commit:
             user_profile.save()
         return user_profile
+
 
 class TherapistProfileForm(forms.ModelForm):
     class Meta:

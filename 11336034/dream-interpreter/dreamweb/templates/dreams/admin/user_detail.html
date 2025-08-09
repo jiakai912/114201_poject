@@ -10,16 +10,14 @@
     <div class="card-body">
       <form method="post" action="{% url 'view_user_detail' user.id %}">
         {% csrf_token %}
-
+        
         <div class="mb-3">
           <label for="username" class="form-label"><strong>帳號 (Username)</strong></label>
-          <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" readonly>
+          <input type="text" class="form-control" id="username" name="username" 
+            value="{% with name=user.username %}{% if name|length > 1 %}{{ name|slice:":1" }}＊{{ name|slice:"2:" }}{% else %}{{ name }}{% endif %}{% endwith %}" 
+            readonly>
         </div>
 
-        <div class="mb-3">
-          <label for="email" class="form-label"><strong>Email</strong></label>
-          <input type="email" class="form-control" id="email" name="email" value="{{ user_form.email.value }}">
-        </div>
 
         <div class="mb-3">
           <label for="role" class="form-label"><strong>身分 (Role)</strong></label>

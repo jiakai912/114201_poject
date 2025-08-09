@@ -23,7 +23,6 @@
         <thead class="table-secondary small text-nowrap">
           <tr>
             <th>名稱</th>
-            <th>Email</th>
             <th>身分</th>
             <th>狀態</th>
             <th>點數</th>
@@ -35,8 +34,15 @@
         <tbody class="small">
           {% for user in users %}
           <tr>
-            <td class="px-3">{{ user.username }}</td>
-            <td class="px-3" style="word-break: break-all;">{{ user.email }}</td>
+            <!-- 顯示前 3 個字元，其餘以 *** 取代 -->
+            <td class="px-3">
+              {% if user.username|length > 1 %}
+                {{ user.username|slice:":1" }}*{{ user.username|slice:"2:" }}
+              {% else %}
+                {{ user.username }}
+              {% endif %}
+            </td>
+
             <td class="px-3 text-center">
               {% if user.is_superuser %}
                 管理員
@@ -69,8 +75,8 @@
                 <a href="{% url 'view_user_detail' user.id %}" class="btn btn-sm btn-outline-primary">編輯</a>
                 {% if user.is_active %}
                   <a href="{% url 'block_user' user.id %}" 
-                     class="btn btn-sm btn-outline-danger" 
-                     onclick="return confirm('確定要停用這個使用者嗎？停用後該使用者將無法登入。');">
+                    class="btn btn-sm btn-outline-danger" 
+                    onclick="return confirm('確定要停用這個使用者嗎？停用後該使用者將無法登入。');">
                     停用
                   </a>
                 {% else %}
@@ -81,7 +87,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-center text-muted py-4">查無使用者</td>
+            <td colspan="7" class="text-center text-muted py-4">查無使用者</td>
           </tr>
           {% endfor %}
         </tbody>

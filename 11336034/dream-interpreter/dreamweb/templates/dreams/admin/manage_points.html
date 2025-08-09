@@ -8,7 +8,7 @@
       <h4 class="mb-0"><i class="fas fa-coins me-2"></i>點券管理</h4>
       <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
         <div class="input-group">
-          <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者名稱、Email 或說明" value="{{ query }}">
+          <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者名稱或說明" value="{{ query }}">
           <button class="btn btn-light btn-sm" type="submit">
             <i class="fas fa-search"></i>
           </button>
@@ -20,18 +20,22 @@
       <table class="table table-hover align-middle mb-0 text-center">
         <thead class="table-secondary small text-nowrap">
           <tr>
-            <th style="width: 15%;">使用者</th>
-            <th style="width: 25%;">Email</th>
+            <th style="width: 20%;">使用者</th>
             <th style="width: 10%;">點數</th>
-            <th style="width: 35%;">使用說明</th>
-            <th style="width: 15%;">時間</th>
+            <th style="width: 50%;">使用說明</th>
+            <th style="width: 20%;">時間</th>
           </tr>
         </thead>
         <tbody class="small align-middle text-nowrap">
           {% for tx in page_obj %}
             <tr>
-              <td class="fw-semibold py-3">{{ tx.user.username }}</td>
-              <td class="text-truncate py-3" style="max-width: 240px;">{{ tx.user.email }}</td>
+              <td class="fw-semibold py-3">
+                {% if tx.user.username|length > 1 %}
+                  {{ tx.user.username|slice:":1" }}*{{ tx.user.username|slice:"2:" }}
+                {% else %}
+                  {{ tx.user.username }}
+                {% endif %}
+              </td>
               <td class="fw-bold py-3 {% if tx.is_gain %}text-success{% else %}text-danger{% endif %}">
                 {% if tx.is_gain %}+{% else %}-{% endif %}{{ tx.amount }}
               </td>
@@ -40,7 +44,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="5" class="text-center text-muted py-4">
+              <td colspan="4" class="text-center text-muted py-4">
                 <i class="fas fa-user-slash fa-lg me-2"></i>查無交易紀錄
               </td>
             </tr>
