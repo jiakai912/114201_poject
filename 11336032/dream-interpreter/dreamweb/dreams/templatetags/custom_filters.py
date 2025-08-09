@@ -46,3 +46,17 @@ def safe_json_dumps(value):
     
     # ensure_ascii=False 確保中文正常顯示，indent=2 增加可讀性 (可選)
     return json.dumps(value, cls=CustomEncoder, ensure_ascii=False)
+
+
+
+from django import template
+
+register = template.Library()
+
+@register.filter
+def multiply(value, arg):
+    """Multiplies the value by the argument."""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return ''
