@@ -1,0 +1,31 @@
+{% extends 'dreams/base.html' %}
+{% block title %}評論詳情{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow rounded-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">評論詳情</h4>
+    </div>
+    <div class="card-body">
+      <p><strong>使用者：</strong>
+        {% if comment.user.username|length > 1 %}
+          {{ comment.user.username|slice:":1" }}*{{ comment.user.username|slice:"2:" }}
+        {% else %}
+          {{ comment.user.username }}
+        {% endif %}
+      </p>
+      <p><strong>貼文標題：</strong>
+        <a href="{% url 'post_detail' comment.dream_post.id %}">
+          {{ comment.dream_post.title }}
+        </a>
+      </p>
+      <p><strong>評論內容：</strong> {{ comment.content }}</p>
+      <p class="text-muted small">建立時間：{{ comment.created_at|date:"Y-m-d H:i" }}</p>
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'manage_comments' %}" class="btn btn-secondary">返回評論管理</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

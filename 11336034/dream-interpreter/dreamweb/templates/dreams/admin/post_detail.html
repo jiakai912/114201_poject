@@ -1,0 +1,30 @@
+{% extends 'dreams/base.html' %}
+{% block title %}貼文詳細內容{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow-lg rounded-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">{{ post.title }}</h4>
+    </div>
+    <div class="card-body">
+      <p><strong>作者：</strong>
+        {% if post.is_anonymous %}
+          匿名
+        {% elif post.user %}
+          {{ post.user.username }}
+        {% else %}
+          無
+        {% endif %}
+      </p>
+      <p><strong>建立時間：</strong>{{ post.created_at|date:"Y-m-d H:i" }}</p>
+      <p><strong>瀏覽次數：</strong>{{ post.view_count }}</p>
+      <hr>
+      <p>{{ post.content|linebreaks }}</p>
+    </div>
+    <div class="card-footer text-end">
+      <a href="{% url 'manage_posts' %}" class="btn btn-secondary">返回列表</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -120,12 +120,15 @@ def view_user_detail(request, user_id):
     profile = user.userprofile
 
     if request.method == 'POST':
-        email = request.POST.get('email')
+        email = request.POST.get('email', '').strip()
         role = request.POST.get('role')
         points = request.POST.get('points')
         is_active = 'is_active' in request.POST
 
-        user.email = email
+        # 防止 email 被空值覆蓋
+        if email:
+            user.email = email
+
         user.is_active = is_active
 
         if role == 'admin':
@@ -147,7 +150,7 @@ def view_user_detail(request, user_id):
 
         try:
             profile.points = int(points)
-        except ValueError:
+        except (ValueError, TypeError):
             profile.points = 0
 
         user.save()
@@ -265,6 +268,11 @@ def toggle_flag_post(request, post_id):
     post.save()
     return redirect('manage_posts')
 
+# 詳細貼文
+def post_detail(request, post_id):
+    post = get_object_or_404(DreamPost, id=post_id)
+    return render(request, 'dreams/admin/post_detail.html', {'post': post})
+
 # 管理評論
 @staff_member_required
 def manage_comments(request):
@@ -293,6 +301,10 @@ def delete_comment(request, comment_id):
     comment.delete()
     return redirect('manage_comments')
 
+# 詳細評論
+def comments_detail(request, comment_id):
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    return render(request, 'dreams/admin/comments_detail.html', {'comment': comment})
 
 # 管理心理師申請
 @user_passes_test(lambda u: u.is_superuser)
@@ -1526,98 +1538,54 @@ def update_dream_trends():
 # 夢境與相關新聞
 def dream_news(request):
     news_results = []
-    dream_input = ""
-    popular_tags = []
-    
-    main_news = None
-    other_news = []
-    
-    try:
-        latest_trend = DreamTrend.objects.latest('date')
-        if latest_trend:
-            trend_data = latest_trend.trend_data
-            popular_tags = list(trend_data.keys())[:10]
-    except DreamTrend.DoesNotExist:
-        popular_tags = []
-
-    print("--- 請求開始 ---")
-    
-    query = ""
+    articles = []  # 在這裡初始化 articles 變數，避免未定義的錯誤
     if request.method == 'POST':
-        print("偵錯：接收到 POST 請求。")
         dream_input = request.POST.get('dream_input')
-        query = dream_input
-    elif popular_tags:
-        print("偵錯：接收到 GET 請求，自動載入熱門新聞。")
-        query = popular_tags[0]
-    else:
-        print("偵錯：接收到 GET 請求，但無熱門關鍵字。使用預設關鍵字。")
-        query = "台灣 新聞"
 
-    if query:
-        print(f"偵錯：夢境輸入或預設關鍵字為: {query}")
-        try:
-            news_api_key = "1ba64fa6fbbf4d98978fc53f829ca6e9"
-            if not news_api_key:
-                raise ValueError("NewsAPI 金鑰未設定。")
+        # 1. 抓取新聞資料
+        news_api_url = f'https://newsapi.org/v2/everything?q={dream_input}&language=zh&apiKey=44c026b581564a6f9d55df137196c6f4'
+        response = requests.get(news_api_url)
+        news_data = response.json()
 
-            news_api_url = f'https://newsapi.org/v2/everything?q={query}&language=zh&apiKey={news_api_key}'
-            print(f"偵錯：正在呼叫 API: {news_api_url}")
-            response = requests.get(news_api_url, timeout=10)
-            response.raise_for_status()
-            news_data = response.json()
+        # 打印 NewsAPI 回應
+        print("NewsAPI 回應: ", news_data)
+
+        # 2. 計算新聞與夢境的相似度
+        if news_data.get('status') == 'ok':
             articles = news_data.get('articles', [])
-            print(f"偵錯：API 回傳了 {len(articles)} 篇文章。")
-
-            if articles:
-                for article in articles:
-                    title = article.get('title', '')
-                    description = article.get('description', '')
-                    url = article.get('url', '#')
-                    urlToImage = article.get('urlToImage')  # ✅ 新增：獲取圖片URL
-                    
-                    document_text = f"{title or ''} {description or ''}"
-                    
-                    if document_text.strip():
-                        documents = [query, document_text]
-                        vectorizer = TfidfVectorizer()
-                        tfidf_matrix = vectorizer.fit_transform(documents)
-                        similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0] * 100
-
-                        news_results.append({
-                            'title': title,
-                            'description': description,
-                            'url': url,
-                            'urlToImage': urlToImage,  # ✅ 新增：傳遞圖片URL
-                            'similarity_score': round(similarity_score, 2)
-                        })
-
-                news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
-                
-                if news_results:
-                    main_news = news_results.pop(0) # 取出第一篇作為主要新聞
-                    other_news = news_results[:10] # 其餘為其他新聞
+            print(f"找到 {len(articles)} 條新聞")  # 打印找到的新聞數量
             
-        except requests.exceptions.RequestException as e:
-            print(f"偵錯：新聞 API 請求失敗，錯誤: {e}")
-            messages.error(request, f"新聞 API 請求失敗: {e}")
-        except ValueError as e:
-            print(f"偵錯：金鑰錯誤或環境變數未設定，錯誤: {e}")
-            messages.error(request, str(e))
-        except Exception as e:
-            print(f"偵錯：處理新聞資料時發生未知錯誤: {e}")
-            messages.error(request, f"處理新聞資料時發生錯誤: {e}")
-    else:
-        print("偵錯：接收到 GET 請求。")
+            for article in articles:
+                title = article['title']
+                description = article['description']
+                url = article['url']
+                
+                # 計算夢境與新聞的相似度
+                documents = [dream_input, (title or "") + " " + (description or "")]
+                vectorizer = TfidfVectorizer(stop_words='english')
+                tfidf_matrix = vectorizer.fit_transform(documents)
+                similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0] * 100
 
-    context = {
-        'main_news': main_news,
-        'other_news': other_news,
-        'dream_input': dream_input,
-        'popular_tags': popular_tags,
-    }
-    print("--- 渲染模板並回傳 ---")
-    return render(request, 'dreams/dream_news.html', context)
+                news_results.append({
+                    'title': title,
+                    'description': description,
+                    'url': url,
+                    'similarity_score': round(similarity_score, 2)
+                })
+        # 只將相似度大於 0 的新聞加入 news_results
+        news_results = [article for article in news_results if article['similarity_score'] > 0]
+
+        # 如果沒有找到新聞，提供提示
+        if not articles:
+            print("沒有找到相關新聞")
+            news_results.append({'title': '沒有找到相關新聞', 'description': '請稍後再試', 'url': '#', 'similarity_score': 0})
+
+        # 按相似度從高到低排序
+        news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
+
+    print("返回的新聞結果: ", news_results)  # 打印返回的新聞結果
+
+    return render(request, 'dreams/dream_news.html', {'news_results': news_results})
 
 
 # 心理諮商頁面分享夢境給心理師
@@ -1819,7 +1787,6 @@ def share_and_schedule(request):
                     content=message_content
                 )
 
-        messages.success(request, f"已成功預約，並扣除 {appointment_cost} 點，目前剩餘 {user_profile.points} 點。")
         return redirect('user_appointments')
 
     return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
@@ -1829,7 +1796,7 @@ def share_and_schedule(request):
 def user_appointments(request):
     appointments = TherapyAppointment.objects.filter(
     user=request.user
-    ).order_by('-scheduled_time')
+    ).order_by('-created_at')  # 按建立時間最新的排在最上面
 
     # 找出使用者已授權的心理師
     therapists = [
@@ -1843,12 +1810,17 @@ def user_appointments(request):
         appointments.filter(is_confirmed=True).values_list('therapist_id', flat=True)
     )
 
-    # 對每筆預約附加 point_change 屬性
     for appt in appointments:
-        if appt.is_confirmed:
-            appt.point_change = -1500
+        therapist_profile = appt.therapist.userprofile
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
+        if appt.is_cancelled:
+            appt.point_change = appointment_cost  # 已經是正數
+        elif appt.is_confirmed:
+            appt.point_change = -appointment_cost
         else:
-            appt.point_change = 0  # 未確認預約尚未扣點
+            appt.point_change = 0
+        appt.abs_point_change = abs(appt.point_change)  # 新增正數版本
+
 
     return render(request, 'dreams/user_appointments.html', {
         'appointments': appointments,
@@ -1891,19 +1863,41 @@ def cancel_appointment(request, appointment_id):
     appointment.is_cancelled = True
     appointment.save()
 
-    # 退回點券
+    # 依照心理師設定的 coin_price 退點（預設 1500）
+    therapist_profile = appointment.therapist.userprofile
+    appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
+
     profile = request.user.userprofile
-    profile.points += 1500
+    profile.points += appointment_cost
     profile.save()
 
     # 點數紀錄
     PointTransaction.objects.create(
         user=request.user,
         transaction_type='GAIN',
-        amount=1500,
-        description='取消預約退還點數'
+        amount=appointment_cost,
+        description=f"取消預約退還 {appointment.therapist.username} 諮商點數"
     )
 
+    return redirect('user_appointments')
+
+#刪除已取消的預約
+@require_POST
+@login_required
+def delete_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id, user=request.user)
+
+    if not appointment.is_cancelled:
+        return HttpResponseForbidden("只能刪除已取消的預約")
+
+    appointment.delete()
+    return redirect('user_appointments')
+
+#全部刪除已取消的預約
+@require_POST
+@login_required
+def delete_all_cancelled_appointments(request):
+    TherapyAppointment.objects.filter(user=request.user, is_cancelled=True).delete()
     return redirect('user_appointments')
 
 

@@ -23,10 +23,12 @@ urlpatterns = [
     path('admin_manage-posts/<int:post_id>/toggle-flag/', views.toggle_flag_post, name='toggle_flag_post'),
     path('admin_posts/<int:post_id>/toggle-flag/', views.toggle_flag_post, name='toggle_flag_post'),
     path('admin_posts/<int:post_id>/delete/', views.delete_post, name='delete_post'),
+    path('post/<int:post_id>/', views.post_detail, name='post_detail'),# 詳細貼文
     
     # 管理評論
     path('admin_manage-comments/', views.manage_comments, name='manage_comments'),
     path('admin_manage-comments/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
+    path('comments/<int:comment_id>/', views.comments_detail, name='comments_detail'),# 詳細評論
 
 
 
@@ -102,6 +104,13 @@ urlpatterns = [
     path('my_appointments/', views.user_appointments, name='user_appointments'),
     path('appointment/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('api/booked_slots/<int:therapist_id>/', views.get_therapist_booked_slots, name='get_booked_slots'),
+    #使用者刪除已取消的預約
+    path('delete_appointment/<int:appointment_id>/', views.delete_appointment, name='delete_appointment'),
+
+    #全部刪除已取消的預約
+    path('delete_all_cancelled/', views.delete_all_cancelled_appointments, name='delete_all_cancelled'),
+
+
 
 
     #心理師看到的預約及確認按鈕

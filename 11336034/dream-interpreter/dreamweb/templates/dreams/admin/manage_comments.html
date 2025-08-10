@@ -41,8 +41,11 @@
                 {{ comment.user.username }}
               {% endif %}
             </td>
-
-            <td>{{ comment.dream_post.title }}</td>
+            <td>
+              <a href="{% url 'comments_detail' comment.id %}">
+                {{ comment.dream_post.title }}
+              </a>
+            </td>
             <td>
               {% if comment.dream_post.is_anonymous %}
                 <span class="badge bg-secondary">匿名</span>
@@ -50,7 +53,12 @@
                 <span class="badge bg-success">公開</span>
               {% endif %}
             </td>
-            <td>{{ comment.content|truncatechars:10 }}</td>
+            <td>
+              <a href="{% url 'comments_detail' comment.id %}">
+                {{ comment.content|truncatechars:10 }}
+              </a>
+            </td>
+
             <td>{{ comment.created_at|date:"Y-m-d H:i" }}</td>
             <td>
               <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-danger" onclick="return confirm('確定要刪除這則評論嗎？')">
