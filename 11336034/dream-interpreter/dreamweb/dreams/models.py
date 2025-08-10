@@ -263,8 +263,10 @@ class PointTransaction(models.Model):
     description = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
     def is_gain(self):
         return self.transaction_type == 'GAIN'
+
 
     def __str__(self):
         return f"{self.user.username} {self.get_transaction_type_display()} {self.amount} 點 - {self.description}"

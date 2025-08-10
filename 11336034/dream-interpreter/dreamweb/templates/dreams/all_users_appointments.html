@@ -44,24 +44,42 @@
                     <td>
                         <div class="d-flex justify-content-center gap-2">
                             {% if not appt.is_confirmed and not appt.is_cancelled %}
-                            <form method="post" action="{% url 'confirm_appointment' appointment_id=appt.id %}" class="m-0 p-0">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-success">確認</button>
-                            </form>
+                                <!-- 顯示確認按鈕 -->
+                                <form method="post" action="{% url 'confirm_appointment' appointment_id=appt.id %}" class="m-0 p-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">確認</button>
+                                </form>
                             {% endif %}
-                            <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆預約嗎？');" class="m-0 p-0">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
-                            </form>
+
+                            {% if not appt.is_confirmed and not appt.is_cancelled %}
+                                <!-- 顯示刪除按鈕 -->
+                                <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆預約嗎？');" class="m-0 p-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+                                </form>
+                            {% else %}
+                                {% if appt.is_confirmed %}
+                                    {% if appt.scheduled_time >= now %}
+                                        <!-- 時間未過仍可刪除 -->
+                                        <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆預約嗎？');" class="m-0 p-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+                                        </form>
+                                    {% else %}
+                                        <!-- 時間已過不顯示刪除鍵 -->
+                                        <span class="text-muted">已過期無法刪除</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </td>
                     <td>
                         {% if appt.is_cancelled %}
-                            <span class="text-success fw-semibold">+1500（退回）</span>
+                            <span class="text-success fw-semibold">+{{ coin_price }}（退回）</span>
                         {% elif appt.is_confirmed %}
-                            <span class="text-danger fw-semibold">-1500（已扣）</span>
+                            <span class="text-danger fw-semibold">-{{ coin_price }}（已扣）</span>
                         {% else %}
-                            <span class="text-danger fw-semibold">-1500（暫扣）</span>
+                            <span class="text-danger fw-semibold">-{{ coin_price }}（暫扣）</span>
                         {% endif %}
                     </td>
                 </tr>

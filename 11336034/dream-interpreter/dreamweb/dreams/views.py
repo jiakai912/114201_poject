@@ -1721,7 +1721,10 @@ def view_user_dreams(request, user_id):
 # 心理諮商預約及對話
 @login_required
 def share_and_schedule(request):
-    therapists = User.objects.filter(userprofile__is_therapist=True, userprofile__is_verified_therapist=True)
+    therapists = User.objects.filter(
+        userprofile__is_therapist=True,
+        userprofile__is_verified_therapist=True
+    )
 
     if request.method == 'POST':
         therapist_id = request.POST.get('therapist_id')
@@ -1734,37 +1737,51 @@ def share_and_schedule(request):
             messages.error(request, "找不到該心理師。")
             return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
+        try:
+            from datetime import datetime
+            scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
+            if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
+                messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
+                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+        except Exception:
+            messages.error(request, "預約時間格式錯誤。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+        # 只擋已確認的預約時段
+        if TherapyAppointment.objects.filter(
+            therapist=therapist,
+            scheduled_time=scheduled_dt,
+            is_cancelled=False,
+            is_confirmed=True
+        ).exists():
+            messages.error(request, "此時間已被確認預約，請選擇其他時間。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
         user_profile = request.user.userprofile
         therapist_profile = therapist.userprofile
-        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500  # 預設1500
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
 
+        if user_profile.points < appointment_cost:
+            messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+        # 扣點並建立預約（狀態未確認）
         with transaction.atomic():
-            if user_profile.points < appointment_cost:
-                messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-            try:
-                from datetime import datetime
-                scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
-                if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
-                    messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
-                    return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-            except Exception:
-                messages.error(request, "預約時間格式錯誤。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-            if TherapyAppointment.objects.filter(therapist=therapist, scheduled_time=scheduled_dt).exists():
-                messages.error(request, "此時間已被預約，請選擇其他時間。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-            # 點數扣除與記錄
             user_profile.points -= appointment_cost
             user_profile.save()
 
             PointTransaction.objects.create(
                 user=request.user,
                 amount=-appointment_cost,
-                description=f"預約心理師 {therapist.username} 諮商（1 小時）"
+                description=f"預約心理師 {therapist.username} 諮商（1 小時，待確認）"
+            )
+
+            appointment = TherapyAppointment.objects.create(
+                user=request.user,
+                therapist=therapist,
+                scheduled_time=scheduled_dt,
+                is_confirmed=False,
+                is_cancelled=False,
             )
 
             # 分享授權
@@ -1774,12 +1791,6 @@ def share_and_schedule(request):
                 defaults={'is_active': True}
             )
 
-            TherapyAppointment.objects.create(
-                user=request.user,
-                therapist=therapist,
-                scheduled_time=scheduled_dt
-            )
-
             if message_content:
                 TherapyMessage.objects.create(
                     sender=request.user,
@@ -1787,9 +1798,11 @@ def share_and_schedule(request):
                     content=message_content
                 )
 
+        messages.success(request, "預約已送出並扣除點數，請等待心理師確認。")
         return redirect('user_appointments')
 
     return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
 
 #使用者查看自己的預約
 @login_required
@@ -1995,45 +2008,56 @@ def delete_invitation(request, invitation_id):
 # 心理師端的預約時間
 @login_required
 def consultation_schedule(request, user_id):
+    from django.utils.timezone import now
+
     client = get_object_or_404(User, id=user_id)
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師能查看預約資料")
 
-    # 只查詢這個使用者的預約
     appointments = TherapyAppointment.objects.filter(
         therapist=request.user,
         user__id=user_id,
         is_cancelled=False
     ).order_by('-scheduled_time')
 
+    # 取得每筆預約對應心理師點數（假設心理師是同一人，直接拿 userprofile.coin_price）
+    coin_price = request.user.userprofile.coin_price or 0  # 預設1500點
+
     return render(request, 'dreams/consultation_schedule.html', {
         'client': client,
-        'appointments': appointments
+        'appointments': appointments,
+        'now': now(),
+        'coin_price': coin_price,
     })
+
 
 
 
 # 心理師端可以看到的所有使用者預約時間
 @login_required
 def all_users_appointments(request):
-    # 限制只有心理師可以使用
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看此頁面")
 
-    # 抓取所有預約我的紀錄（排除已取消的）
     appointments = TherapyAppointment.objects.select_related('user', 'therapist') \
         .filter(therapist=request.user, is_cancelled=False).order_by('-scheduled_time')
 
-    # 取得有預約我的使用者（去重）
     users_with_appointments = User.objects.filter(
         received_appointments__therapist=request.user,
         received_appointments__is_cancelled=False
     ).distinct()
 
+    now = timezone.now()
+
+    coin_price = request.user.userprofile.coin_price or 1500  # 取得心理師設定點數，預設1500
+
     return render(request, 'dreams/all_users_appointments.html', {
         'appointments': appointments,
         'users_with_appointments': users_with_appointments,
+        'now': now,
+        'coin_price': coin_price,
     })
+
 
 
 
@@ -2043,16 +2067,69 @@ def all_users_appointments(request):
 def confirm_appointment(request, appointment_id):
     appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
 
-    # 檢查是否是該心理師本人
     if appointment.therapist != request.user:
         return HttpResponseForbidden("您無權確認此預約")
 
-    appointment.is_confirmed = True
-    appointment.save()
+    if appointment.is_cancelled:
+        messages.error(request, "此預約已取消，無法確認。")
+        return redirect('therapist_appointments')
+    if appointment.is_confirmed:
+        messages.info(request, "此預約已確認過。")
+        return redirect('therapist_appointments')
+
+    # 確認該時段沒有被其他已確認預約佔用
+    if TherapyAppointment.objects.filter(
+        therapist=appointment.therapist,
+        scheduled_time=appointment.scheduled_time,
+        is_cancelled=False,
+        is_confirmed=True
+    ).exists():
+        messages.error(request, "該時段已被其他確認預約，無法確認此預約。")
+        return redirect('therapist_appointments')
+
+    user_profile = appointment.user.userprofile
+    therapist_profile = appointment.therapist.userprofile
+    appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 0
+
+    if user_profile.points < appointment_cost:
+        messages.error(request, f"該用戶點數不足（需 {appointment_cost} 點），無法確認預約。")
+        return redirect('therapist_appointments')
+
+    with transaction.atomic():
+        # 確認該預約並扣點（理論上預約時已扣過點，這裡可視狀況改，不扣或檢查）
+        # 如果預約時已扣點，這裡不再扣點
+        appointment.is_confirmed = True
+        appointment.save()
+
+        # 找出其他同時段且未確認、未取消的預約
+        other_pending_appointments = TherapyAppointment.objects.filter(
+            therapist=appointment.therapist,
+            scheduled_time=appointment.scheduled_time,
+            is_cancelled=False,
+            is_confirmed=False
+        ).exclude(id=appointment.id)
+
+        for appt in other_pending_appointments:
+            appt.is_cancelled = True
+            appt.save()
+
+            # 退點給使用者
+            other_user_profile = appt.user.userprofile
+            other_user_profile.points += appointment_cost
+            other_user_profile.save()
+
+            PointTransaction.objects.create(
+                user=appt.user,
+                amount=appointment_cost,  # 正數
+                transaction_type='GAIN',
+                description=f"預約時間衝突取消，退還 {appointment.therapist.username} 諮商點數"
+            )
+
+
+    messages.success(request, f"已成功確認預約，並取消同時段其他待確認預約，退還他們點數。")
     return redirect('consultation_schedule', user_id=appointment.user.id)
 
 
-    
 # 心理師端的刪除預約按鈕
 @require_POST
 @login_required
@@ -2063,36 +2140,27 @@ def therapist_delete_appointment(request, appointment_id):
     if appointment.therapist != request.user:
         return HttpResponseForbidden("您無權刪除此預約。")
 
-    # 檢查預約是否已過期
-    if appointment.scheduled_time < timezone.now():
-        messages.error(request, "預約時間已過，無法刪除。")
-        return redirect('therapist_view_client_appointments', user_id=appointment.user.id)
 
-    # 只有已確認的預約會退點數
-    if appointment.is_confirmed:
-        user_profile = appointment.user.userprofile
+    therapist_profile = appointment.therapist.userprofile
+    refund_points = therapist_profile.coin_price if therapist_profile.coin_price else 0
 
-        with transaction.atomic():
-            user_profile.points += 1500
-            user_profile.save()
+    user_profile = appointment.user.userprofile
 
-            PointTransaction.objects.create(
-                user=appointment.user,
-                transaction_type='GAIN',
-                amount=1500,
-                description=f'心理師取消已確認預約退還點數（ID:{appointment.id}）'
-            )
+    with transaction.atomic():
+        user_profile.points += refund_points
+        user_profile.save()
 
-            appointment.delete()
+        PointTransaction.objects.create(
+            user=appointment.user,
+            transaction_type='GAIN',
+            amount=refund_points,
+            description=f'心理師取消預約退還點數（ID:{appointment.id}）'
+        )
 
-        messages.success(request, "已確認的預約已刪除並退還使用者1500點。")
-    else:
-        # 未確認的預約不加點，直接刪除
         appointment.delete()
-        messages.success(request, "未確認的預約已刪除。")
 
+    messages.success(request, f"預約已刪除並退還使用者 {refund_points} 點。")
     return redirect('therapist_view_client_appointments', user_id=appointment.user.id)
-
 
 
 
