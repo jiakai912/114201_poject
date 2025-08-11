@@ -52,7 +52,7 @@
             </td>
 
             <td class="px-3 py-2" style="white-space: nowrap;">
-              <a href="{% url 'post_detail' post.id %}" class="text-decoration-none">
+              <a href="{% url 'dream_post_detail' post_id=post.id %}" class="text-decoration-none">
                 {{ post.title }}
               </a>
             </td>
@@ -65,7 +65,7 @@
             </td>
 
             <td class="px-3 py-2" style="white-space: nowrap;">
-              <a href="{% url 'post_detail' post.id %}" class="text-decoration-none">
+               <a href="{% url 'dream_post_detail' post_id=post.id %}" class="text-decoration-none">
                 {{ post.content|truncatechars:30 }}
               </a>
             </td>

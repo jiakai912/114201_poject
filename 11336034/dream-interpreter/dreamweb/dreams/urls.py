@@ -23,7 +23,6 @@ urlpatterns = [
     path('admin_manage-posts/<int:post_id>/toggle-flag/', views.toggle_flag_post, name='toggle_flag_post'),
     path('admin_posts/<int:post_id>/toggle-flag/', views.toggle_flag_post, name='toggle_flag_post'),
     path('admin_posts/<int:post_id>/delete/', views.delete_post, name='delete_post'),
-    path('post/<int:post_id>/', views.post_detail, name='post_detail'),# 詳細貼文
     
     # 管理評論
     path('admin_manage-comments/', views.manage_comments, name='manage_comments'),
@@ -46,9 +45,17 @@ urlpatterns = [
 
 
 
+    # 通知系統
+    path('notifications/', views.notification_list, name='notification_list'),
+    path('notifications/<int:notification_id>/', views.notification_detail, name='notification_detail'),
+    path('notifications/mark_as_read/<int:notification_id>/', views.mark_notification_as_read, name='mark_notification_as_read'),
+    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin_dashboard/send_broadcast/', views.send_broadcast, name='send_broadcast'),
 
     path('', views.welcome_page, name='welcome'),
     path('dream_form/', views.dream_form, name='dream_form'),  # ✅ 修正
+    path('daily-task/claim/', views.claim_daily_task, name='claim_daily_task'),
+    path('daily-task/check/', views.check_daily_task, name='check_daily_task'),# 每日任務
     path('register/', views.register, name='register'),
     path('login/', views.custom_login, name='login'),
     path('logout/',  views.logout_view, name='logout'),  # ✅ 修正
@@ -117,7 +124,6 @@ urlpatterns = [
     path('consultation/schedule/<int:user_id>/', views.consultation_schedule, name='consultation_schedule'),
     path('appointment/confirm/<int:appointment_id>/', views.confirm_appointment, name='confirm_appointment'),
     path('all_users_appointments/', views.all_users_appointments, name='all_users_appointments'),
-    
 
     #心理師的刪除預約按鈕
     path('therapist/consultation/<int:user_id>/', views.consultation_schedule, name='therapist_view_client_appointments'),

@@ -126,49 +126,29 @@
         </div>
         
         <div class="card mt-4">
-            <div class="card-header">
-                <h3><i class="fas fa-question-circle me-2"></i>常見問題</h3>
+        <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
+            <h3><i class="fas fa-tasks me-2"></i>每日任務</h3>
+        </div>
+        <div class="card-body text-center">
+            <p>完成以下任務可獲得 <strong>5 點券</strong> 獎勵！</p>
+
+            <div class="d-grid gap-2 mb-3">
+            <button class="btn btn-primary daily-task-btn" data-task="daily_login" type="button">
+                <i class="fas fa-sign-in-alt me-2"></i> 每日登入
+            </button>
+            <button class="btn btn-primary daily-task-btn" data-task="daily_dream_analysis" type="button">
+                <i class="fas fa-cloud-moon me-2"></i> 解析夢境一次
+            </button>
+            <button class="btn btn-primary daily-task-btn" data-task="daily_post" type="button">
+                <i class="fas fa-pen me-2"></i> 發佈一篇貼文
+            </button>
+            <button class="btn btn-primary daily-task-btn" data-task="daily_comment" type="button">
+                <i class="fas fa-comment me-2"></i> 留言一次
+            </button>
             </div>
-            <div class="card-body">
-                <div class="accordion" id="faqAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
-                                如何獲得最佳解析效果？
-                            </button>
-                        </h2>
-                        <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                盡可能詳細描述您的夢境，包括場景、人物、色彩、情緒和感受。越詳細的描述會得到越準確的解析。
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingTwo">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
-                                夢境解析的準確性如何？
-                            </button>
-                        </h2>
-                        <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                夢境解析提供的是可能的象徵含義和參考，最終解釋仍需結合您個人的生活經驗和情境。
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingThree">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
-                                我的夢境資料安全嗎？
-                            </button>
-                        </h2>
-                        <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body">
-                                我們重視您的隱私，所有夢境內容僅儲存在本地數據庫中，不會分享給第三方。
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+            <p id="daily-message" class="text-success"></p>
+        </div>
         </div>
     </div>
 </div>
@@ -218,6 +198,45 @@
             });
         }
     });
-    </script>
+</script>
 
+<script>
+    document.querySelectorAll('.daily-task-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const taskType = button.getAttribute('data-task');
+            fetch("{% url 'claim_daily_task' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: `task_type=${encodeURIComponent(taskType)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                const msgElem = document.getElementById('daily-message');
+                msgElem.textContent = data.message;
+                if (data.success) {
+                    button.disabled = true;
+                    button.textContent = '已領取';
+                }
+            });
+        });
+    });
+
+    // 載入時檢查已領取任務並禁用按鈕
+    fetch("{% url 'check_daily_task' %}")
+    .then(res => res.json())
+    .then(data => {
+        const claimed = data.claimed_tasks;
+        document.querySelectorAll('.daily-task-btn').forEach(button => {
+            const task = button.getAttribute('data-task');
+            if (claimed[task]) {
+                button.disabled = true;
+                button.textContent = '已領取';
+            }
+        });
+    });
+
+</script>
 {% endblock %}

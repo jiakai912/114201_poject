@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',  # Google 驗證
 ]
 
+
 # google驗證
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/dream_form/'  # 成功登入後導向的頁面
@@ -55,6 +56,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'dreamweb.urls'
 
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -66,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'dreams.context_processors.notification_context', # 新增這一行
             ],
         },
     },

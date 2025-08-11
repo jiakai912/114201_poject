@@ -115,11 +115,66 @@
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   </div>
-  
+
+  <div class="card shadow rounded-4 mt-5">
+    <div class="card-header">
+      <h3 class="mb-0 text-white"><i class="fas fa-bullhorn me-2"></i>發送系統廣播</h3>
+    </div>
+    <div class="card-body">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'send_broadcast' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="target" class="form-label">選擇收件人</label>
+          <select class="form-select" id="target" name="target" onchange="toggleSpecificUserField()">
+            <option value="all">所有使用者</option>
+            <option value="therapists">所有已驗證的諮商師</option>
+            <option value="specific">特定使用者</option>
+          </select>
+        </div>
+        <div class="mb-3" id="specificUserField" style="display:none;">
+          <label for="specific_user_id" class="form-label">選擇特定使用者</label>
+          <select class="form-select" id="specific_user_id" name="specific_user_id">
+            <option value="">--請選擇--</option>
+            {% for user in all_users %}
+              <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="title" class="form-label">標題</label>
+          <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+        <div class="mb-3">
+          <label for="content" class="form-label">內容</label>
+          <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">發送廣播</button>
+      </form>
+    </div>
+  </div>
 </div>
+<script>
+    function toggleSpecificUserField() {
+        const target = document.getElementById('target').value;
+        const specificUserField = document.getElementById('specificUserField');
+        if (target === 'specific') {
+            specificUserField.style.display = 'block';
+        } else {
+            specificUserField.style.display = 'none';
+        }
+    }
+</script>
+
 {% endblock %}

@@ -407,33 +407,52 @@
 
 
                         <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownSettings" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {% if user.is_authenticated and user.userprofile.avatar %}
-                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}"
-                                    class="rounded-circle me-2 shadow"
-                                    style="width: 35px; height: 35px; object-fit: cover; border: 2px solid #dee2e6;">
-                            {% elif user.is_authenticated %}
-                                <div class="rounded-circle me-2 d-flex justify-content-center align-items-center shadow"
-                                    style="width: 30px; height: 30px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
-                                    {{ user.username|slice:":1"|upper }}
-                                </div>
-                            {% else %}
-                                <i class="fas fa-user-circle me-1 fs-5 text-secondary"></i>
-                            {% endif %}
-                            <span class="fw-medium">{{ user.username }}</span>
-                        </a>
+                            <a class="nav-link dropdown-toggle d-flex align-items-center position-relative" href="#" id="navbarDropdownSettings" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if user.is_authenticated and user.userprofile.avatar %}
+                                    <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}"
+                                        class="rounded-circle me-2 shadow"
+                                        style="width: 35px; height: 35px; object-fit: cover; border: 2px solid #dee2e6;">
+                                {% elif user.is_authenticated %}
+                                    <div class="rounded-circle me-2 d-flex justify-content-center align-items-center shadow"
+                                        style="width: 30px; height: 30px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
+                                        {{ user.username|slice:":1"|upper }}
+                                    </div>
+                                {% else %}
+                                    <i class="fas fa-user-circle me-1 fs-5 text-secondary"></i>
+                                {% endif %}
+                                <span class="fw-medium">{{ user.username }}</span>
+                                {% if unread_notifications_count > 0 %}
+                                <span class="badge bg-danger rounded-circle position-absolute top-0 start-100 translate-middle"
+                                    style="font-size: 0.7em;">
+                                    {{ unread_notifications_count }}
+                                </span>
+                                {% endif %}
+                            </a>
 
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownSettings" style="min-width: 160px;">
-                            <li class="px-3 py-3 d-flex flex-column align-items-center" style="background:rgb(255, 255, 255); border-bottom: 1px solid #dee2e6; min-width: 140px;">
-                                <i class="fas fa-coins text-warning fs-1 mb-2"></i>
-                                <span class="badge bg-primary fs-6 px-3 py-2">{{ request.user.userprofile.points }}</span>
-                            </li>
-                            <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2"></i>個人檔案</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center" href="{% url 'pointshop' %}"><i class="fas fa-coins me-2"></i>點券商店</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center" href="{% url 'achievements' %}"><i class="fas fa-trophy me-2"></i>成就</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>登出</a></li>
-                        </ul>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownSettings" style="min-width: 160px;">
+                                <li class="px-3 py-3 d-flex flex-column align-items-center" style="background:rgb(255, 255, 255); border-bottom: 1px solid #dee2e6; min-width: 140px;">
+                                    <i class="fas fa-coins text-warning fs-1 mb-2"></i>
+                                    <span class="badge bg-primary fs-6 px-3 py-2">{{ request.user.userprofile.points }}</span>
+                                </li>
+                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2"></i>個人檔案</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'pointshop' %}"><i class="fas fa-coins me-2"></i>點券商店</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'achievements' %}"><i class="fas fa-trophy me-2"></i>成就</a></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center" href="{% url 'notification_list' %}">
+                                        <i class="fas fa-envelope me-2"></i>信件箱
+                                        {% if unread_notifications_count > 0 %}
+                                        <span class="badge bg-danger ms-1">{{ unread_notifications_count }}</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item d-flex align-items-center"><i class="fas fa-sign-out-alt me-2"></i>登出</button>
+                                    </form>
+                                </li>
+                            </ul>
                         </li>
 
                     {% else %}
@@ -454,9 +473,6 @@
     </nav>
 
     <div class="container mt-5 animation-fade-in">
-
-            
-        {# ✅ FIX: Remove extra '{' #}
         {% block content %}{% endblock %}
     </div>
 
