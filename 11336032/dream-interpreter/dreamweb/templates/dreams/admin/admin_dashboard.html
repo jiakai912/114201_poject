@@ -1,0 +1,180 @@
+{% extends 'dreams/base.html' %}
+{% block title %}管理員儀表板{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="card shadow rounded-4">
+    <div class="card-header">
+      <h3 class="mb-0 text-white"><i class="fas fa-tools me-2"></i>系統維護面板</h3>
+    </div>
+
+    <div class="card-body">
+      <div class="row g-4">
+
+        <!-- 用戶總數 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card h-100 d-flex flex-column justify-content-between">
+            <div class="card-body text-center">
+              <i class="fas fa-users fa-3x text-primary mb-3"></i>
+              <h5 class="card-title">用戶總數</h5>
+              <p class="fs-2 fw-bold">{{ user_count }}</p>
+              <a href="{% url 'manage_users' %}" class="btn btn-outline-primary mt-3">
+                管理用戶 
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 夢境總數 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card">
+            <div class="card-body text-center">
+              <i class="fas fa-bed fa-3x text-success mb-3"></i>
+              <h5 class="card-title">夢境總數</h5>
+              <p class="fs-2 fw-bold">{{ dream_count }}</p>
+              <a href="{% url 'manage_dreams' %}" class="btn btn-outline-primary mt-3">
+                管理夢境
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 貼文總數 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card">
+            <div class="card-body text-center">
+              <i class="fas fa-file-alt fa-3x text-warning mb-3"></i>
+              <h5 class="card-title">貼文總數</h5>
+              <p class="fs-2 fw-bold">{{ post_count }}</p>
+              <a href="{% url 'manage_posts' %}" class="btn btn-outline-primary mt-3">
+                管理貼文
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 評論總數 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card">
+            <div class="card-body text-center">
+              <i class="fas fa-comments fa-3x text-info mb-3"></i>
+              <h5 class="card-title">評論總數</h5>
+              <p class="fs-2 fw-bold">{{ comment_count }}</p>
+              <a href="{% url 'manage_comments' %}" class="btn btn-outline-primary mt-3">管理評論</a>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <!-- 待審心理師 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card d-flex flex-column justify-content-center">
+            <div class="card-body text-center">
+              <i class="fas fa-user-md fa-3x text-info mb-3"></i>
+              <h5 class="card-title">待審心理師</h5>
+              <p class="fs-2 fw-bold">{{ unverified_therapists }}</p>
+              <a href="{% url 'manage_therapists' %}" class="btn btn-outline-primary mt-3">前往管理</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 今日預約 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card">
+            <div class="card-body text-center">
+              <i class="fas fa-calendar-check fa-3x text-danger mb-3"></i>
+              <h5 class="card-title">所有預約</h5>
+              <p class="fs-2 fw-bold">{{ appointments_all }}</p>
+              <a href="{% url 'manage_appointments' %}" class="btn btn-outline-primary mt-3">管理預約</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 聊天室訊息 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card d-flex flex-column justify-content-center">
+            <div class="card-body text-center">
+              <i class="fas fa-comments fa-3x text-secondary mb-3"></i>
+              <h5 class="card-title">聊天室訊息</h5>
+              <p class="fs-2 fw-bold">{{ total_chat_messages }}</p>
+              <a href="{% url 'manage_chat_messages' %}" class="btn btn-outline-primary mt-3">瀏覽訊息</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 總點數記錄 -->
+        <div class="col-md-3 col-sm-6">
+          <div class="card dream-card d-flex flex-column justify-content-center">
+            <div class="card-body text-center">
+              <i class="fas fa-history fa-3x text-dark mb-3"></i>
+              <h5 class="card-title">總點數記錄</h5>
+              <p class="fs-2 fw-bold">{{ total_point_transactions }}</p>
+              <a href="{% url 'manage_points' %}" class="btn btn-outline-primary mt-3">管理點數</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow rounded-4 mt-5">
+    <div class="card-header">
+      <h3 class="mb-0 text-white"><i class="fas fa-bullhorn me-2"></i>發送系統廣播</h3>
+    </div>
+    <div class="card-body">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'send_broadcast' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="target" class="form-label">選擇收件人</label>
+          <select class="form-select" id="target" name="target" onchange="toggleSpecificUserField()">
+            <option value="all">所有使用者</option>
+            <option value="therapists">所有已驗證的諮商師</option>
+            <option value="specific">特定使用者</option>
+          </select>
+        </div>
+        <div class="mb-3" id="specificUserField" style="display:none;">
+          <label for="specific_user_id" class="form-label">選擇特定使用者</label>
+          <select class="form-select" id="specific_user_id" name="specific_user_id">
+            <option value="">--請選擇--</option>
+            {% for user in all_users %}
+              <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="title" class="form-label">標題</label>
+          <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+        <div class="mb-3">
+          <label for="content" class="form-label">內容</label>
+          <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">發送廣播</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+    function toggleSpecificUserField() {
+        const target = document.getElementById('target').value;
+        const specificUserField = document.getElementById('specificUserField');
+        if (target === 'specific') {
+            specificUserField.style.display = 'block';
+        } else {
+            specificUserField.style.display = 'none';
+        }
+    }
+</script>
+
+{% endblock %}

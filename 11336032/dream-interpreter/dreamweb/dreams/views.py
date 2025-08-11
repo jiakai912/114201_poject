@@ -2,17 +2,16 @@ import json
 import os
 from dotenv import load_dotenv
 from django.shortcuts import render, redirect,get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
-from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm
-
+from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm
 import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
-from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike
+from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike
 from django.db.models import Count,Q
 from django.utils import timezone
 import jieba  # 中文分詞庫
@@ -38,8 +37,7 @@ import io
 from django.contrib.auth.models import User
 from django.db import models,transaction
 from django.views.decorators.http import require_POST
-from datetime import datetime
-
+from datetime import datetime,date
 # 綠界
 import datetime
 from django.views.decorators.csrf import csrf_exempt
@@ -55,8 +53,361 @@ from django.utils.timezone import localtime #已預約時段變成台灣地區�
 # 聊天室
 from django.utils.timezone import now
 
+# 管理夢境
+from django.contrib.admin.views.decorators import staff_member_required
+
+# 管理預約
+from django.utils.timezone import localdate
+# 夢境新聞
 import bleach
 from django.urls import reverse
+
+# 管理員頁面
+def is_admin(user):
+    return user.is_authenticated and user.is_superuser  # ✅ 只允許超級使用者進入
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def admin_dashboard(request):
+    today = now().date()
+    context = {
+        'user_count': User.objects.count(),
+        'dream_count': Dream.objects.count(),
+        'post_count': DreamPost.objects.count(),
+        'comment_count': DreamComment.objects.count(),
+        'appointments_today': TherapyAppointment.objects.filter(scheduled_time__date=today).count(),
+        'appointments_all': TherapyAppointment.objects.count(),  # 新增全部預約數
+        'unverified_therapists': UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False).count(),
+        'flagged_posts': DreamPost.objects.filter(is_flagged=True).count(),
+        'total_point_transactions': PointTransaction.objects.count(),
+        'total_chat_messages': ChatMessage.objects.count(),
+        'total_points': UserProfile.objects.aggregate(total=models.Sum('points'))['total'] or 0,
+        'all_users': User.objects.all(),# 新增這一行來傳遞所有使用者列表給模板
+    }
+    return render(request, 'dreams/admin/admin_dashboard.html', context)
+# 管理使用者
+@user_passes_test(lambda u: u.is_superuser)
+def manage_users(request):
+    query = request.GET.get('q')
+    users = User.objects.all()
+    if query:
+        users = users.filter(username__icontains=query) | users.filter(email__icontains=query)
+    return render(request, 'dreams/admin/manage_users.html', {'users': users})
+
+@user_passes_test(lambda u: u.is_superuser)
+def block_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = False
+    user.save()
+    return redirect('manage_users')
+
+@user_passes_test(lambda u: u.is_superuser)
+def unblock_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = True
+    user.save()
+    return redirect('manage_users')
+
+
+def view_user_detail(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    return render(request, 'dreams/admin/user_detail.html', {'user': user})
+
+
+def view_user_detail(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    profile = user.userprofile
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        role = request.POST.get('role')
+        points = request.POST.get('points')
+        is_active = 'is_active' in request.POST
+
+        # 防止 email 被空值覆蓋
+        if email:
+            user.email = email
+
+        user.is_active = is_active
+
+        if role == 'admin':
+            user.is_superuser = True
+            profile.is_therapist = False
+            profile.is_verified_therapist = False
+        elif role == 'therapist':
+            user.is_superuser = False
+            profile.is_therapist = True
+            profile.is_verified_therapist = False
+        elif role == 'verified':
+            user.is_superuser = False
+            profile.is_therapist = True
+            profile.is_verified_therapist = True
+        else:
+            user.is_superuser = False
+            profile.is_therapist = False
+            profile.is_verified_therapist = False
+
+        try:
+            profile.points = int(points)
+        except (ValueError, TypeError):
+            profile.points = 0
+
+        user.save()
+        profile.save()
+
+        return redirect('manage_users')
+
+    user_form = UserEditForm(instance=user)
+    profile_form = UserProfileForm(instance=profile)
+
+    return render(request, 'dreams/admin/user_detail.html', {
+        'user': user,
+        'user_form': user_form,
+        'profile_form': profile_form,
+    })
+
+# 管理夢境
+@staff_member_required
+def manage_dreams(request):
+    dream_list = Dream.objects.select_related('user').order_by('-created_at')
+
+    query = request.GET.get('q')
+    if query:
+        dream_list = dream_list.filter(
+            Q(dream_content__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+
+    paginator = Paginator(dream_list, 10)  # 每頁 10 筆
+    page_number = request.GET.get('page')
+    dreams = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_dreams.html', {
+        'page_obj': dreams,
+        'dreams': dreams,
+        'query': query,
+    })
+
+@staff_member_required
+def dream_detail(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+    return render(request, 'dreams/admin/dream_detail.html', {'dream': dream})
+
+@staff_member_required
+def delete_dream(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+    dream.delete()
+    return redirect('manage_dreams')
+
+@staff_member_required
+def toggle_flag_dream(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+    dream.flagged = not dream.flagged  # 假設你的模型有個 flagged 欄位
+    dream.save()
+    return redirect('manage_dreams')
+
+# 詳細夢境
+@staff_member_required
+def dream_manage_detail(request, dream_id):
+    dream = get_object_or_404(Dream, id=dream_id)
+
+    emotion_data = [
+        ("快樂", dream.Happiness, "success", "smile"),
+        ("焦慮", dream.Anxiety, "warning", "exclamation-triangle"),
+        ("恐懼", dream.Fear, "danger", "skull"),  # 改成 skull 或 face-surprise
+        ("興奮", dream.Excitement, "info", "bolt"),
+        ("悲傷", dream.Sadness, "primary", "face-sad-tear"),
+    ]
+
+    if request.method == 'POST' and 'delete' in request.POST:
+        dream.delete()
+        return redirect('manage_dreams')
+
+    context = {
+        'dream': dream,
+        'emotion_data': emotion_data,
+    }
+    return render(request, 'dreams/admin/dream_manage_detail.html', context)
+
+
+# 管理貼文
+@staff_member_required
+def manage_posts(request):
+    query = request.GET.get('q', '')
+    post_list = DreamPost.objects.all()
+
+    if query:
+        post_list = post_list.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+
+    paginator = Paginator(post_list, 10)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_posts.html', {
+        'posts': posts,
+        'query': query,
+    })
+
+
+@staff_member_required
+def delete_post(request, post_id):
+    post = get_object_or_404(DreamPost, id=post_id)
+    post.delete()
+    return redirect('manage_posts')
+
+
+@staff_member_required
+def toggle_flag_post(request, post_id):
+    post = get_object_or_404(DreamPost, id=post_id)
+    post.is_flagged = not post.is_flagged  # 確保欄位名稱一致
+    post.save()
+    return redirect('manage_posts')
+
+# 管理評論
+@staff_member_required
+def manage_comments(request):
+    query = request.GET.get('q', '')
+    comment_list = DreamComment.objects.select_related('user', 'dream_post')
+
+    if query:
+        comment_list = comment_list.filter(
+            Q(content__icontains=query) |
+            Q(user__username__icontains=query) |
+            Q(dream_post__title__icontains=query)
+        )
+
+    paginator = Paginator(comment_list, 10)
+    page_number = request.GET.get('page')
+    comments = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_comments.html', {
+        'comments': comments,
+        'query': query,
+    })
+
+@staff_member_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    comment.delete()
+    return redirect('manage_comments')
+
+# 詳細評論
+def comments_detail(request, comment_id):
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    return render(request, 'dreams/admin/comments_detail.html', {'comment': comment})
+
+# 管理心理師申請
+@user_passes_test(lambda u: u.is_superuser)
+def manage_therapists(request):
+    therapist_applications = UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False)
+    return render(request, 'dreams/admin/manage_therapists.html', {'therapist_applications': therapist_applications})
+
+@user_passes_test(lambda u: u.is_superuser)
+def manage_therapists(request):
+    q = request.GET.get('q', '').strip()
+    queryset = UserProfile.objects.filter(is_therapist=True, is_verified_therapist=False)
+    if q:
+        queryset = queryset.filter(
+            user__username__icontains=q
+        ) | queryset.filter(
+            user__email__icontains=q
+        )
+    return render(request, 'dreams/admin/manage_therapists.html', {'therapist_applications': queryset})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def approve_therapist(request, user_id):
+    profile = get_object_or_404(UserProfile, user__id=user_id, is_therapist=True)
+    profile.is_verified_therapist = True
+    profile.save()
+    messages.success(request, f"{profile.user.username} 的心理師資格已核准。")
+    return redirect('manage_therapists')
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def reject_therapist(request, user_id):
+    profile = get_object_or_404(UserProfile, user__id=user_id, is_therapist=True)
+    profile.is_therapist = False
+    profile.save()
+    messages.warning(request, f"{profile.user.username} 的心理師申請已拒絕。")
+    return redirect('manage_therapists')
+
+# ✅ 預約管理
+@user_passes_test(lambda u: u.is_superuser)
+@login_required
+def manage_appointments(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("只有管理員可以查看此頁面")
+
+    query = request.GET.get('q', '')
+
+    appointments = TherapyAppointment.objects.select_related('user', 'therapist').order_by('-scheduled_time')
+
+    if query:
+        appointments = appointments.filter(
+            Q(user__username__icontains=query) |
+            Q(user__email__icontains=query) |
+            Q(therapist__username__icontains=query) |
+            Q(therapist__email__icontains=query)
+        )
+
+    # 分頁設定：每頁 10 筆
+    paginator = Paginator(appointments, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_appointments.html', {
+        'all_appointments': page_obj
+    })
+
+# ✅ 聊天訊息管理
+@user_passes_test(lambda u: u.is_superuser)
+def manage_chat_messages(request):
+    q = request.GET.get('q', '').strip()
+    queryset = ChatMessage.objects.select_related('sender', 'receiver').order_by('-timestamp')
+
+    if q:
+        queryset = queryset.filter(
+            Q(sender__username__icontains=q) |
+            Q(receiver__username__icontains=q) |
+            Q(message__icontains=q)  # 這裡加上訊息內容的搜尋
+        )
+
+    paginator = Paginator(queryset, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_chat_messages.html', {
+        'messages': page_obj,
+    })
+
+# ✅ 點數排行管理
+@user_passes_test(lambda u: u.is_superuser)
+def manage_points(request):
+    query = request.GET.get('q', '').strip()
+
+    transactions = PointTransaction.objects.select_related('user', 'user__userprofile').order_by('-created_at')
+    if query:
+        transactions = transactions.filter(
+            Q(user__username__icontains=query) | 
+            Q(user__email__icontains=query) |
+            Q(description__icontains=query)   # 加入說明欄位的搜尋
+        )
+
+    paginator = Paginator(transactions, 15)  # 每頁15筆交易
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/admin/manage_points.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
 
 
 # 燈箱
@@ -111,6 +462,7 @@ def custom_login(request):
             return redirect('login')
     else:
         return render(request, 'dreams/login.html')
+    
 
 # 心理諮商審核介面
 def not_verified(request):
@@ -283,6 +635,85 @@ def check_and_unlock_achievements(request):
                 messages.info(request, f"恭喜！您解鎖了成就：『{achievement.name}』！")  # 解鎖時給予通知
 
 
+# 共用的每日任務發獎方法
+def award_daily_task(user, task_type, points, description):
+    today = date.today()
+
+    # 檢查今天是否已經完成該任務（避免重複發獎）
+    if DailyTaskRecord.objects.filter(user=user, date=today, task_type=task_type).exists():
+        return False  # 已完成，不能重複領
+
+    # 發放點數
+    profile = user.userprofile
+    profile.points += points
+    profile.save()
+
+    # 記錄任務完成
+    DailyTaskRecord.objects.create(user=user, date=today, task_type=task_type, completed=True)
+
+    # 記錄交易
+    PointTransaction.objects.create(
+        user=user,
+        transaction_type='GAIN',
+        amount=points,
+        description=description
+    )
+
+    return True
+
+# 每日任務領取 API
+@login_required
+@require_POST
+def claim_daily_task(request):
+    task_type = request.POST.get("task_type", "daily_login")
+    user = request.user
+    today = now().date()
+
+    # 驗證任務是否完成
+    if task_type == "daily_login":
+        task_completed = True  # 假設登入即完成
+    elif task_type == "daily_dream_analysis":
+        task_completed = Dream.objects.filter(user=user, created_at__date=today).exists()
+    elif task_type == "daily_post":
+        task_completed = DreamPost.objects.filter(user=user, created_at__date=today).exists()
+    elif task_type == "daily_comment":
+        task_completed = DreamComment.objects.filter(user=user, created_at__date=today).exists()
+    else:
+        return JsonResponse({"success": False, "message": "無效的任務類型"})
+
+    if not task_completed:
+        return JsonResponse({"success": False, "message": "尚未完成該任務，無法領取獎勵"})
+
+    description_map = {
+        "daily_login": "每日登入獎勵",
+        "daily_dream_analysis": "每日解析夢境獎勵",
+        "daily_post": "每日發佈貼文獎勵",
+        "daily_comment": "每日留言獎勵",
+    }
+    description = description_map.get(task_type, "每日任務獎勵")
+    points = 5
+
+    # 使用共用發獎函式（內含重複檢查）
+    success = award_daily_task(user, task_type, points, description)
+    if success:
+        return JsonResponse({"success": True, "message": f"成功領取{description} +{points} 點券"})
+    else:
+        return JsonResponse({"success": False, "message": "今天已經領取過這個獎勵"})
+
+# 檢查每日任務是否已領取 API
+@login_required
+def check_daily_task(request):
+    today = date.today()
+    task_types = ["daily_login", "daily_dream_analysis", "daily_post", "daily_comment"]
+    result = {}
+    for t in task_types:
+        claimed = DailyTaskRecord.objects.filter(user=request.user, date=today, task_type=t).exists()
+        result[t] = claimed
+    return JsonResponse({"claimed_tasks": result})
+
+
+
+
 # 載入環境變量
 load_dotenv()
 # DEEPSEEK_API_KEY = os.getenv("sk-b1e7ea9f25184324aaa973412b081f6f")  # 修正為正確的環境變量名稱
@@ -358,13 +789,35 @@ def dream_form(request):
                 user_profile.points -= 20
                 user_profile.save()
 
-                # 建立使用紀錄
                 PointTransaction.objects.create(
                     user=request.user,
                     transaction_type='USE',
                     amount=20,
                     description='夢境解析'
                 )
+
+                # 🆕 每日任務：解析夢境獎勵 +5 點
+                from datetime import date
+                today = date.today()
+                if not DailyTaskRecord.objects.filter(user=request.user, date=today, task_type="daily_dream_analysis").exists():
+                    user_profile.points += 5
+                    user_profile.save()
+
+                    DailyTaskRecord.objects.create(
+                        user=request.user,
+                        date=today,
+                        task_type="daily_dream_analysis",
+                        completed=True
+                    )
+
+                    PointTransaction.objects.create(
+                        user=request.user,
+                        transaction_type='GAIN',
+                        amount=5,
+                        description='每日解析夢境獎勵'
+                    )
+
+                    messages.success(request, "完成每日解析夢境任務，獲得 +5 點券")
 
                 messages.success(request, "夢境解析成功，已扣除 20 點券")
 
@@ -376,7 +829,6 @@ def dream_form(request):
     else:
         form = DreamForm()
 
-    # 顯示歷史夢境
     dreams = Dream.objects.filter(user=request.user)
 
     return render(request, 'dreams/dream_form.html', {
@@ -385,6 +837,7 @@ def dream_form(request):
         'error_message': error_message,
         'dreams': dreams,
     })
+
 
 # 音檔並轉換為文字
 def upload_audio(request):
@@ -618,20 +1071,33 @@ class EmotionAnalyzer:
 # 夢境歷史
 @login_required
 def dream_history(request):
-    query = request.GET.get('q')  # 取得搜尋文字
+    query = request.GET.get('q')
     dreams = Dream.objects.filter(user=request.user)
 
     if query:
-        dreams = dreams.filter(Q(dream_content__icontains=query) | Q(interpretation__icontains=query))
+        dreams = dreams.filter(
+            Q(dream_content__icontains=query) | Q(interpretation__icontains=query)
+        )
 
-    paginator = Paginator(dreams.order_by('-created_at'), 6)
+    dreams = dreams.order_by('-created_at')  # 新的在前（顯示順序）
+
+    total_dreams = dreams.count()
+
+    # ⭐ 預先計算夢境編號（最舊的為1）
+    dreams_with_index = list(dreams)
+    for idx, dream in enumerate(reversed(dreams_with_index), start=1):
+        dream.dream_number = idx  # 動態加一個屬性
+
+    # 分頁
+    paginator = Paginator(dreams_with_index, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'dreams/dream_history.html', {
         'page_obj': page_obj,
-        'query': query,  # 回傳到前端顯示搜尋欄的值
+        'query': query,
     })
+
 
 # 夢境詳情
 @login_required
@@ -864,7 +1330,7 @@ def community(request):
         num_likes=Count('likes')
     ).order_by('-num_comments', '-view_count', '-num_likes')[:5]
 
-    return render(request, 'dreams/community.html', {
+    return render(request, 'dreams/community/community.html', {
         'dream_posts': posts_for_template,
         'trend_data': trend_data,
         'sort_type': sort_type,
@@ -904,10 +1370,6 @@ def share_dream(request):
         is_anonymous = request.POST.get('is_anonymous') == 'on'
         tags = request.POST.getlist('tags')
 
-         # 使用 bleach 清理輸入內容
-        cleaned_title = bleach.clean(title, strip=True)
-        cleaned_content = bleach.clean(content, strip=True)
-
         # 危險字眼檢查
         flagged = contains_dangerous_keywords(content)
 
@@ -916,21 +1378,39 @@ def share_dream(request):
             content=content,
             user=request.user if not is_anonymous else None,
             is_anonymous=is_anonymous,
-            is_flagged=flagged  # 儲存標記狀態
+            is_flagged=flagged
         )
 
         for tag_name in tags:
             tag, created = DreamTag.objects.get_or_create(name=tag_name)
             dream_post.tags.add(tag)
 
-        # 這裡會檢查並解鎖成就
-        check_and_unlock_achievements(request)
+        # 🆕 每日任務：發佈貼文獎勵 +5 點
+        from datetime import date
+        today = date.today()
+        if not DailyTaskRecord.objects.filter(user=request.user, date=today, task_type="daily_post").exists():
+            user_profile = request.user.userprofile
+            user_profile.points += 5
+            user_profile.save()
 
-        messages.success(request, '夢境已成功分享！')
+            DailyTaskRecord.objects.create(
+                user=request.user,
+                date=today,
+                task_type="daily_post",
+                completed=True
+            )
+
+            PointTransaction.objects.create(
+                user=request.user,
+                transaction_type='GAIN',
+                amount=5,
+                description='每日發佈貼文獎勵'
+            )
+
         return redirect('dream_community')
 
     popular_tags = DreamTag.objects.all()
-    return render(request, 'dreams/share_dream.html', {
+    return render(request, 'dreams/community/share_dream.html', {
         'popular_tags': popular_tags
     })
 
@@ -964,7 +1444,7 @@ def my_posts(request):
 
         posts_for_template.append(post)
 
-    return render(request, 'dreams/my_posts.html', {'my_posts': posts_for_template})
+    return render(request, 'dreams/community/my_posts.html', {'my_posts': posts_for_template})
 
 
 #編輯貼文功能
@@ -1005,7 +1485,7 @@ def edit_dream_post(request, post_id):
         usage_count=Count('dreampost')
     ).order_by('-usage_count')[:20]
 
-    return render(request, 'dreams/edit_dream_post.html', {
+    return render(request, 'dreams/community/edit_dream_post.html', {
         'dream_post': dream_post,
         'popular_tags': popular_tags
     })
@@ -1043,7 +1523,7 @@ def search_dreams(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'dreams/search_results.html', {
+    return render(request, 'dreams/community/search_results.html', {
         'page_obj': page_obj,  # ✅ 傳遞分頁物件，而不是原始的 'dreams'
         'query': query
     })
@@ -1051,31 +1531,32 @@ def search_dreams(request):
 # 4. 夢境詳情頁與評論功能
 @login_required
 def dream_post_detail(request, post_id):
-    # ✅ FIX: 預加載貼文作者和評論者的 userprofile、display_title 和 display_badge (深度到 Achievement)
+    # ✅ 預加載貼文與作者資訊
     dream_post = get_object_or_404(
         DreamPost.objects.select_related(
-            'user__userprofile', # 確保載入 userprofile
+            'user__userprofile',
             'user__userprofile__display_title',
             'user__userprofile__display_badge'
         ), id=post_id
     )
     dream_post.increase_view_count()
 
-    # 為貼文作者添加稱號和徽章資訊
     if dream_post.user and hasattr(dream_post.user, 'userprofile'):
         user_profile = dream_post.user.userprofile
         dream_post.author_display_title = user_profile.display_title.name if user_profile.display_title else None
         dream_post.author_display_badge_icon = user_profile.display_badge.badge_icon if user_profile.display_badge else None
-        dream_post.author_unlocked_achievements = UserAchievement.objects.filter(user=dream_post.user).select_related('achievement').order_by('-unlocked_at')[:5]
+        dream_post.author_unlocked_achievements = UserAchievement.objects.filter(
+            user=dream_post.user
+        ).select_related('achievement').order_by('-unlocked_at')[:5]
     else:
         dream_post.author_display_title = None
         dream_post.author_display_badge_icon = None
         dream_post.author_unlocked_achievements = []
 
+    # ✅ 預加載評論與評論者資訊
     comments = []
-    # ✅ FIX: 預加載評論者的 userprofile、display_title 和 display_badge (深度到 Achievement)
     raw_comments = dream_post.comments.select_related(
-        'user__userprofile', # 確保載入 userprofile
+        'user__userprofile',
         'user__userprofile__display_title',
         'user__userprofile__display_badge'
     ).order_by('created_at')
@@ -1095,35 +1576,59 @@ def dream_post_detail(request, post_id):
         if request.user.is_authenticated:
             comment_data['is_liked_by_user'] = CommentLike.objects.filter(comment=comment, user=request.user).exists()
 
-        # ✅ 新增：為每個評論者添加稱號和徽章資訊
         if comment.user and hasattr(comment.user, 'userprofile'):
             user_profile = comment.user.userprofile
             comment_data['commenter_display_title'] = user_profile.display_title.name if user_profile.display_title else None
             comment_data['commenter_display_badge_icon'] = user_profile.display_badge.badge_icon if user_profile.display_badge else None
-            comment_data['commenter_unlocked_achievements'] = UserAchievement.objects.filter(user=comment.user).select_related('achievement').order_by('-unlocked_at')[:5]
+            comment_data['commenter_unlocked_achievements'] = UserAchievement.objects.filter(
+                user=comment.user
+            ).select_related('achievement').order_by('-unlocked_at')[:5]
 
         comments.append(comment_data)
 
     similar_dreams = get_similar_dreams(dream_post)
 
+    # ✅ 留言功能 + 每日留言任務
     if request.method == 'POST' and request.user.is_authenticated:
         comment_content = request.POST.get('comment')
         if comment_content:
-             # 使用 bleach 清理評論內容
-            cleaned_comment = bleach.clean(comment_content, strip=True)
             DreamComment.objects.create(
                 dream_post=dream_post,
                 user=request.user,
                 content=comment_content
             )
+
+            # 🆕 每日任務：第一次留言 +5 點券
+            from datetime import date
+            today = date.today()
+            if not DailyTaskRecord.objects.filter(user=request.user, date=today, task_type="daily_comment").exists():
+                user_profile = request.user.userprofile
+                user_profile.points += 5
+                user_profile.save()
+
+                DailyTaskRecord.objects.create(
+                    user=request.user,
+                    date=today,
+                    task_type="daily_comment",
+                    completed=True
+                )
+
+                PointTransaction.objects.create(
+                    user=request.user,
+                    transaction_type='GAIN',
+                    amount=5,
+                    description='每日留言獎勵'
+                )
+
             messages.success(request, '評論已提交！')
             return redirect('dream_post_detail', post_id=post_id)
 
-    return render(request, 'dreams/dream_post_detail.html', {
+    return render(request, 'dreams/community/dream_post_detail.html', {
         'dream': dream_post,
         'comments': comments,
         'similar_dreams': similar_dreams
     })
+
 
 
 # 5. 夢境推薦系統
@@ -1271,7 +1776,6 @@ def dream_news(request):
     print("--- 渲染模板並回傳 ---")
     return render(request, 'dreams/dream_news.html', context)
 
-
 # 心理諮商頁面分享夢境給心理師
 @login_required
 def share_dreams(request):
@@ -1368,7 +1872,7 @@ def shared_with_me(request):
             'invitation_status': invitation_status_dict.get(entry['user_id'], 'none'),
         })
 
-    return render(request, 'dreams/shared_users.html', {
+    return render(request, 'dreams/therapist/shared_users.html', {
         'shared_users': shares,
         'leaderboard': leaderboard,
     })
@@ -1395,7 +1899,7 @@ def view_user_dreams(request, user_id):
 
     target_user = User.objects.get(id=user_id)
 
-    return render(request, 'dreams/user_dreams_for_therapist.html', {
+    return render(request, 'dreams/therapist/user_dreams_for_therapist.html', {
         'dreams': dreams,
         'target_user': target_user,
         'is_active_share': share.is_active,
@@ -1405,7 +1909,10 @@ def view_user_dreams(request, user_id):
 # 心理諮商預約及對話
 @login_required
 def share_and_schedule(request):
-    therapists = User.objects.filter(userprofile__is_therapist=True, userprofile__is_verified_therapist=True)
+    therapists = User.objects.filter(
+        userprofile__is_therapist=True,
+        userprofile__is_verified_therapist=True
+    )
 
     if request.method == 'POST':
         therapist_id = request.POST.get('therapist_id')
@@ -1418,37 +1925,51 @@ def share_and_schedule(request):
             messages.error(request, "找不到該心理師。")
             return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
+        try:
+            from datetime import datetime
+            scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
+            if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
+                messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
+                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+        except Exception:
+            messages.error(request, "預約時間格式錯誤。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+        # 只擋已確認的預約時段
+        if TherapyAppointment.objects.filter(
+            therapist=therapist,
+            scheduled_time=scheduled_dt,
+            is_cancelled=False,
+            is_confirmed=True
+        ).exists():
+            messages.error(request, "此時間已被確認預約，請選擇其他時間。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
         user_profile = request.user.userprofile
         therapist_profile = therapist.userprofile
-        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500  # 預設1500
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
 
+        if user_profile.points < appointment_cost:
+            messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+        # 扣點並建立預約（狀態未確認）
         with transaction.atomic():
-            if user_profile.points < appointment_cost:
-                messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-            try:
-                from datetime import datetime
-                scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
-                if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
-                    messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
-                    return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-            except Exception:
-                messages.error(request, "預約時間格式錯誤。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-            if TherapyAppointment.objects.filter(therapist=therapist, scheduled_time=scheduled_dt).exists():
-                messages.error(request, "此時間已被預約，請選擇其他時間。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-            # 點數扣除與記錄
             user_profile.points -= appointment_cost
             user_profile.save()
 
             PointTransaction.objects.create(
                 user=request.user,
                 amount=-appointment_cost,
-                description=f"預約心理師 {therapist.username} 諮商（1 小時）"
+                description=f"預約心理師 {therapist.username} 諮商（1 小時，待確認）"
+            )
+
+            appointment = TherapyAppointment.objects.create(
+                user=request.user,
+                therapist=therapist,
+                scheduled_time=scheduled_dt,
+                is_confirmed=False,
+                is_cancelled=False,
             )
 
             # 分享授權
@@ -1458,12 +1979,6 @@ def share_and_schedule(request):
                 defaults={'is_active': True}
             )
 
-            TherapyAppointment.objects.create(
-                user=request.user,
-                therapist=therapist,
-                scheduled_time=scheduled_dt
-            )
-
             if message_content:
                 TherapyMessage.objects.create(
                     sender=request.user,
@@ -1471,17 +1986,18 @@ def share_and_schedule(request):
                     content=message_content
                 )
 
-        messages.success(request, f"已成功預約，並扣除 {appointment_cost} 點，目前剩餘 {user_profile.points} 點。")
+        messages.success(request, "預約已送出並扣除點數，請等待心理師確認。")
         return redirect('user_appointments')
 
     return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
 
 #使用者查看自己的預約
 @login_required
 def user_appointments(request):
     appointments = TherapyAppointment.objects.filter(
     user=request.user
-    ).order_by('-scheduled_time')
+    ).order_by('-created_at')  # 按建立時間最新的排在最上面
 
     # 找出使用者已授權的心理師
     therapists = [
@@ -1495,12 +2011,17 @@ def user_appointments(request):
         appointments.filter(is_confirmed=True).values_list('therapist_id', flat=True)
     )
 
-    # 對每筆預約附加 point_change 屬性
     for appt in appointments:
-        if appt.is_confirmed:
-            appt.point_change = -1500
+        therapist_profile = appt.therapist.userprofile
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
+        if appt.is_cancelled:
+            appt.point_change = appointment_cost  # 已經是正數
+        elif appt.is_confirmed:
+            appt.point_change = -appointment_cost
         else:
-            appt.point_change = 0  # 未確認預約尚未扣點
+            appt.point_change = 0
+        appt.abs_point_change = abs(appt.point_change)  # 新增正數版本
+
 
     return render(request, 'dreams/user_appointments.html', {
         'appointments': appointments,
@@ -1543,19 +2064,41 @@ def cancel_appointment(request, appointment_id):
     appointment.is_cancelled = True
     appointment.save()
 
-    # 退回點券
+    # 依照心理師設定的 coin_price 退點（預設 1500）
+    therapist_profile = appointment.therapist.userprofile
+    appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
+
     profile = request.user.userprofile
-    profile.points += 1500
+    profile.points += appointment_cost
     profile.save()
 
     # 點數紀錄
     PointTransaction.objects.create(
         user=request.user,
         transaction_type='GAIN',
-        amount=1500,
-        description='取消預約退還點數'
+        amount=appointment_cost,
+        description=f"取消預約退還 {appointment.therapist.username} 諮商點數"
     )
 
+    return redirect('user_appointments')
+
+#刪除已取消的預約
+@require_POST
+@login_required
+def delete_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id, user=request.user)
+
+    if not appointment.is_cancelled:
+        return HttpResponseForbidden("只能刪除已取消的預約")
+
+    appointment.delete()
+    return redirect('user_appointments')
+
+#全部刪除已取消的預約
+@require_POST
+@login_required
+def delete_all_cancelled_appointments(request):
+    TherapyAppointment.objects.filter(user=request.user, is_cancelled=True).delete()
     return redirect('user_appointments')
 
 
@@ -1597,7 +2140,7 @@ def therapist_list_with_chat(request):
     })
 
 
-
+# 心理師邀請聊天
 @require_POST
 @login_required
 def respond_invitation(request, invitation_id):
@@ -1653,45 +2196,55 @@ def delete_invitation(request, invitation_id):
 # 心理師端的預約時間
 @login_required
 def consultation_schedule(request, user_id):
+    from django.utils.timezone import now
+
     client = get_object_or_404(User, id=user_id)
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師能查看預約資料")
 
-    # 只查詢這個使用者的預約
     appointments = TherapyAppointment.objects.filter(
         therapist=request.user,
         user__id=user_id,
         is_cancelled=False
     ).order_by('-scheduled_time')
 
-    return render(request, 'dreams/consultation_schedule.html', {
-        'client': client,
-        'appointments': appointments
-    })
+    # 取得每筆預約對應心理師點數（假設心理師是同一人，直接拿 userprofile.coin_price）
+    coin_price = request.user.userprofile.coin_price or 0  # 預設1500點
 
+    return render(request, 'dreams/therapist/consultation_schedule.html', {
+        'client': client,
+        'appointments': appointments,
+        'now': now(),
+        'coin_price': coin_price,
+    })
 
 
 # 心理師端可以看到的所有使用者預約時間
 @login_required
 def all_users_appointments(request):
-    # 限制只有心理師可以使用
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看此頁面")
 
-    # 抓取所有預約我的紀錄（排除已取消的）
     appointments = TherapyAppointment.objects.select_related('user', 'therapist') \
         .filter(therapist=request.user, is_cancelled=False).order_by('-scheduled_time')
 
-    # 取得有預約我的使用者（去重）
     users_with_appointments = User.objects.filter(
         received_appointments__therapist=request.user,
         received_appointments__is_cancelled=False
     ).distinct()
 
-    return render(request, 'dreams/all_users_appointments.html', {
+    now = timezone.now()
+
+    coin_price = request.user.userprofile.coin_price or 1500  # 取得心理師設定點數，預設1500
+
+    return render(request, 'dreams/therapist/all_users_appointments.html', {
         'appointments': appointments,
         'users_with_appointments': users_with_appointments,
+        'now': now,
+        'coin_price': coin_price,
     })
+
+
 
 
 
@@ -1701,16 +2254,82 @@ def all_users_appointments(request):
 def confirm_appointment(request, appointment_id):
     appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
 
-    # 檢查是否是該心理師本人
     if appointment.therapist != request.user:
         return HttpResponseForbidden("您無權確認此預約")
 
-    appointment.is_confirmed = True
-    appointment.save()
+    if appointment.is_cancelled:
+        messages.error(request, "此預約已取消，無法確認。")
+        return redirect('therapist_appointments')
+    if appointment.is_confirmed:
+        messages.info(request, "此預約已確認過。")
+        return redirect('therapist_appointments')
+
+    # 確認該時段沒有被其他已確認預約佔用
+    if TherapyAppointment.objects.filter(
+        therapist=appointment.therapist,
+        scheduled_time=appointment.scheduled_time,
+        is_cancelled=False,
+        is_confirmed=True
+    ).exists():
+        messages.error(request, "該時段已被其他確認預約，無法確認此預約。")
+        return redirect('therapist_appointments')
+
+    user_profile = appointment.user.userprofile
+    therapist_profile = appointment.therapist.userprofile
+    appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 0
+
+    if user_profile.points < appointment_cost:
+        messages.error(request, f"該用戶點數不足（需 {appointment_cost} 點），無法確認預約。")
+        return redirect('therapist_appointments')
+
+
+    with transaction.atomic():
+        # 確認該預約並扣點（理論上預約時已扣過點，這裡可視狀況改，不扣或檢查）
+        # 如果預約時已扣點，這裡不再扣點
+        appointment.is_confirmed = True
+        appointment.save()
+
+        # 新增：發送通知給使用者
+        Notification.objects.create(
+            recipient=appointment.user,
+            sender=request.user,
+            title="✅ 預約確認通知",
+            content=f"恭喜！您與 {request.user.username} 心理師的諮商預約已成功確認。\n\n"
+                    f"預約時間：{appointment.scheduled_time.strftime('%Y-%m-%d %H:%M')}\n\n"
+                    f"期待與您相見！",
+            is_system_message=False # 這裡不是系統信，是來自心理師
+        )
+
+        # 找出其他同時段且未確認、未取消的預約
+        other_pending_appointments = TherapyAppointment.objects.filter(
+            therapist=appointment.therapist,
+            scheduled_time=appointment.scheduled_time,
+            is_cancelled=False,
+            is_confirmed=False
+        ).exclude(id=appointment.id)
+
+        for appt in other_pending_appointments:
+            appt.is_cancelled = True
+            appt.save()
+
+            # 退點給使用者
+            other_user_profile = appt.user.userprofile
+            other_user_profile.points += appointment_cost
+            other_user_profile.save()
+
+            PointTransaction.objects.create(
+                user=appt.user,
+                amount=appointment_cost,  # 正數
+                transaction_type='GAIN',
+                description=f"預約時間衝突取消，退還 {appointment.therapist.username} 諮商點數"
+            )
+
+    messages.success(request, f"已成功確認預約，並取消同時段其他待確認預約，退還他們點數。")
     return redirect('consultation_schedule', user_id=appointment.user.id)
 
 
-    
+
+
 # 心理師端的刪除預約按鈕
 @require_POST
 @login_required
@@ -1721,36 +2340,27 @@ def therapist_delete_appointment(request, appointment_id):
     if appointment.therapist != request.user:
         return HttpResponseForbidden("您無權刪除此預約。")
 
-    # 檢查預約是否已過期
-    if appointment.scheduled_time < timezone.now():
-        messages.error(request, "預約時間已過，無法刪除。")
-        return redirect('therapist_view_client_appointments', user_id=appointment.user.id)
 
-    # 只有已確認的預約會退點數
-    if appointment.is_confirmed:
-        user_profile = appointment.user.userprofile
+    therapist_profile = appointment.therapist.userprofile
+    refund_points = therapist_profile.coin_price if therapist_profile.coin_price else 0
 
-        with transaction.atomic():
-            user_profile.points += 1500
-            user_profile.save()
+    user_profile = appointment.user.userprofile
 
-            PointTransaction.objects.create(
-                user=appointment.user,
-                transaction_type='GAIN',
-                amount=1500,
-                description=f'心理師取消已確認預約退還點數（ID:{appointment.id}）'
-            )
+    with transaction.atomic():
+        user_profile.points += refund_points
+        user_profile.save()
 
-            appointment.delete()
+        PointTransaction.objects.create(
+            user=appointment.user,
+            transaction_type='GAIN',
+            amount=refund_points,
+            description=f'心理師取消預約退還點數（ID:{appointment.id}）'
+        )
 
-        messages.success(request, "已確認的預約已刪除並退還使用者1500點。")
-    else:
-        # 未確認的預約不加點，直接刪除
         appointment.delete()
-        messages.success(request, "未確認的預約已刪除。")
 
+    messages.success(request, f"預約已刪除並退還使用者 {refund_points} 點。")
     return redirect('therapist_view_client_appointments', user_id=appointment.user.id)
-
 
 
 
@@ -1767,7 +2377,7 @@ def my_clients(request):
         is_active=True
     ).select_related('user')
 
-    return render(request, 'dreams/my_clients.html', {
+    return render(request, 'dreams/therapist/my_clients.html', {
         'shared_users': shared_users,  # 傳入整個 queryset
     })
 
@@ -2180,6 +2790,22 @@ def send_chat_invitation(request):
 
     try:
         target_user = User.objects.get(id=user_id)
+        invitation, created = ChatInvitation.objects.get_or_create(
+            therapist=request.user,
+            user=target_user,
+            defaults={'status': 'pending'}
+        )
+
+        # 新增：發送通知給使用者
+        Notification.objects.create(
+            recipient=target_user,
+            sender=request.user,
+            title="💌 聊天邀請",
+            content=f"您好，{request.user.username} 心理師向您發送了聊天邀請，點此回覆：[連結到回覆頁面]。",
+            is_system_message=False
+        )
+        return JsonResponse({'success': True, 'message': '邀請送出成功'})
+    
     except User.DoesNotExist:
         return JsonResponse({'success': False, 'error': '使用者不存在'}, status=404)
 
@@ -2227,15 +2853,16 @@ def leaderboard_view(request):
     for user_emotion in leaderboard:
         user_emotion.invitation_status = invitation_dict.get(user_emotion.user_id, 'none')
 
-    return render(request, 'dreams/shared_users.html', {
+    return render(request, 'dreams/therapist/shared_users.html', {
         'leaderboard': leaderboard,
         # 你需要的其他上下文變數
     })
 
 
-
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseRedirect
+
+
 
 @require_POST
 @login_required
@@ -2247,67 +2874,88 @@ def delete_chat_invitation(request, user_id):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
+from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse
+from .models import Notification
 
 @login_required
-def chat_with_user(request, user_id):
-    other_user = get_object_or_404(User, id=user_id)
+def notification_list(request):
+    """顯示使用者的所有通知信件"""
+    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    return render(request, 'dreams/notification_list.html', {'notifications': notifications})
 
-    # 決定目前使用者的身份
-    is_self_therapist = request.user.userprofile.is_therapist
-    is_other_therapist = other_user.userprofile.is_therapist
+@login_required
+def notification_detail(request, notification_id):
+    """顯示單封信件詳細內容並標記為已讀"""
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save()
+    return render(request, 'dreams/notification_detail.html', {'notification': notification})
 
-    # ✅ 在條件式外部初始化 authorized 變數，解決 NameError
-    authorized = False 
+@login_required
+@require_POST
+def mark_notification_as_read(request, notification_id):
+    """透過 AJAX 將信件標記為已讀"""
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        return JsonResponse({'success': False}, status=404)
+    
 
-    if is_self_therapist:
-        # 心理師只能與授權給他的使用者聊天
-        authorized = DreamShareAuthorization.objects.filter(
-            therapist=request.user,
-            user=other_user,
-            is_active=True
-        ).exists()
-    else:
-        # 使用者只能與他授權的心理師聊天
-        authorized = DreamShareAuthorization.objects.filter(
-            therapist=other_user,
-            user=request.user,
-            is_active=True
-        ).exists()
-        
-    # 如果 authorized 為 False，則回傳 HttpResponseForbidden
-    if not authorized:
-        return HttpResponseForbidden("尚未取得授權或無效聊天對象")
+# views.py (假設有一個管理員專用視圖)
+def send_system_broadcast(request, title, content):
+    users = User.objects.all()
+    for user in users:
+        Notification.objects.create(
+            recipient=user,
+            title=title,
+            content=content,
+            is_system_message=True
+        )
 
-    # 抓訊息紀錄
-    messages = ChatMessage.objects.filter(
-        Q(sender=request.user, receiver=other_user) |
-        Q(sender=other_user, receiver=request.user)
-    ).order_by('timestamp')
 
-    # 添加偵錯語句來檢查 messages 變數的內容
-    print("Debugging: Messages in chat_with_user view:", messages)
-
-    # 發送新訊息
+from django.contrib import messages
+from .models import Notification
+@staff_member_required
+def send_broadcast(request):
     if request.method == 'POST':
-        text = request.POST.get('message', '').strip()
-        file_obj = request.FILES.get('file')
-        sticker_name = request.POST.get('sticker')
-        
-        # 確保訊息內容、檔案或貼圖至少有一項
-        if text or file_obj or sticker_name:
-            ChatMessage.objects.create(
-                sender=request.user,
-                receiver=other_user,
-                message=text,
-                file=file_obj,
-                sticker=sticker_name
-            )
-        # 解決 ValueError，確保在 POST 請求後總是回傳 HttpResponse
-        return redirect('chat_with_user', user_id=other_user.id)
+        target = request.POST.get('target')
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        specific_user_id = request.POST.get('specific_user_id')
 
-    return render(request, 'dreams/chat_room.html', {
-        'messages': messages,
-        'chat_user': other_user
-    })
+        recipients = []
+        if target == 'all':
+            recipients = User.objects.all()
+        elif target == 'therapists':
+            recipients = User.objects.filter(userprofile__is_therapist=True, userprofile__is_verified_therapist=True)
+        elif target == 'specific' and specific_user_id:
+            try:
+                user = User.objects.get(id=specific_user_id)
+                recipients = [user]
+            except User.DoesNotExist:
+                messages.error(request, '指定的用戶不存在。')
+                return redirect('send_broadcast')
 
-
+        if recipients:
+            for recipient in recipients:
+                Notification.objects.create(
+                    recipient=recipient,
+                    sender=request.user,  # 設定發送者為當前登入的管理員
+                    title=title,
+                    content=content,
+                    is_system_message=True
+                )
+            messages.success(request, '消息已成功發送。')
+            return redirect('admin_dashboard')
+    
+    # 獲取所有用戶以供選擇
+    all_users = User.objects.all()
+    context = {
+        'all_users': all_users,
+    }
+    return render(request, 'dreams/admin_dashboard.html', context)

@@ -1,0 +1,350 @@
+{% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+
+{% block title %} - 夢境社群討論區{% endblock %}
+{% block content %}
+
+
+
+<div class="container mt-5">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-comments"></i>
+        </div>
+        <h1>夢境社群討論區</h1>
+        <p class="text-muted">與其他用戶分享夢境、交流分析，並尋找相似的夢境經歷。</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <nav>
+                <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
+                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action card-header d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-comments me-3 nav-icon"></i>
+                    <span class="fw-medium">夢境社群</span>
+                </a>
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fa-solid fa-pen-to-square me-3 nav-icon"></i>
+                    <span class="fw-medium">我的夢境貼文</span>
+                </a>
+                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-share-alt me-3 nav-icon"></i>
+                    <span class="fw-medium">分享夢境</span>
+                </a>
+                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-search me-3 nav-icon"></i>
+                    <span class="fw-medium">搜尋夢境</span>
+                </a>
+                </div>
+            </nav>
+
+            <div class="card mb-4 shadow-sm rounded-4 dream-ad-card">
+                <div class="card-header text-white d-flex justify-content-between align-items-center rounded-top-4">
+                    <h2 class="h5 mb-0"><i class="fas fa-bullhorn me-2"></i>本週推薦廣告</h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-3">
+                        <!-- 廣告內容 -->
+                        <a href="https://example.com/ad1" class="text-decoration-none text-dark d-flex align-items-center gap-3">
+                            
+                            <div>
+                                <h6 class="mb-1 fw-bold">夢境解碼書上架優惠中</h6>
+                                <small class="text-muted">探索夢的奧秘，限時 79 折</small>
+                            </div>
+                        </a>
+
+                        <a href="https://example.com/ad2" class="text-decoration-none text-dark d-flex align-items-center gap-3">
+                            
+                            <div>
+                                <h6 class="mb-1 fw-bold">加入夢境分析 Premium</h6>
+                                <small class="text-muted">解鎖專業心理師診斷建議</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <main class="col-md-9">
+            <div class="card mb-4">
+                <div class="card-header  text-white">
+                    <h2 class="h5 mb-0">今日熱門夢境主題</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if trend_data %}
+                            {% for keyword, count in trend_data.items %}
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'search_dreams' %}?q={{ keyword }}" class="btn btn-outline-primary btn-sm w-100">
+                                        {{ keyword }} ({{ count }})
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-12">
+                                <p class="text-muted">今天還沒有熱門趨勢數據</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+           
+            <div class="card mb-4">
+                <div class="card-header text-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">夢境貼文</h2>
+                    <div>
+                        <a href="?sort=popular" class="btn btn-sm {% if sort_type == 'popular' %}btn-light{% else %}btn-outline-light{% endif %} me-2">熱門</a>
+                        <a href="?sort=latest" class="btn btn-sm {% if sort_type == 'latest' %}btn-light{% else %}btn-outline-light{% endif %}">最新</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for dream in dream_posts %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center mb-3 rounded shadow-sm">
+                                <a href="{% url 'dream_post_detail' post_id=dream.id %}" class="d-flex align-items-center text-decoration-none">
+
+                                    <!-- 頭像區塊 -->
+                                    {% if dream.is_anonymous %}
+                                        <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                            style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
+                                            匿名
+                                        </div>
+                                    {% else %}
+                                        {% if dream.user.userprofile.avatar %}
+                                            <img src="{{ dream.user.userprofile.avatar.url }}" alt="{{ dream.user.username }}"
+                                                class="rounded-circle me-3 shadow"
+                                                style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
+                                        {% else %}
+                                            <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                                {{ dream.user.username|slice:":1"|upper }}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+
+
+                                    <!-- 文字與時間區塊 -->
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <strong class="me-2 text-dark">
+                                                {% if dream.is_anonymous %}
+                                                    匿名
+                                                {% else %}
+                                                    {{ dream.user.username }}
+                                                {% endif %}
+                                            </strong>
+
+                                            {% if dream.author_display_badge_icon %}
+                                                <i class="{{ dream.author_display_badge_icon }} display-badge me-2" title="展示徽章"></i>
+                                            {% endif %}
+                                            
+                                            <small class="text-muted">{{ dream.created_at|timesince }} 前發布</small>
+                                        </div>
+                                        
+                                        <h5 class="mb-1 text-dark">{{ dream.title }}</h5>
+                                        
+                                        <p class="text-muted mb-0">
+                                            {{ dream.content|slice:":20" }}{% if dream.content|length > 20 %}...{% endif %}
+                                        </p>
+                                    </div>
+                                </a>
+                                
+
+                                {# 新增互動數據區塊 #}
+                                <div class="dcard-post-footer d-flex align-items-center gap-3 mt-1">
+                                    <span class="dcard-engagement-item d-flex align-items-center">
+                                        <i class="far fa-eye me-1"></i> {{ dream.view_count }}
+                                    </span>
+                                    <span class="dcard-engagement-item d-flex align-items-center">
+                                        <a href="{% url 'dream_post_detail' post_id=dream.id %}#comments-section" class="text-decoration-none text-muted dcard-icon-button d-flex align-items-center">
+                                        <i class="far fa-comment me-1"></i> {{ dream.comments.count }}
+                                        </a>
+                                    </span>
+                                    <span class="dcard-engagement-item d-flex align-items-center">
+                                        {% if user.is_authenticated %}
+                                        <button type="button" class="btn btn-sm {% if dream.is_liked_by_user %}btn-danger{% else %}btn-outline-danger{% endif %} post-like-button dcard-icon-button d-flex align-items-center" data-post-id="{{ dream.id }}">
+                                            <i class="fas fa-heart me-1"></i> <span class="like-count">{{ dream.likes.count }}</span>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted dcard-icon-button d-flex align-items-center">
+                                            <i class="fas fa-heart me-1"></i> <span class="like-count">{{ dream.likes.count }}</span>
+                                        </span>
+                                        {% endif %}
+                                    </span>
+                                    <span class="dcard-engagement-item d-flex align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dcard-icon-button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-share-alt me-1"></i> 分享
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="copyToClipboard('{{ request.build_absolute_uri }}')">複製連結</a></li>
+                                        <li><a class="dropdown-item" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank">分享到 Facebook</a></li>
+                                        <li><a class="dropdown-item" href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}" target="_blank">分享到 Twitter</a></li>
+                                        <li><a class="dropdown-item" href="https://social-plugins.line.me/lineit/share?url={{ request.build_absolute_uri }}" target="_blank">分享到 LINE</a></li>
+                                        </ul>
+                                    </div>
+                                    </span>
+
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animation-fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+
+        {# --- BEGIN MODIFICATION: JavaScript for Post Likes functionality (CSRF token fetching improved) --- #}
+        // 從 cookie 中獲取 CSRF token 的函數 (Django 推薦的方式)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken'); // 獲取 CSRF token
+
+        const postLikeButtons = document.querySelectorAll('.post-like-button');
+
+        postLikeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const url = `/post/${postId}/like_toggle/`; // 確保這個URL正確對應urls.py
+                const buttonElement = this;
+                const likeCountSpan = buttonElement.querySelector('.like-count');
+
+                // 檢查 CSRF token 是否獲取成功 (這是額外的安全檢查，getCookie 函數會確保獲取)
+                if (!csrftoken) {
+                    console.error('CSRF token not found. Cannot send like request.');
+                    alert('安全驗證失敗，請刷新頁面再試。');
+                    return;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken, // 使用從 cookie 獲取的 token
+                        'Content-Type': 'application/x-www-form-urlencoded', // 保持這個 Content-Type
+                    },
+                    body: '' // 發送空字串作為 body，因為後端 view 只需要 CSRF token 和 post_id
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        // 處理 401 Unauthorized 錯誤 (未登入)
+                        if (response.status === 401) {
+                            alert('請先登入才能按讚或取消按讚！');
+                            window.location.href = '{% url "login" %}?next=' + window.location.pathname;
+                            return;
+                        }
+                        // 如果 HTTP 狀態碼不是 2xx，拋出錯誤
+                        throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        likeCountSpan.textContent = data.likes_count;
+                        if (data.liked) {
+                            buttonElement.classList.remove('btn-outline-danger');
+                            buttonElement.classList.add('btn-danger');
+                        } else {
+                            buttonElement.classList.remove('btn-danger');
+                            buttonElement.classList.add('btn-outline-danger');
+                        }
+                    } else {
+                        alert('操作失敗: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('按讚操作時發生錯誤。請檢查網路連線或伺服器日誌。');
+                });
+            });
+        });
+        {# --- END MODIFICATION --- #}
+    });
+
+
+</script>
+
+
+<!-- JS 功能 -->
+<script>
+// 即時按讚功能（模擬）
+document.getElementById('like-btn').addEventListener('click', function () {
+    const likeBtn = this;
+    const countSpan = document.getElementById('like-count');
+    let count = parseInt(countSpan.innerText);
+    likeBtn.classList.toggle('active');
+    likeBtn.classList.contains('active') ? count++ : count--;
+    countSpan.innerText = count;
+
+    likeBtn.classList.add('animate-like');
+    setTimeout(() => likeBtn.classList.remove('animate-like'), 500);
+});
+
+// 複製連結提示
+function copyToClipboard() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('已複製連結！');
+    });
+}
+
+// 滾動至留言
+const commentLinks = document.querySelectorAll('a[href="#comments"]');
+commentLinks.forEach(link => link.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('comments').scrollIntoView({ behavior: 'smooth' });
+}));
+</script>
+
+<!-- CSS 特效 -->
+<style>
+#like-btn.animate-like i {
+    animation: heartbeat 0.4s ease;
+    color: #e25555;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(1); }
+}
+
+#like-btn.active i {
+    color: #e25555;
+}
+</style>
+
+{% endblock %}
+
+

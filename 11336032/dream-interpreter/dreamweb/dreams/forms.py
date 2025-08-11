@@ -3,7 +3,16 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Dream, UserProfile, Achievement, UserAchievement
-from django.core.exceptions import ValidationError
+
+# 管理員編輯
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email', 'is_active']
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
 
 
 
@@ -16,27 +25,11 @@ class UserRegisterForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'password1', 'password2', 'is_therapist']
 
-class DreamForm(forms.ModelForm):
-    audio_file = forms.FileField(required=False)
-    dream_content = forms.CharField(widget=forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': '請詳細描述您的夢境...',
-                'rows': 8,
-            }), required=False)
-
-    class Meta:
-        model = Dream
-        fields = ['dream_content', 'audio_file']
-
-
-# 用戶註冊表單，包含心理師身份選項
-class UserRegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    is_therapist = forms.BooleanField(required=False, label="我是心理師")
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password1', 'password2', 'is_therapist']
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if len(username) < 2 or len(username) > 8:
+            raise forms.ValidationError("用戶名必須介於 2 到 8 個字之間")
+        return username
 
 class DreamForm(forms.ModelForm):
     audio_file = forms.FileField(required=False)
@@ -52,7 +45,16 @@ class DreamForm(forms.ModelForm):
 
 
 class UserProfileForm(forms.ModelForm):
-
+    class Meta:
+        model = UserProfile
+        fields = ['is_therapist', 'is_verified_therapist', 'points']
+        widgets = {
+            'is_therapist': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_verified_therapist': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'points': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+        
+class UserProfileForm(forms.ModelForm):
     bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': '寫一些關於您自己的內容...'}), required=False)
     avatar = forms.ImageField(required=False, help_text="上傳您的頭像圖片")
 
@@ -73,12 +75,13 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
+        # ✅ FIX: 移除 email 字段
         fields = ['bio', 'avatar', 'display_title', 'display_badge']
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        user = kwargs.pop('user', None) # 雖然 email 字段移除了，但這個 user 參數可能用於其他自定義邏輯
         super().__init__(*args, **kwargs)
-        if user:
+        if user: # 確保有 user 才過濾成就
             unlocked_achievements_queryset = UserAchievement.objects.filter(user=user).select_related('achievement').order_by('-unlocked_at')
 
             display_title_choices = [(ua.achievement.id, ua.achievement.title)
@@ -91,10 +94,12 @@ class UserProfileForm(forms.ModelForm):
             self.fields['display_badge'].queryset = Achievement.objects.filter(id__in=[id for id, _ in display_badge_choices])
             self.fields['display_badge'].choices = [('', '--- 不顯示徽章 ---')] + display_badge_choices
 
+            # 設置初始值
             if self.instance.display_title:
                 self.fields['display_title'].initial = self.instance.display_title.id
             if self.instance.display_badge:
                 self.fields['display_badge'].initial = self.instance.display_badge.id
+
 
     def clean_avatar(self):
         avatar = self.cleaned_data.get('avatar')
@@ -114,6 +119,7 @@ class UserProfileForm(forms.ModelForm):
         if commit:
             user_profile.save()
         return user_profile
+
 
 class TherapistProfileForm(forms.ModelForm):
     class Meta:
