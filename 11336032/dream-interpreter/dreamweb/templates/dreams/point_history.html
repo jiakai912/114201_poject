@@ -26,7 +26,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if tx.is_gain %}+{% else %}-{% endif %}{{ tx.amount }}
+                        {% if tx.is_gain %}+{% else %} {% endif %}{{ tx.amount }}
                     </td>
                     <td>{{ tx.description }}</td>
                 </tr>

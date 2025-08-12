@@ -1,0 +1,117 @@
+{% extends 'dreams/base.html' %}
+{% load static %} {# 加載 static 檔案，用於頭像圖片 #}
+{% load custom_filters %} {# 確保加載 custom_filters 以使用 safe_json_dumps #}
+
+{% block title %}我的夢境貼文{% endblock %}
+
+{% block content %}
+<div class="container mt-5 animation-fade-in">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-pencil-alt"></i>
+        </div>
+        <h1>我的夢境貼文</h1>
+        <p class="text-muted">在這裡管理您在社群中發布的夢境貼文。</p>
+    </div>
+    <div class="row">
+        <nav class="col-md-3">
+            <div class="list-group mb-4 dream-nav shadow-sm rounded overflow-hidden">
+                <a href="{% url 'dream_community' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-comments me-3 nav-icon"></i>
+                <span class="fw-medium">夢境社群</span>
+                </a>
+                <a href="{% url 'my_posts' %}" class="list-group-item list-group-item-action card-header d-flex align-items-center py-3 border-0 transition">
+                    <i class="fa-solid fa-pen-to-square me-3 nav-icon"></i>
+                <span class="fw-medium">我的夢境貼文</span>
+                </a>
+                <a href="{% url 'share_dream' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-share-alt me-3 nav-icon"></i>
+                <span class="fw-medium">分享夢境</span>
+                </a>
+                <a href="{% url 'search_dreams' %}" class="list-group-item list-group-item-action d-flex align-items-center py-3 border-0 transition">
+                    <i class="fas fa-search me-3 nav-icon"></i>
+                <span class="fw-medium">搜尋夢境</span>
+                </a>
+            </div>
+        </nav>
+        
+        <main class="col-md-9">
+            {% if my_posts %}
+                <div class="row">
+                    {% for post in my_posts %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card dream-card shadow-sm">
+                                <div class="card-header text-white">
+                                    <h5 class="card-title">
+                                        <a href="{% url 'dream_post_detail' post_id=post.id %}" class="text-decoration-none text-white">
+                                            {{ post.title }}
+                                        </a>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {# ✅ MODIFIED: 發文者頭像、用戶名、稱號和徽章的顯示邏輯 #}
+                                    <div class="d-flex align-items-center mb-3">
+                                        {% if post.is_anonymous %}
+                                            <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                style="width: 50px; height: 50px; background-color: #6c757d; color: white; font-weight: bold; font-size: 14px; border: 2px solid #dee2e6;">
+                                                匿名
+                                            </div>
+                                            <small class="text-muted">匿名發佈 </small>
+                                        {% else %}
+                                            {% if post.user.userprofile.avatar %}
+                                                <img src="{{ post.user.userprofile.avatar.url }}" alt="{{ post.user.username }}"
+                                                    class="rounded-circle me-3 shadow"
+                                                    style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #dee2e6;">
+                                            {% else %}
+                                                <div class="rounded-circle me-3 d-flex justify-content-center align-items-center shadow"
+                                                    style="width: 50px; height: 50px; background: linear-gradient(135deg, #b790f5, #55b1fc); color: white; font-weight: 600; font-size: 18px; border: 2px solid #dee2e6;">
+                                                    {{ post.user.username|slice:":1"|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ post.user.username }}
+                                                    {% if post.author_display_badge_icon %}
+                                                        <i class="{{ post.author_display_badge_icon }} display-badge" title="展示徽章"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <!-- 放置貼文時間或其他資訊 -->
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <p>{{ post.content|truncatechars:50 }}</p>
+                                    <small class="text-muted">
+                                        發佈時間：{{ post.created_at|date:"Y-m-d H:i" }} |
+                                        {% if post.is_anonymous %}
+                                            <span class="badge bg-secondary">匿名發佈</span>
+                                        {% else %}
+                                            <span class="badge bg-success">公開發佈</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="card-footer d-flex justify-content-end">
+                                    <a href="{% url 'edit_dream_post' post_id=post.id %}" class="btn btn-sm" style="background-color: #6a5acd; color: white; border: none; margin-right: 50px;">編輯</a>
+                                    <form action="{% url 'delete_dream_post' post_id=post.id %}" method="post" style="display:inline;" onsubmit="return confirmDelete();">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">刪除</button>
+                                    </form>
+                                </div>
+                                
+                                <script>
+                                    function confirmDelete() {
+                                        return confirm("您確定要刪除這篇夢境貼文嗎？這個操作無法撤回。");
+                                    }
+                                </script>                                
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">您尚未發佈任何夢境。</div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

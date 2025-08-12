@@ -1,5 +1,7 @@
 
 from openai import OpenAI  # 導入 OpenAI SDK
+import re
+import logging
 client = OpenAI(api_key="sk-b1e7ea9f25184324aaa973412b081f6f", base_url="https://api.deepseek.com")
 def interpret_dream(dream_content):
     try:

@@ -5,7 +5,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
     
-# 心理諮商個人資料擴展模型
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     points = models.IntegerField(default=0)  # 點券餘額
@@ -15,6 +14,9 @@ class UserProfile(models.Model):
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
     # 訂價格
     coin_price = models.PositiveIntegerField(default=10, help_text="每次預約所需點券數")  # 新增欄位
+    
+    # 新增未讀信件計數
+    unread_notifications_count = models.IntegerField(default=0)
 
     # 新增 bio 和 avatar 字段
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
@@ -263,11 +265,25 @@ class PointTransaction(models.Model):
     description = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
     def is_gain(self):
         return self.transaction_type == 'GAIN'
 
+
     def __str__(self):
         return f"{self.user.username} {self.get_transaction_type_display()} {self.amount} 點 - {self.description}"
+
+
+
+# 每日任務
+class DailyTaskRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    task_type = models.CharField(max_length=50)  # 例如 "daily_login"
+    completed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('user', 'date', 'task_type')
 
 
 
@@ -319,3 +335,21 @@ class ChatInvitation(models.Model):
     
     class Meta:
         unique_together = ('therapist', 'user')
+
+# 通知系統
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name="收件人")
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_notifications', verbose_name="寄件人")
+    title = models.CharField(max_length=255, verbose_name="標題")
+    content = models.TextField(verbose_name="內容")
+    is_read = models.BooleanField(default=False, verbose_name="是否已讀")
+    is_system_message = models.BooleanField(default=False, verbose_name="是否為系統信")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="創建時間")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "通知信件"
+        verbose_name_plural = "通知信件"
+
+    def __str__(self):
+        return f"To {self.recipient.username}: {self.title}"

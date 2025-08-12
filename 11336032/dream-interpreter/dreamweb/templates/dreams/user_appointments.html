@@ -1,61 +1,124 @@
-<!-- 這是使用者看到的預約資料 -->
 {% extends 'dreams/base.html' %}
 
 {% block title %}我的預約紀錄{% endblock %}
 
 {% block content %}
+<style>
+    .appointment-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    thead th {
+        background: linear-gradient(90deg, #ffe08a, #ffd36f);
+        color: #5a4400;
+        font-weight: bold;
+        border: none;
+    }
+    tbody tr:hover {
+        background-color: #fff7e6 !important;
+        transition: background-color 0.3s ease;
+    }
+    .status-badge {
+        padding: 0.5em 0.8em;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .points-positive {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .points-negative {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .points-neutral {
+        color: #6c757d;
+        font-weight: bold;
+    }
+</style>
+
+
 <div class="container mt-5">
-    <h2 class="mb-3">📅 我的預約紀錄</h2>
-    <p class="text-muted">以下是您與心理師的諮詢預約紀錄，點券異動與狀態都會被記錄。</p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+        <h2 class="mb-3"><i class="fas fa-calendar-check me-2 text-primary"></i>我的預約紀錄</h2>
+        <p class="text-muted">以下是您與心理師的諮詢預約紀錄，點券異動與狀態都會被記錄。</p>
+        </div>
+        <div class="mt-3">
+            <form method="post" action="{% url 'delete_all_cancelled' %}" 
+                  onsubmit="return confirm('確定要刪除所有已取消的預約紀錄嗎？')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm rounded-pill mt-3">
+                    一鍵刪除已取消紀錄
+                </button>
+            </form>
+        </div>
+    </div>
+
+
 
     {% if appointments %}
-    <div class="table-responsive shadow-sm rounded-4 overflow-hidden">
-        <table class="table table-hover align-middle text-center">
-            <thead class="table-warning">
+    <div class="table-responsive appointment-card">
+        <table class="table table-hover align-middle text-center mb-0">
+            <thead>
                 <tr>
-                    <th scope="col">心理師</th>
-                    <th scope="col">預約時間</th>
-                    <th scope="col">建立時間</th>
-                    <th scope="col">狀態</th>
-                    <th scope="col">操作</th>
-                    <th scope="col">點券異動</th>
+                    <th>心理師</th>
+                    <th>預約時間</th>
+                    <th>建立時間</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                    <th>點券異動</th>
                 </tr>
             </thead>
             <tbody>
                 {% for appt in appointments %}
-                
                 <tr class="{% if appt.is_cancelled %}table-light text-muted{% endif %}">
-                    <td>{{ appt.therapist.username }}</td>
+                    <td class="fw-semibold">{{ appt.therapist.username }}</td>
                     <td>{{ appt.scheduled_time|date:"Y-m-d H:i" }}</td>
                     <td>{{ appt.created_at|date:"Y-m-d H:i" }}</td>
                     <td>
                         {% if appt.is_cancelled %}
-                            <span class="badge bg-secondary">已取消</span>
+                            <span class="status-badge bg-secondary text-white">已取消</span>
                         {% elif appt.is_confirmed %}
-                            <span class="badge bg-success">已確認</span>
+                            <span class="status-badge bg-success text-white">已確認</span>
                         {% else %}
-                            <span class="badge bg-warning text-dark">待確認</span>
+                            <span class="status-badge bg-warning text-dark">待確認</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if not appt.is_confirmed and not appt.is_cancelled %}
-                        <form method="post" action="{% url 'cancel_appointment' appointment_id=appt.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                取消預約
-                            </button>
-                        </form>
+                            <form method="post" action="{% url 'cancel_appointment' appointment_id=appt.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                    取消預約
+                                </button>
+                            </form>
+                        {% elif appt.is_cancelled %}
+                            <form method="post" action="{% url 'delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆紀錄嗎？')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                    刪除紀錄
+                                </button>
+                            </form>
                         {% else %}
                             <span class="text-muted">無法取消</span>
                         {% endif %}
                     </td>
+
                     <td>
                         {% if appt.is_cancelled %}
-                            <span class="text-success">+1500（退回）</span>
+                            <span class="points-positive">
+                                <i class="fas fa-plus-circle me-1"></i>{{ appt.abs_point_change }}（退回）
+                            </span>
                         {% elif appt.is_confirmed %}
-                            <span class="text-danger">-1500（預約）</span>
+                            <span class="points-negative">
+                                <i class="fas fa-minus-circle me-1"></i>{{ appt.abs_point_change }}（預約）
+                            </span>
                         {% else %}
-                            <span class="text-danger">-1500（預約）</span>
+                            <span class="points-neutral">等待確認</span>
                         {% endif %}
                     </td>
                 </tr>
