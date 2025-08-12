@@ -434,9 +434,7 @@
                                     <i class="fas fa-coins text-warning fs-1 mb-2"></i>
                                     <span class="badge bg-primary fs-6 px-3 py-2">{{ request.user.userprofile.points }}</span>
                                 </li>
-                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2"></i>個人檔案</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'pointshop' %}"><i class="fas fa-coins me-2"></i>點券商店</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'achievements' %}"><i class="fas fa-trophy me-2"></i>成就</a></li>
+                                
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center" href="{% url 'notification_list' %}">
                                         <i class="fas fa-envelope me-2"></i>信件箱
@@ -445,6 +443,10 @@
                                         {% endif %}
                                     </a>
                                 </li>
+                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2"></i>個人檔案</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'pointshop' %}"><i class="fas fa-coins me-2"></i>點券商店</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'achievements' %}"><i class="fas fa-trophy me-2"></i>成就</a></li>
+
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="post" action="{% url 'logout' %}">

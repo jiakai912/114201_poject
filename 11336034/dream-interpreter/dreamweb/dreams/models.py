@@ -74,7 +74,7 @@ class DreamShareAuthorization(models.Model):
 
     def __str__(self):
         return f"{self.user.username} 授權給 {self.therapist.username}"
-    
+
 
 # 個人檔案
 class Achievement(models.Model):
@@ -353,3 +353,17 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"To {self.recipient.username}: {self.title}"
+    
+
+# 分享夢境解析
+class DreamShare(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_dreams')
+    dream = models.ForeignKey(Dream, on_delete=models.CASCADE)
+    shared_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'therapist', 'dream')
+
+    def __str__(self):
+        return f"{self.user.username} 分享夢境 {self.dream.id} 給 {self.therapist.username}"

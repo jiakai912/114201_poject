@@ -11,7 +11,7 @@ import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
-from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike
+from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike,DreamShare
 from django.db.models import Count,Q
 from django.utils import timezone
 import jieba  # 中文分詞庫
@@ -296,10 +296,7 @@ def delete_comment(request, comment_id):
     comment.delete()
     return redirect('manage_comments')
 
-# 詳細評論
-def comments_detail(request, comment_id):
-    comment = get_object_or_404(DreamComment, id=comment_id)
-    return render(request, 'dreams/admin/comments_detail.html', {'comment': comment})
+
 
 # 管理心理師申請
 @user_passes_test(lambda u: u.is_superuser)
@@ -1842,24 +1839,31 @@ def view_user_dreams(request, user_id):
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看夢境")
 
-    # 不只查 is_active=True 的授權，而是找所有授權紀錄
-    share = DreamShareAuthorization.objects.filter(
+    # 確認授權（DreamShareAuthorization 作為總開關）
+    share_auth = DreamShareAuthorization.objects.filter(
         user_id=user_id,
-        therapist=request.user
+        therapist=request.user,
+        is_active=True
     ).first()
 
-    if not share:
+    if not share_auth:
         return HttpResponseForbidden("您沒有查看此使用者夢境的權限")
 
-    # 分享是否啟用決定夢境資料是否取出
-    dreams = Dream.objects.filter(user_id=user_id).order_by('-created_at') if share.is_active else []
+    # 取該使用者分享給該心理師的夢境（移除 DreamShare 的 is_active 篩選）
+    dreams = Dream.objects.filter(
+        id__in=DreamShare.objects.filter(
+            user_id=user_id,
+            therapist=request.user
+            # 不要用 is_active 篩選，因為該欄位不存在
+        ).values_list('dream_id', flat=True)
+    ).select_related('user').order_by('-created_at')
 
     target_user = User.objects.get(id=user_id)
 
     return render(request, 'dreams/therapist/user_dreams_for_therapist.html', {
         'dreams': dreams,
         'target_user': target_user,
-        'is_active_share': share.is_active,
+        'is_active_share': share_auth.is_active,
     })
 
 
@@ -1875,6 +1879,7 @@ def share_and_schedule(request):
         therapist_id = request.POST.get('therapist_id')
         scheduled_time = request.POST.get('scheduled_time')
         message_content = request.POST.get('message')
+        dream_id = request.POST.get('dream_id')  # ✅ 從表單取夢境 ID
 
         try:
             therapist = User.objects.get(id=therapist_id)
@@ -1902,6 +1907,7 @@ def share_and_schedule(request):
             messages.error(request, "此時間已被確認預約，請選擇其他時間。")
             return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
+        # 確認使用者點數
         user_profile = request.user.userprofile
         therapist_profile = therapist.userprofile
         appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
@@ -1910,7 +1916,7 @@ def share_and_schedule(request):
             messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
             return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-        # 扣點並建立預約（狀態未確認）
+        # 扣點並建立預約
         with transaction.atomic():
             user_profile.points -= appointment_cost
             user_profile.save()
@@ -1929,13 +1935,26 @@ def share_and_schedule(request):
                 is_cancelled=False,
             )
 
-            # 分享授權
+            # 1. 建立或啟用授權
             DreamShareAuthorization.objects.update_or_create(
                 user=request.user,
                 therapist=therapist,
                 defaults={'is_active': True}
             )
 
+            # 2. 確認夢境並建立分享紀錄
+            if dream_id:
+                try:
+                    dream = Dream.objects.get(id=dream_id, user=request.user)
+                    DreamShare.objects.get_or_create(
+                        user=request.user,
+                        therapist=therapist,
+                        dream=dream
+                    )
+                except Dream.DoesNotExist:
+                    messages.warning(request, "找不到該夢境，已略過夢境分享。")
+
+            # 3. 建立初始訊息
             if message_content:
                 TherapyMessage.objects.create(
                     sender=request.user,
@@ -1943,7 +1962,7 @@ def share_and_schedule(request):
                     content=message_content
                 )
 
-        messages.success(request, "預約已送出並扣除點數，請等待心理師確認。")
+        messages.success(request, "預約已送出並扣除點數，已分享夢境，請等待心理師確認。")
         return redirect('user_appointments')
 
     return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})

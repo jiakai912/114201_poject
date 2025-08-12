@@ -27,7 +27,6 @@ urlpatterns = [
     # 管理評論
     path('admin_manage-comments/', views.manage_comments, name='manage_comments'),
     path('admin_manage-comments/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
-    path('comments/<int:comment_id>/', views.comments_detail, name='comments_detail'),# 詳細評論
 
 
 
