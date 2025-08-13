@@ -1,3 +1,4 @@
+<!-- 使用者心理診斷頁面 -->
 {% extends 'dreams/base.html' %}
 
 {% block title %}心理健康分析{% endblock %}
@@ -106,7 +107,7 @@
                 </div>
 
                 <!-- 右邊：按鈕 -->
-                {% if request.user.is_authenticated and not request.user.userprofile.is_therapist %}
+                {% if request.user.is_authenticated %}
                 <div class="col-md-6 text-md-end mt-3 mt-md-0 pe-md-5 pe-3">
                     <div class="d-flex flex-wrap justify-content-md-end gap-2">
 
