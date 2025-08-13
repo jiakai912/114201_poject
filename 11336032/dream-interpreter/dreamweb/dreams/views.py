@@ -2460,20 +2460,17 @@ def chat_room(request, chat_user_id):
 @login_required
 def chat_with_user(request, user_id):
     other_user = get_object_or_404(User, id=user_id)
-
-    # 決定目前使用者的身份
+    # ... (授權檢查邏輯保持不變) ...
     is_self_therapist = request.user.userprofile.is_therapist
     is_other_therapist = other_user.userprofile.is_therapist
 
     if is_self_therapist:
-        # 心理師只能與授權給他的使用者聊天
         authorized = DreamShareAuthorization.objects.filter(
             therapist=request.user,
             user=other_user,
             is_active=True
         ).exists()
     else:
-        # 使用者只能與他授權的心理師聊天
         authorized = DreamShareAuthorization.objects.filter(
             therapist=other_user,
             user=request.user,
@@ -2483,23 +2480,46 @@ def chat_with_user(request, user_id):
     if not authorized:
         return HttpResponseForbidden("尚未取得授權或無效聊天對象")
 
-    # 抓訊息紀錄
+    # 這段程式碼同時處理 POST 請求的文字、貼圖和檔案上傳
+    if request.method == 'POST':
+        sticker = request.POST.get('sticker')
+        message = request.POST.get('message', '').strip()
+        chat_file = request.FILES.get('file')
+
+        if sticker:
+            ChatMessage.objects.create(sender=request.user, receiver=other_user, sticker=sticker)
+            return JsonResponse({'success': True, 'type': 'sticker', 'sticker': sticker})
+        elif message:
+            ChatMessage.objects.create(sender=request.user, receiver=other_user, message=message)
+            return JsonResponse({'success': True, 'type': 'message', 'message': message})
+        elif chat_file:
+            chat_message = ChatMessage.objects.create(sender=request.user, receiver=other_user, file=chat_file)
+            return JsonResponse({
+                'success': True, 
+                'type': 'file', 
+                'file_name': chat_file.name, 
+                'file_url': chat_message.file.url
+            })
+        
+        return JsonResponse({'success': False, 'error': '無效的訊息或貼圖'}, status=400)
+
+    # 這裡將 chat_user_profile 也傳給模板
+    chat_user_profile = other_user.userprofile
+    chat_user_achievements = UserAchievement.objects.filter(user=other_user).select_related('achievement')
+
+    # 這部分用於處理 GET 請求並渲染頁面
     messages = ChatMessage.objects.filter(
         Q(sender=request.user, receiver=other_user) |
         Q(sender=other_user, receiver=request.user)
     ).order_by('timestamp')
 
-    # 發送新訊息
-    if request.method == 'POST':
-        text = request.POST.get('message', '').strip()
-        if text:
-            ChatMessage.objects.create(sender=request.user, receiver=other_user, message=text)
-            return redirect('chat_with_user', user_id=other_user.id)
-
     return render(request, 'dreams/chat_room.html', {
         'messages': messages,
-        'chat_user': other_user
+        'chat_user': other_user,
+        'chat_user_profile': chat_user_profile,
+        'chat_user_achievements': chat_user_achievements,
     })
+
 
 
 # 綠界第三方支付
@@ -2959,3 +2979,37 @@ def send_broadcast(request):
         'all_users': all_users,
     }
     return render(request, 'dreams/admin_dashboard.html', context)
+
+
+
+
+
+@login_required
+@require_POST
+def send_chat_message(request, user_id):
+    """
+    處理 AJAX 發送的聊天訊息和貼圖。
+    """
+    other_user = get_object_or_404(User, id=user_id)
+    
+    # 這裡可以保留授權檢查
+    authorized = DreamShareAuthorization.objects.filter(
+        Q(therapist=other_user, user=request.user) | Q(therapist=request.user, user=other_user),
+        is_active=True
+    ).exists()
+    if not authorized:
+        return JsonResponse({'success': False, 'error': '尚未取得授權或無效聊天對象'}, status=403)
+
+    # 檢查是貼圖還是文字訊息
+    sticker = request.POST.get('sticker')
+    message = request.POST.get('message', '')
+
+    if sticker:
+        ChatMessage.objects.create(sender=request.user, receiver=other_user, sticker=sticker)
+        return JsonResponse({'success': True, 'type': 'sticker', 'sticker': sticker})
+    elif message:
+        ChatMessage.objects.create(sender=request.user, receiver=other_user, message=message)
+        return JsonResponse({'success': True, 'type': 'message', 'message': message})
+    
+    return JsonResponse({'success': False, 'error': '無效的訊息或貼圖'}, status=400)
+

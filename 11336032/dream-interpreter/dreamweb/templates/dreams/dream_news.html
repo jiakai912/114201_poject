@@ -6,53 +6,56 @@
 
 {% block content %}
     <style>
-        /* 頁面整體科幻深色主題 */
+        /* 頁面整體淺色主題 */
         body {
-            background-color: #121212;
-            color: #e0e0e0;
+            background-color: #f0f2f5; /* 淺灰色背景 */
+            color: #212529;
         }
         .page-container {
-            background-color: #1a1a1a;
+            background-color: #ffffff; /* 白色背景 */
             border-radius: 1rem;
             padding: 2rem;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 柔和的陰影 */
         }
-        .page-header h1, .page-header p {
-            color: #00ffff;
-            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        .page-header h1 {
+            color: #007bff; /* 主題藍色 */
+            text-shadow: none;
+        }
+        .page-header p {
+            color: #6c757d; /* 柔和的文字顏色 */
         }
         .search-card {
-            background-color: #2a2a2a;
-            border: 1px solid #00ffff;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            background-color: #f8f9fa; /* 淺色卡片背景 */
+            border: 1px solid #dee2e6;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
             transition: box-shadow 0.3s ease-in-out;
         }
         .search-card:hover {
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
         }
         .form-control {
-            background-color: #121212;
-            border: 1px solid #444;
-            color: #fff;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            color: #212529;
             transition: border-color 0.3s;
         }
         .form-control:focus {
-            background-color: #121212;
-            border-color: #00ffff;
-            box-shadow: none;
-            color: #fff;
+            background-color: #fff;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+            color: #212529;
         }
         .custom-btn {
-            background-color: #00ffff;
-            border-color: #00ffff;
-            color: #121212;
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
             font-weight: bold;
             transition: all 0.3s;
         }
         .custom-btn:hover {
-            background-color: #00b3b3;
-            border-color: #00b3b3;
-            color: #121212;
+            background-color: #0056b3;
+            border-color: #0056b3;
+            color: #fff;
         }
 
         /* 新聞卡片佈局 */
@@ -66,14 +69,14 @@
             align-items: flex-end;
             padding: 1.5rem;
             min-height: 400px;
-            border: 1px solid #444;
+            border: 1px solid #dee2e6;
             border-radius: 0.5rem;
             overflow: hidden;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             transition: box-shadow 0.3s;
         }
         .news-card-main:hover {
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         }
         .news-card-main::before {
             content: '';
@@ -95,38 +98,38 @@
         }
         .news-card-small {
             height: 100%;
-            background-color: #2a2a2a;
-            border: 1px solid #444;
-            color: #e0e0e0;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #212529;
             transition: transform 0.2s, box-shadow 0.2s, border-color 0.3s;
         }
         .news-card-small:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0, 255, 255, 0.2);
-            border-color: #00ffff;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+            border-color: #007bff;
         }
         .similarity-badge {
             font-weight: bold;
-            color: #00ffff;
+            color: #007bff;
         }
         
         /* 輔助區塊 */
         .placeholder-card {
-            background-color: #2a2a2a;
-            border: 1px solid #444;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-radius: 0.5rem;
             padding: 1.5rem;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
         }
         .section-header {
             font-size: 1.25rem;
             font-weight: bold;
-            color: #fff;
+            color: #212529;
             margin-bottom: 1rem;
         }
         .text-neon {
-            color: #00ffff;
-            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+            color: #007bff;
+            text-shadow: none;
         }
         .fade-in {
             opacity: 0;
@@ -177,21 +180,21 @@
                     <ul class="list-unstyled">
                         <li class="d-flex justify-content-between align-items-center py-2">
                             <div>
-                                <h6 class="mb-0 text-white">CBOE恐慌指數</h6>
+                                <h6 class="mb-0 text-dark">CBOE恐慌指數</h6>
                                 <small class="text-muted">快速下跌</small>
                             </div>
                             <span class="text-danger fw-bold">-1.19%</span>
                         </li>
                         <li class="d-flex justify-content-between align-items-center py-2">
                             <div>
-                                <h6 class="mb-0 text-white">台灣50指數</h6>
+                                <h6 class="mb-0 text-dark">台灣50指數</h6>
                                 <small class="text-muted">TWS0</small>
                             </div>
                             <span class="text-danger fw-bold">-0.10%</span>
                         </li>
                         <li class="d-flex justify-content-between align-items-center py-2">
                             <div>
-                                <h6 class="mb-0 text-white">台積電</h6>
+                                <h6 class="mb-0 text-dark">台積電</h6>
                                 <small class="text-muted">TSM</small>
                             </div>
                             <span class="text-success fw-bold">+0.29%</span>
