@@ -132,11 +132,12 @@ urlpatterns = [
     #聊天室
     path('my_therapists/', views.therapist_list_with_chat, name='my_therapists'),
     path('chat/<int:therapist_id>/', views.chat_with_therapist, name='chat_with_therapist'),
-    #聊天室
     path('my_clients/', views.my_clients, name='my_clients'),
     path('chat/client/<int:user_id>/', views.chat_with_client, name='chat_with_client'),
     path('chat/<int:chat_user_id>/', views.chat_room, name='chat_room'),
     path('chat/user/<int:user_id>/', views.chat_with_user, name='chat_with_user'),
+    path('chat/send_message/<int:user_id>/', views.send_chat_message, name='send_chat_message'),# 新增這條來處理 AJAX 訊息
+    
     #綠界第三方支付
     path('ecpay/checkout/', views.ecpay_checkout, name='ecpay_checkout'),
     path('ecpay/return/', views.ecpay_return, name='ecpay_return'),
