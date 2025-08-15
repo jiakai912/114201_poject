@@ -5,8 +5,9 @@
 
 {% block content %}
 <div class="container-fluid py-5">
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-4">
+            
             <div class="card shadow rounded-4 mb-4">
                 <div class="card-body text-center">
                     {% if chat_user_profile.avatar %}
@@ -63,14 +64,73 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card shadow rounded-4 mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-cloud me-2"></i>夢境與諮詢資訊</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-start mb-2"><i class="fas fa-list-ul me-2"></i>最近夢境紀錄</h6>
+                    <ul class="list-group list-group-flush small mb-3">
+                        {% for dream in recent_dreams %}
+                            <li class="list-group-item">
+                                <a href="{% url 'dream_detail' dream_id=dream.id %}" target="_blank" class="text-decoration-none text-dark">
+                                    <i class="fas fa-link me-1"></i>{{ dream.dream_content|truncatewords:5 }}
+                                </a>
+                                <span class="text-muted d-block mt-1">{{ dream.created_at|date:"Y-m-d H:i" }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">目前沒有夢境紀錄。</li>
+                        {% endfor %}
+                    </ul>
+
+                    <h6 class="text-start mb-2"><i class="fas fa-key me-2"></i>夢境關鍵字</h6>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for keyword, count in top_keywords.items %}
+                            <span class="badge bg-primary">{{ keyword }} ({{ count }})</span>
+                        {% empty %}
+                            <p class="text-muted small">目前沒有關鍵字。</p>
+                        {% endfor %}
+                    </div>
+
+                    <h6 class="text-start mb-2"><i class="fas fa-calendar-alt me-2"></i>諮詢歷史</h6>
+                    <ul class="list-group list-group-flush small">
+                        {% for appointment in consultation_history %}
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-1"></i>預約時間：{{ appointment.scheduled_time|date:"Y-m-d H:i" }}
+                                <br><span class="text-muted">狀態：{{ appointment.get_status_display }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">目前沒有諮詢歷史。</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            {% if is_therapist %}
+            <div class="card shadow rounded-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>諮詢工具</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-start mb-2"><i class="fas fa-reply me-2"></i>快速回覆範本</h6>
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="你好，我們開始吧。">開始諮詢</button>
+                        <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="好的，感謝你的分享。">感謝分享</button>
+                        <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="這是一個很重要的線索，請繼續說。">重要線索</button>
+                    </div>
+
+                    <h6 class="text-start mb-2"><i class="fas fa-sticky-note me-2"></i>私密筆記</h6>
+                    <textarea id="private-notes" class="form-control" rows="4" placeholder="在這裡記錄諮詢筆記... (只有你看得到)"></textarea>
+                </div>
+            </div>
+            {% endif %}
         </div>
         
         <div class="col-md-8">
             <div class="card shadow rounded-4">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話
-                    </h4>
+                    <h4 class="mb-0"><i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話</h4>
                 </div>
                 <div class="card-body d-flex flex-column" style="height: 600px;">
                     <div id="chat-box" class="flex-grow-1 overflow-auto p-3 mb-3 bg-light rounded" style="border: 1px solid #e0e0e0;">
@@ -93,7 +153,7 @@
                                     <div class="chat-file mt-2">
                                       <i class="fas fa-file-alt me-2"></i>
                                       <a href="{{ msg.file.url }}" download class="text-decoration-none text-dark">
-                                        {{ msg.file.name|truncatechars:25 }}
+                                        {{ msg.file.name|truncatewords:25 }}
                                       </a>
                                     </div>
                                   {% endif %}
@@ -281,6 +341,15 @@
     .catch(error => {
       console.error('Error:', error);
       alert('訊息發送時發生錯誤。');
+    });
+  });
+
+  // ✅ 新增：快速回覆按鈕點擊事件
+  document.querySelectorAll('.quick-reply').forEach(button => {
+    button.addEventListener('click', function() {
+        const messageInput = document.getElementById('message-input');
+        messageInput.value = this.dataset.message;
+        messageInput.focus();
     });
   });
 </script>
