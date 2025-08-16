@@ -93,12 +93,10 @@ urlpatterns = [
     path('achievements/', views.user_achievements, name='achievements'),
     path('achievements/', views.user_achievements, name='user_achievements'),
     path('profile/', views.profile_view, name='profile'),
-    
 
     # 使用者分享與取消分享夢境
     path('share_dreams/', views.share_dreams, name='share_dreams'),
     path('cancel_share/<int:therapist_id>/', views.cancel_share, name='cancel_share'),
-
     path('not_verified/', views.not_verified, name='not_verified'),
     path('shared_users/', views.shared_with_me, name='shared_with_me'),
     path('view_user_dreams/<int:user_id>/', views.view_user_dreams, name='view_user_dreams'),
@@ -106,19 +104,16 @@ urlpatterns = [
     path('therapists/chat_list/', views.therapist_list_with_chat, name='therapist_list_with_chat'),
     path('chat/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
 
-
     #使用者看到的預約狀態及取消預約按鈕及已預約時段
     path('my_appointments/', views.user_appointments, name='user_appointments'),
     path('appointment/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('api/booked_slots/<int:therapist_id>/', views.get_therapist_booked_slots, name='get_booked_slots'),
+
     #使用者刪除已取消的預約
     path('delete_appointment/<int:appointment_id>/', views.delete_appointment, name='delete_appointment'),
 
     #全部刪除已取消的預約
     path('delete_all_cancelled/', views.delete_all_cancelled_appointments, name='delete_all_cancelled'),
-
-
-
 
     #心理師看到的預約及確認按鈕
     path('consultation/schedule/<int:user_id>/', views.consultation_schedule, name='consultation_schedule'),
@@ -142,11 +137,11 @@ urlpatterns = [
     path('ecpay/checkout/', views.ecpay_checkout, name='ecpay_checkout'),
     path('ecpay/return/', views.ecpay_return, name='ecpay_return'),
     path('result/', views.ecpay_result, name='ecpay_result'),
+    
     #點券包
     path('pointshop/', views.pointshop, name='pointshop'),
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
-    
 
     # urls.py
     path('invitation/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),

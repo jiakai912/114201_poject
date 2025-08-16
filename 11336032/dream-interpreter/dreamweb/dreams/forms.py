@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Dream, UserProfile, Achievement, UserAchievement
+from django.core.exceptions import ValidationError
 
 # 管理員編輯
 class UserEditForm(forms.ModelForm):
