@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Dream, UserProfile, Achievement, UserAchievement
+from django.core.exceptions import ValidationError
 
 # 管理員編輯
 class UserEditForm(forms.ModelForm):
@@ -109,8 +110,11 @@ class UserProfileForm(forms.ModelForm):
                 raise ValidationError("上傳的圖片檔案不能超過 2MB。")
 
             # 檔案類型限制
-            if not avatar.content_type.startswith('image/'):
-                raise ValidationError("請上傳有效的圖片檔案（例如 JPG, PNG）。")
+            # ✅ FIX: 在存取 content_type 前，檢查它是否存在。對於非上傳檔案，這個屬性不存在。
+            # 如果是已經儲存的圖片，cleaned_data.get('avatar') 會是 ImageFieldFile 物件，不需檢查 content_type
+            if hasattr(avatar, 'content_type'):
+                if not avatar.content_type.startswith('image/'):
+                    raise ValidationError("請上傳有效的圖片檔案（例如 JPG, PNG）。")
         return avatar
     
     def save(self, commit=True):
