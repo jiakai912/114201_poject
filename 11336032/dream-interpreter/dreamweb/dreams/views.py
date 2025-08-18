@@ -2456,14 +2456,16 @@ def chat_room(request, chat_user_id):
     })
 
 
-
 @login_required
 def chat_with_user(request, user_id):
+    """
+    此函數為整合後的版本，用於處理聊天室頁面的所有邏輯。
+    """
     other_user = get_object_or_404(User, id=user_id)
-    # ... (授權檢查邏輯保持不變) ...
     is_self_therapist = request.user.userprofile.is_therapist
     is_other_therapist = other_user.userprofile.is_therapist
 
+    # 授權檢查
     if is_self_therapist:
         authorized = DreamShareAuthorization.objects.filter(
             therapist=request.user,
@@ -2480,7 +2482,7 @@ def chat_with_user(request, user_id):
     if not authorized:
         return HttpResponseForbidden("尚未取得授權或無效聊天對象")
 
-    # 這段程式碼同時處理 POST 請求的文字、貼圖和檔案上傳
+    # 處理 POST 請求 (AJAX)
     if request.method == 'POST':
         sticker = request.POST.get('sticker')
         message = request.POST.get('message', '').strip()
@@ -2503,11 +2505,29 @@ def chat_with_user(request, user_id):
         
         return JsonResponse({'success': False, 'error': '無效的訊息或貼圖'}, status=400)
 
-    # 這裡將 chat_user_profile 也傳給模板
+    # 處理 GET 請求
     chat_user_profile = other_user.userprofile
     chat_user_achievements = UserAchievement.objects.filter(user=other_user).select_related('achievement')
+    
+    # ✅ 獲取使用者最近的夢境紀錄
+    recent_dreams = Dream.objects.filter(user=other_user).order_by('-created_at')[:5]
 
-    # 這部分用於處理 GET 請求並渲染頁面
+    # ✅ 獲取使用者夢境關鍵字
+    all_words = []
+    for dream in recent_dreams:
+        content = dream.dream_content
+        words = jieba.cut(content)
+        all_words.extend(list(words))
+    stopwords = ['的', '是', '了', '在', '和', '我', '他', '她', '它', '有', '沒有']
+    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
+    word_counts = Counter(filtered_words)
+    top_keywords = dict(word_counts.most_common(5))
+    
+    # ✅ 獲取諮詢歷史（這裡假設為 TherapyAppointment）
+    consultation_history = TherapyAppointment.objects.filter(
+        Q(user=other_user, therapist=request.user) | Q(user=request.user, therapist=other_user)
+    ).order_by('-scheduled_time')[:5]
+
     messages = ChatMessage.objects.filter(
         Q(sender=request.user, receiver=other_user) |
         Q(sender=other_user, receiver=request.user)
@@ -2518,6 +2538,10 @@ def chat_with_user(request, user_id):
         'chat_user': other_user,
         'chat_user_profile': chat_user_profile,
         'chat_user_achievements': chat_user_achievements,
+        'recent_dreams': recent_dreams,
+        'top_keywords': top_keywords,
+        'consultation_history': consultation_history,
+        'is_therapist': request.user.userprofile.is_therapist, # 新增，用於前端顯示不同的功能
     })
 
 

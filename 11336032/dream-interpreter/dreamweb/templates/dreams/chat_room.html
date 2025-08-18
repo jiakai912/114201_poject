@@ -1,79 +1,228 @@
+<!-- 這是聊天室 -->
 {% extends 'dreams/base.html' %}
 {% load static %}
 
 {% block title %}與 {{ chat_user.username }} 聊天{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-5">
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card shadow rounded-4 mb-4">
-                <div class="card-body text-center">
-                    {% if chat_user_profile.avatar %}
-                        <img src="{{ chat_user_profile.avatar.url }}" alt="{{ chat_user.username }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
-                    {% else %}
-                        <img src="https://ui-avatars.com/api/?name={{ chat_user.username }}&background=0D8ABC&color=fff&size=150" alt="{{ chat_user.username }}" class="img-fluid rounded-circle mb-3">
-                    {% endif %}
+<style>
+    /* 全新的 CSS 樣式，用於美化排版 */
+    .chat-container {
+        padding: 2rem 0;
+    }
+    .profile-card {
+        background-color: #ffffff;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .profile-header {
+        position: relative;
+        padding-top: 100px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+    }
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .profile-info {
+        margin-top: -60px;
+    }
+    .profile-title {
+        font-weight: 600;
+        color: #fff;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    .profile-bio {
+        color: #6c757d;
+        line-height: 1.6;
+        padding: 0 1rem;
+    }
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .info-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+    .info-list strong {
+        color: #495057;
+    }
+    .info-list i {
+        color: var(--primary-color);
+        margin-right: 0.5rem;
+    }
+    .chat-card {
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-box {
+        flex-grow: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-bubble {
+        max-width: 70%;
+        padding: 12px 18px;
+        border-radius: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        word-wrap: break-word;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    .chat-bubble.sent {
+        background: linear-gradient(135deg, #a8c0ff, #3f72af);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 5px;
+    }
+    .chat-bubble.received {
+        background: #e9ecef;
+        color: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 5px;
+    }
+    .chat-bubble .timestamp {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.8);
+        position: absolute;
+        bottom: 5px;
+        right: 15px;
+    }
+    .chat-bubble.received .timestamp {
+        color: #6c757d;
+        left: 15px;
+        right: auto;
+    }
+    .chat-input-form {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+    .quick-reply-btn {
+        transition: background-color 0.2s ease;
+    }
+    .quick-reply-btn:hover {
+        background-color: #e9ecef;
+    }
+</style>
 
-                    <h5 class="card-title">{{ chat_user.username }}</h5>
+<div class="container chat-container">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="profile-card card h-100 shadow rounded-4">
+                <div class="profile-header text-center">
+                    {% if chat_user_profile.avatar %}
+                        <img src="{{ chat_user_profile.avatar.url }}" alt="{{ chat_user.username }}" class="profile-avatar rounded-circle">
+                    {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ chat_user.username }}&background=0D8ABC&color=fff&size=120" alt="{{ chat_user.username }}" class="profile-avatar rounded-circle">
+                    {% endif %}
+                </div>
+                <div class="card-body text-center profile-info">
+                    <h4 class="mb-1">{{ chat_user.username }}</h4>
                     {% if chat_user_profile.display_title %}
-                        <p class="text-muted"><i class="fas fa-certificate me-2"></i>{{ chat_user_profile.display_title.name }}</p>
+                        <span class="profile-title badge bg-info">{{ chat_user_profile.display_title.name }}</span>
                     {% endif %}
                     
-                    {% if chat_user_profile.bio %}
-                        <p class="card-text text-start">{{ chat_user_profile.bio }}</p>
-                    {% else %}
-                        <p class="card-text text-muted">目前沒有個人簡介。</p>
-                    {% endif %}
+                    <hr class="my-3">
 
-                    <hr>
+                    <p class="profile-bio mb-4">{{ chat_user_profile.bio|default:"目前沒有個人簡介。" }}</p>
 
-                    <h6 class="text-start mb-2"><i class="fas fa-info-circle me-2"></i>詳細資訊</h6>
-                    <ul class="list-unstyled text-start small">
-                        <li><strong>身分：</strong>
-                            {% if chat_user_profile.is_verified_therapist %}
-                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>認證心理師</span>
-                            {% elif chat_user_profile.is_therapist %}
-                                <span class="badge bg-warning text-dark"><i class="fas fa-user-md me-1"></i>心理師申請中</span>
-                            {% else %}
-                                <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>一般用戶</span>
+                    <div class="text-start">
+                        <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>詳細資訊</h6>
+                        <ul class="info-list small">
+                            <li><strong>身分：</strong>
+                                {% if chat_user_profile.is_verified_therapist %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>認證心理師</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>一般用戶</span>
+                                {% endif %}
+                            </li>
+                            {% if chat_user_profile.specialties %}
+                                <li>
+                                    <strong>專長領域：</strong>
+                                    {% for specialty in chat_user_profile.get_specialties_list %}
+                                        <span class="badge bg-info text-dark">{{ specialty }}</span>
+                                    {% endfor %}
+                                </li>
                             {% endif %}
-                        </li>
-                        {% if chat_user_profile.specialties %}
+                        </ul>
+                    </div>
+
+                    <hr class="my-3">
+                    <div class="text-start">
+                        <h6 class="mb-2"><i class="fas fa-cloud me-2"></i>夢境與諮詢資訊</h6>
+                        <ul class="info-list small">
                             <li>
-                                <strong>專長領域：</strong>
-                                {% for specialty in chat_user_profile.get_specialties_list %}
-                                    <span class="badge bg-info text-dark">{{ specialty }}</span>
+                                <strong>最近夢境：</strong>
+                                {% for dream in recent_dreams %}
+                                    <a href="{% url 'dream_detail' dream_id=dream.id %}" target="_blank" class="text-decoration-none text-dark d-block">
+                                        <i class="fas fa-link me-1"></i>{{ dream.dream_content|truncatewords:5 }}
+                                    </a>
+                                {% empty %}
+                                    <span class="text-muted d-block mt-1">目前沒有夢境紀錄。</span>
                                 {% endfor %}
                             </li>
-                        {% endif %}
-                    </ul>
-
-                    <hr>
-                    <h6 class="text-start mb-2"><i class="fas fa-trophy me-2"></i>已解鎖成就</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for ua in chat_user_achievements %}
-                            <span class="badge bg-secondary d-flex align-items-center">
-                                {% if ua.achievement.badge_icon %}<i class="{{ ua.achievement.badge_icon }} me-1"></i>{% endif %}
-                                {{ ua.achievement.name }}
-                            </span>
-                        {% empty %}
-                            <p class="text-muted small">尚未解鎖任何成就。</p>
-                        {% endfor %}
+                            <li>
+                                <strong>夢境關鍵字：</strong>
+                                {% for keyword, count in top_keywords.items %}
+                                    <span class="badge bg-primary">{{ keyword }} ({{ count }})</span>
+                                {% empty %}
+                                    <span class="text-muted">目前沒有關鍵字。</span>
+                                {% endfor %}
+                            </li>
+                            <li>
+                                <strong>諮詢歷史：</strong>
+                                {% for appointment in consultation_history %}
+                                    <span class="d-block">
+                                        <i class="fas fa-check-circle text-success me-1"></i>{{ appointment.scheduled_time|date:"Y-m-d H:i" }}
+                                    </span>
+                                {% empty %}
+                                    <span class="text-muted d-block">目前沒有諮詢歷史。</span>
+                                {% endfor %}
+                            </li>
+                        </ul>
                     </div>
+
+                    {% if is_therapist %}
+                    <hr class="my-3">
+                    <div class="text-start">
+                        <h6 class="mb-2"><i class="fas fa-tools me-2"></i>諮詢工具</h6>
+                        <div class="d-grid gap-2 mb-3">
+                            <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="你好，我們開始吧。">開始諮詢</button>
+                            <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="好的，感謝你的分享。">感謝分享</button>
+                            <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="這是一個很重要的線索，請繼續說。">重要線索</button>
+                        </div>
+                        <h6 class="mb-2"><i class="fas fa-sticky-note me-2"></i>私密筆記</h6>
+                        <textarea id="private-notes" class="form-control" rows="4" placeholder="在這裡記錄諮詢筆記... (只有你看得到)"></textarea>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
         
         <div class="col-md-8">
-            <div class="card shadow rounded-4">
+            <div class="chat-card card h-100 shadow rounded-4">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話
-                    </h4>
+                    <h4 class="mb-0"><i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話</h4>
                 </div>
                 <div class="card-body d-flex flex-column" style="height: 600px;">
-                    <div id="chat-box" class="flex-grow-1 overflow-auto p-3 mb-3 bg-light rounded" style="border: 1px solid #e0e0e0;">
+                    <div id="chat-box" class="chat-box flex-grow-1 overflow-auto p-3 mb-3 bg-light rounded">
                         {% if messages %}
                           {% for msg in messages %}
                             <div class="d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
@@ -83,7 +232,6 @@
                                 {% else %}
                                   <img src="https://ui-avatars.com/api/?name={{ msg.sender.username }}&background=0D8ABC&color=fff&size=32" class="rounded-circle {% if msg.sender == request.user %}ms-2{% else %}me-2{% endif %}" width="32" height="32">
                                 {% endif %}
-                                
                                 <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
                                   {% if msg.sticker %}
                                     <div class="chat-sticker">
@@ -93,7 +241,7 @@
                                     <div class="chat-file mt-2">
                                       <i class="fas fa-file-alt me-2"></i>
                                       <a href="{{ msg.file.url }}" download class="text-decoration-none text-dark">
-                                        {{ msg.file.name|truncatechars:25 }}
+                                        {{ msg.file.name|truncatewords:25 }}
                                       </a>
                                     </div>
                                   {% endif %}
@@ -283,6 +431,15 @@
       alert('訊息發送時發生錯誤。');
     });
   });
+
+  // ✅ 新增：快速回覆按鈕點擊事件
+  document.querySelectorAll('.quick-reply').forEach(button => {
+    button.addEventListener('click', function() {
+        const messageInput = document.getElementById('message-input');
+        messageInput.value = this.dataset.message;
+        messageInput.focus();
+    });
+  });
 </script>
 
 <style>
@@ -337,3 +494,4 @@
   }
 </style>
 {% endblock %}
+        
