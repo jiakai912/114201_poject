@@ -21,9 +21,10 @@ class UserProfile(models.Model):
     # 新增 bio 和 avatar 字段
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
-
+    private_notes = models.TextField(blank=True, null=True, verbose_name="私密筆記") # ✅ 新增此行
+    preferred_location = models.CharField(max_length=100, blank=True, null=True, verbose_name="偏好地區") # ✅ 新增此行
     allow_contact_by_therapist = models.BooleanField(default=False)
-
+    
     # 新增這兩個欄位，用於用戶選擇在社群中展示的稱號和徽章
     display_title = models.ForeignKey(
         'Achievement',
@@ -74,7 +75,7 @@ class DreamShareAuthorization(models.Model):
 
     def __str__(self):
         return f"{self.user.username} 授權給 {self.therapist.username}"
-    
+
 
 # 個人檔案
 class Achievement(models.Model):
@@ -353,3 +354,44 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"To {self.recipient.username}: {self.title}"
+    
+
+# 分享夢境解析
+class DreamShare(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_dreams')
+    dream = models.ForeignKey(Dream, on_delete=models.CASCADE)
+    shared_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'therapist', 'dream')
+
+    def __str__(self):
+        return f"{self.user.username} 分享夢境 {self.dream.id} 給 {self.therapist.username}"
+    
+
+
+class Watchlist(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="用戶")
+    name = models.CharField(max_length=100, default="我的關注清單", verbose_name="清單名稱")
+
+    class Meta:
+        verbose_name = "關注清單"
+        verbose_name_plural = "關注清單"
+
+    def __str__(self):
+        return f"{self.user.username}'s Watchlist"
+
+class WatchlistItem(models.Model):
+    watchlist = models.ForeignKey(Watchlist, on_delete=models.CASCADE, related_name='items', verbose_name="關注清單")
+    symbol = models.CharField(max_length=20, verbose_name="股票/指數代碼")
+    name = models.CharField(max_length=100, verbose_name="名稱")
+    is_active = models.BooleanField(default=True, verbose_name="是否啟用")
+    
+    class Meta:
+        verbose_name = "關注項目"
+        verbose_name_plural = "關注項目"
+        unique_together = ('watchlist', 'symbol')  # 確保同一個清單中沒有重複的代碼
+
+    def __str__(self):
+        return f"{self.name} ({self.symbol}) on {self.watchlist.user.username}'s list"

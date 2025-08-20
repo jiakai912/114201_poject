@@ -42,7 +42,7 @@
               {% endif %}
             </td>
             <td>
-              <a href="{% url 'comments_detail' comment.id %}">
+               <a href="{% url 'dream_post_detail' post_id=comment.dream_post.id %}" class="text-decoration-none">
                 {{ comment.dream_post.title }}
               </a>
             </td>
@@ -54,7 +54,7 @@
               {% endif %}
             </td>
             <td>
-              <a href="{% url 'comments_detail' comment.id %}">
+               <a href="{% url 'dream_post_detail' post_id=comment.dream_post.id %}" class="text-decoration-none">
                 {{ comment.content|truncatechars:10 }}
               </a>
             </td>

@@ -27,7 +27,6 @@ urlpatterns = [
     # 管理評論
     path('admin_manage-comments/', views.manage_comments, name='manage_comments'),
     path('admin_manage-comments/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
-    path('comments/<int:comment_id>/', views.comments_detail, name='comments_detail'),# 詳細評論
 
 
 
@@ -73,30 +72,29 @@ urlpatterns = [
     path('share/', views.share_dream, name='share_dream'),
     path('search/', views.search_dreams, name='search_dreams'),
     path('post/<int:post_id>/', views.dream_post_detail, name='dream_post_detail'),
+    path('comment/<int:comment_id>/like_toggle/', views.toggle_comment_like, name='toggle_comment_like'), # 評論按讚
+    path('post/<int:post_id>/like_toggle/', views.toggle_post_like, name='toggle_post_like'), # 貼文按讚
+    path('profile/<int:user_id>/', views.profile_view_other, name='profile_view_other'),# 個人簡介浮窗
+    # 我的個人貼文
     path('my_posts/', views.my_posts, name='my_posts'),
     path('post/<int:post_id>/edit/', views.edit_dream_post, name='edit_dream_post'),
     path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
+
+
     path('dream_news/', views.dream_news, name='dream_news'),
     path('dream/upload_audio/', views.upload_audio, name='upload_audio'),
 
-
-    # 黃忠
-    path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'), 
-    path('comment/<int:comment_id>/like_toggle/', views.toggle_comment_like, name='toggle_comment_like'),
-    path('dream_post/<int:post_id>/delete/', views.delete_dream_post, name='delete_dream_post'),
-    path('comment/<int:comment_id>/like_toggle/', views.toggle_comment_like, name='toggle_comment_like'), # 評論按讚
-    path('post/<int:post_id>/like_toggle/', views.toggle_post_like, name='toggle_post_like'), # 貼文按讚
-    path('profile/<int:user_id>/', views.profile_view_other, name='profile_view_other'),
 
     # 個人檔案
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('achievements/', views.user_achievements, name='achievements'),
     path('achievements/', views.user_achievements, name='user_achievements'),
     path('profile/', views.profile_view, name='profile'),
+    
 
     # 使用者分享與取消分享夢境
-    path('share_dreams/', views.share_dreams, name='share_dreams'),
     path('cancel_share/<int:therapist_id>/', views.cancel_share, name='cancel_share'),
+
     path('not_verified/', views.not_verified, name='not_verified'),
     path('shared_users/', views.shared_with_me, name='shared_with_me'),
     path('view_user_dreams/<int:user_id>/', views.view_user_dreams, name='view_user_dreams'),
@@ -104,15 +102,15 @@ urlpatterns = [
     path('therapists/chat_list/', views.therapist_list_with_chat, name='therapist_list_with_chat'),
     path('chat/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
 
+
     #使用者看到的預約狀態及取消預約按鈕及已預約時段
     path('my_appointments/', views.user_appointments, name='user_appointments'),
     path('appointment/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('api/booked_slots/<int:therapist_id>/', views.get_therapist_booked_slots, name='get_booked_slots'),
-
     #使用者刪除已取消的預約
     path('delete_appointment/<int:appointment_id>/', views.delete_appointment, name='delete_appointment'),
 
-    #全部刪除已取消的預約
+    # 一鍵刪除已取消的預約
     path('delete_all_cancelled/', views.delete_all_cancelled_appointments, name='delete_all_cancelled'),
 
     #心理師看到的預約及確認按鈕
@@ -124,30 +122,36 @@ urlpatterns = [
     path('therapist/consultation/<int:user_id>/', views.consultation_schedule, name='therapist_view_client_appointments'),
     path('appointments/<int:appointment_id>/delete/', views.therapist_delete_appointment, name='therapist_delete_appointment'),
 
-    #聊天室
+    # 心理師邀請聊天功能
+    path('invitation/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
+    # 使用者能夠看到的通知訊息
+    path('send_chat_invitation/', views.send_chat_invitation, name='send_chat_invitation'),
+    # 刪除邀請記錄
+    path('invitation/delete/<int:invitation_id>/', views.delete_invitation, name='delete_invitation'),
+    # 刪除邀請記錄
+    path('chat/invitation/delete/<int:user_id>/', views.delete_chat_invitation, name='delete_chat_invitation'),
+
+
+    # 使用者看到的聊天對象列表
     path('my_therapists/', views.therapist_list_with_chat, name='my_therapists'),
-    path('chat/<int:therapist_id>/', views.chat_with_therapist, name='chat_with_therapist'),
-    path('my_clients/', views.my_clients, name='my_clients'),
-    path('chat/client/<int:user_id>/', views.chat_with_client, name='chat_with_client'),
+    #聊天室
     path('chat/<int:chat_user_id>/', views.chat_room, name='chat_room'),
     path('chat/user/<int:user_id>/', views.chat_with_user, name='chat_with_user'),
-    path('chat/send_message/<int:user_id>/', views.send_chat_message, name='send_chat_message'),# 新增這條來處理 AJAX 訊息
-    
     #綠界第三方支付
     path('ecpay/checkout/', views.ecpay_checkout, name='ecpay_checkout'),
     path('ecpay/return/', views.ecpay_return, name='ecpay_return'),
     path('result/', views.ecpay_result, name='ecpay_result'),
-    
     #點券包
     path('pointshop/', views.pointshop, name='pointshop'),
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
 
-    # urls.py
-    path('invitation/respond/<int:invitation_id>/', views.respond_invitation, name='respond_invitation'),
-    path('send_chat_invitation/', views.send_chat_invitation, name='send_chat_invitation'),
-    path('invitation/delete/<int:invitation_id>/', views.delete_invitation, name='delete_invitation'),
-    path('chat/invitation/delete/<int:user_id>/', views.delete_chat_invitation, name='delete_chat_invitation'),
+
+    path('weather/forecast/', views.weather_forecast, name='weather_forecast'),     # ✅ 新增：天氣預報頁面
+    path('watchlist/', views.manage_watchlist, name='manage_watchlist'),    # ✅ 新增：關注清單管理
+    path('api/watchlist-data/', views.get_watchlist_data, name='get_watchlist_data'),# ✅ 新增：API 接口，供前端獲取關注清單的即時數據
+    path('api/save_notes/', views.save_private_notes, name='save_private_notes'),
+
 
 ]
     

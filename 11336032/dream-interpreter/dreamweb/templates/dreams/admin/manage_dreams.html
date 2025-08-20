@@ -48,12 +48,12 @@
 
             <td>{{ dream.id }}</td>
             <td>
-              <a href="{% url 'dream_manage_detail' dream.id %}" class="text-decoration-none" title="查看完整夢境內容">
+              {#<a href="{% url 'dream_manage_detail' dream.id %}" class="text-decoration-none" title="查看完整夢境內容"> #}
                 {{ dream.dream_content|truncatechars:10|default:"(無內容)" }}
               </a>
             </td>
             <td>
-              <a href="{% url 'dream_manage_detail' dream.id %}" class="text-decoration-none" title="查看完整解析結果">
+              {#<a <a href="{% url 'dream_manage_detail' dream.id %}" class="text-decoration-none" title="查看完整解析結果">#}
                 {{ dream.interpretation|truncatechars:10|default:"(無解析)" }}
               </a>
             </td>

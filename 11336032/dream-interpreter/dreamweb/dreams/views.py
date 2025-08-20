@@ -11,8 +11,9 @@ import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
-from .models import User,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike
-from django.db.models import Count,Q
+from .models import User,ChatInvitation,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike,DreamShare,Notification
+from django.db.models.functions import Greatest
+from django.db.models import Count,Q,Max
 from django.utils import timezone
 import jieba  # 中文分詞庫
 from collections import Counter,defaultdict
@@ -61,7 +62,8 @@ from django.utils.timezone import localdate
 # 夢境新聞
 import bleach
 from django.urls import reverse
-
+# dreams/views.py
+from .models import User,ChatInvitation,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike,DreamShare,Notification, Watchlist, WatchlistItem
 # 管理員頁面
 def is_admin(user):
     return user.is_authenticated and user.is_superuser  # ✅ 只允許超級使用者進入
@@ -296,10 +298,7 @@ def delete_comment(request, comment_id):
     comment.delete()
     return redirect('manage_comments')
 
-# 詳細評論
-def comments_detail(request, comment_id):
-    comment = get_object_or_404(DreamComment, id=comment_id)
-    return render(request, 'dreams/admin/comments_detail.html', {'comment': comment})
+
 
 # 管理心理師申請
 @user_passes_test(lambda u: u.is_superuser)
@@ -481,6 +480,32 @@ def logout_success(request):
     return render(request, 'dreams/logout_success.html')  # 顯示登出成功頁面
 
 
+# 個人檔案
+@login_required
+def user_profile(request):
+    user_profile_instance, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile_instance, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '個人檔案和展示設定已成功更新！')
+            return redirect('profile')
+        else:
+            print(form.errors) 
+            messages.error(request, '更新個人檔案失敗，請檢查您的輸入。')
+    else:
+        form = UserProfileForm(instance=user_profile_instance, user=request.user) 
+
+    unlocked_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement').order_by('-unlocked_at')
+
+    context = {
+        'user_profile': user_profile_instance,
+        'unlocked_achievements': unlocked_achievements,
+        'form': form, # 將表單傳遞給模板
+    }
+    return render(request, 'dreams/UserProfile/profile.html', context)
+
 # 編輯個人檔案
 @login_required
 def edit_profile(request):
@@ -515,38 +540,129 @@ def edit_profile(request):
     else:
         form = form_class(instance=user_profile_instance, user=request.user)
 
-    return render(request, 'dreams/edit_profile.html', {'form': form})
+    return render(request, 'dreams/UserProfile/edit_profile.html', {'form': form})
 
-
-
-# 個人檔案
-@login_required
-def user_profile(request):
-    user_profile_instance, created = UserProfile.objects.get_or_create(user=request.user)
-
+# 管理員發送「系統廣播通知
+@staff_member_required
+def send_broadcast(request):
     if request.method == 'POST':
-        form = UserProfileForm(request.POST, request.FILES, instance=user_profile_instance, user=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, '個人檔案和展示設定已成功更新！')
-            return redirect('profile')
-        else:
-            print(form.errors) 
-            messages.error(request, '更新個人檔案失敗，請檢查您的輸入。')
-    else:
-        form = UserProfileForm(instance=user_profile_instance, user=request.user) 
+        target = request.POST.get('target')
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        specific_user_id = request.POST.get('specific_user_id')
 
-    unlocked_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement').order_by('-unlocked_at')
+        recipients = []
+        if target == 'all':
+            recipients = User.objects.all()
+        elif target == 'therapists':
+            recipients = User.objects.filter(userprofile__is_therapist=True, userprofile__is_verified_therapist=True)
+        elif target == 'specific' and specific_user_id:
+            try:
+                user = User.objects.get(id=specific_user_id)
+                recipients = [user]
+            except User.DoesNotExist:
+                messages.error(request, '指定的用戶不存在。')
+                return redirect('send_broadcast')
 
+        if recipients:
+            for recipient in recipients:
+                Notification.objects.create(
+                    recipient=recipient,
+                    sender=request.user,  # 設定發送者為當前登入的管理員
+                    title=title,
+                    content=content,
+                    is_system_message=True
+                )
+            messages.success(request, '消息已成功發送。')
+            return redirect('admin_dashboard')
+    
+    # 獲取所有用戶以供選擇
+    all_users = User.objects.all()
     context = {
-        'user_profile': user_profile_instance,
-        'unlocked_achievements': unlocked_achievements,
-        'form': form, # 將表單傳遞給模板
+        'all_users': all_users,
     }
-    return render(request, 'dreams/profile.html', context)
+    return render(request, 'dreams/admin_dashboard.html', context)
 
 
+# 使用者接收系統廣播通知
+def send_system_broadcast(request, title, content):
+    users = User.objects.all()
+    for user in users:
+        Notification.objects.create(
+            recipient=user,
+            title=title,
+            content=content,
+            is_system_message=True
+        )
 
+
+# 使用者能夠看到的通知訊息
+@login_required
+@require_POST
+def send_chat_invitation(request):
+    if not request.user.userprofile.is_therapist:
+        return JsonResponse({'success': False, 'error': '只有心理師可以發送邀請'}, status=403)
+
+    user_id = request.POST.get('user_id')
+    if not user_id:
+        return JsonResponse({'success': False, 'error': '缺少 user_id'}, status=400)
+
+    try:
+        target_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': '使用者不存在'}, status=404)
+
+    invitation, created = ChatInvitation.objects.get_or_create(
+        therapist=request.user,
+        user=target_user,
+        defaults={'status': 'pending'}
+    )
+
+    if not created:
+        if invitation.status == 'pending':
+            return JsonResponse({'success': True, 'message': '邀請已送出，等待使用者回覆'})
+        elif invitation.status in ['accepted', 'rejected']:
+            invitation.status = 'pending'
+            invitation.save()
+
+    # 只有新邀請或重新發送時才發通知
+    Notification.objects.create(
+        recipient=target_user,
+        sender=request.user,
+        title="💌 聊天邀請",
+        content=f"您好，{request.user.username} 心理師向您發送了聊天邀請，點此回覆：[連結到回覆頁面]。",
+        is_system_message=False
+    )
+
+    return JsonResponse({'success': True, 'message': '邀請送出成功'})
+
+
+@login_required
+def notification_list(request):
+    """顯示使用者的所有通知信件"""
+    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    return render(request, 'dreams/UserProfile/notification_list.html', {'notifications': notifications})
+
+@login_required
+def notification_detail(request, notification_id):
+    """顯示單封信件詳細內容並標記為已讀"""
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save()
+    return render(request, 'dreams/UserProfile/notification_detail.html', {'notification': notification})
+
+@login_required
+@require_POST
+def mark_notification_as_read(request, notification_id):
+    """透過 AJAX 將信件標記為已讀"""
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        return JsonResponse({'success': False}, status=404)
 
 # 用戶成就
 @login_required
@@ -585,7 +701,7 @@ def user_achievements(request):
         'unlocked_achievements': unlocked_achievements,
         'achievements_progress': achievements_progress,
     }
-    return render(request, 'dreams/achievements.html', context)
+    return render(request, 'dreams/UserProfile/achievements.html', context)
 
 
 @login_required
@@ -605,7 +721,7 @@ def profile_view(request):
         'user_profile': user_profile,
         'unlocked_achievements': unlocked_achievements,
     }
-    return render(request, 'dreams/profile.html', context)
+    return render(request, 'dreams/UserProfile/profile.html', context)
 
 
 # 檢查並解鎖成就
@@ -1261,8 +1377,7 @@ def get_mental_health_suggestions(request, dream_id):
         return JsonResponse({"error": "夢境不存在"}, status=404)
 
 
-# 1. 社群主頁和全球夢境趨勢
-# ✅ FIX: 合併兩個 community 函數，確保邏輯完整且變數已定義
+# 夢境社群討論區
 def community(request):
     sort_type = request.GET.get('sort', 'popular')
     
@@ -1355,7 +1470,7 @@ def dream_community(request):
         'trend_data': top_8_trend_data,  # 傳遞已排序並限制為 8 條的資料
     }
 
-    return render(request, 'dreams/community.html', context)
+    return render(request, 'dreams/community/community.html', context)
 
 
 # 2. 匿名夢境分享
@@ -1414,7 +1529,7 @@ def share_dream(request):
         'popular_tags': popular_tags
     })
 
-#查看貼文功能
+#查看個人貼文
 @login_required
 def my_posts(request):
     # 確保也預加載 userprofile 以取得稱號/徽章資訊
@@ -1445,7 +1560,6 @@ def my_posts(request):
         posts_for_template.append(post)
 
     return render(request, 'dreams/community/my_posts.html', {'my_posts': posts_for_template})
-
 
 #編輯貼文功能
 @login_required
@@ -1630,6 +1744,101 @@ def dream_post_detail(request, post_id):
     })
 
 
+# 個人簡介浮窗
+@login_required
+def profile_view_other(request, user_id):
+    """
+    查看其他使用者的個人檔案。
+    """
+    target_user = get_object_or_404(User, id=user_id)
+    
+    # 防止用戶查看自己的 profile_view_other (可選，但通常會導向標準的 profile 頁面)
+    if target_user == request.user:
+        return redirect('profile') # 導向自己的個人檔案頁面
+
+    try:
+        user_profile_instance = target_user.userprofile
+    except UserProfile.DoesNotExist:
+        user_profile_instance = None 
+    unlocked_achievements = UserAchievement.objects.filter(user=target_user).select_related('achievement').order_by('-unlocked_at')
+
+    context = {
+        'target_user': target_user,
+        'user_profile': user_profile_instance,
+        'unlocked_achievements': unlocked_achievements,
+        'is_other_user_profile': True, # 用於模板判斷是否顯示編輯按鈕等
+    }
+    return render(request, 'dreams/profile_view_other.html', context)
+
+# 使用者在前端點擊按讚按鈕時即時更新狀態
+@login_required
+@require_POST 
+def toggle_comment_like(request, comment_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
+
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    user = request.user
+
+    try:
+        like = CommentLike.objects.get(comment=comment, user=user)
+        like.delete() # 如果已按讚，則取消按讚
+        liked = False
+        message = '已取消按讚'
+    except CommentLike.DoesNotExist:
+        CommentLike.objects.create(comment=comment, user=user) # 如果未按讚，則按讚
+        liked = True
+        message = '已按讚'
+
+    # 獲取最新的按讚數量
+    likes_count = comment.likes.count()
+    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+
+# 貼文按讚功能
+@login_required
+@require_POST
+def toggle_post_like(request, post_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
+
+    post = get_object_or_404(DreamPost, id=post_id)
+    user = request.user
+
+    try:
+        like = PostLike.objects.get(post=post, user=user)
+        like.delete()
+        liked = False
+        message = '已取消按讚貼文'
+    except PostLike.DoesNotExist:
+        PostLike.objects.create(post=post, user=user)
+        liked = True
+        message = '已按讚貼文'
+
+    likes_count = post.likes.count()
+    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+
+# 評論按讚功能
+@login_required
+@require_POST
+def toggle_comment_like(request, comment_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
+
+    comment = get_object_or_404(DreamComment, id=comment_id)
+    user = request.user
+
+    try:
+        like = CommentLike.objects.get(comment=comment, user=user)
+        like.delete()
+        liked = False
+        message = '已取消按讚'
+    except CommentLike.DoesNotExist:
+        CommentLike.objects.create(comment=comment, user=user)
+        liked = True
+        message = '已按讚'
+
+    likes_count = comment.likes.count()
+    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
 
 # 5. 夢境推薦系統
 def get_similar_dreams(dream_post, limit=5):
@@ -1711,6 +1920,111 @@ def dream_news(request):
         print("偵錯：接收到 GET 請求，但無熱門關鍵字。使用預設關鍵字。")
         query = "台灣 新聞"
 
+    # === 動態資料獲取區塊 ===
+    # 1. 天氣 API (不指定區域，抓取第一筆可用資料)
+    weather_data = {}
+    weather_data = {}
+    try:
+        user_profile = request.user.userprofile
+        # 取得偏好地點，如果沒有則預設為 '臺北市'
+        preferred_location = user_profile.preferred_location or '臺北市'
+
+        cwa_api_key = "CWA-8651080D-A7CB-45BF-A520-901BCD852AAC"
+        weather_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization={cwa_api_key}&locationName={preferred_location}"
+        response = requests.get(weather_url, timeout=5)
+        response.raise_for_status()
+        cwa_data = response.json()
+        
+        # 確保資料結構存在且不為空
+        if cwa_data.get('success') == 'true' and cwa_data.get('records', {}).get('location', []):
+            location_data = cwa_data['records']['location'][0]
+            weather_elements = {item['elementName']: item for item in location_data.get('weatherElement', [])}
+            
+            temp_data = weather_elements.get('MinT', {}).get('time', [{}])[0].get('parameter', {}).get('parameterName', 'N/A')
+            weather_desc = weather_elements.get('Wx', {}).get('time', [{}])[0].get('parameter', {}).get('parameterName', 'N/A')
+            
+            weather_data = {
+                'location': location_data.get('locationName', 'N/A'),
+                'temp': temp_data,
+                'description': weather_desc,
+                'icon': "fas fa-sun" if "晴" in weather_desc else "fas fa-cloud" if "陰" in weather_desc else "fas fa-cloud-showers-heavy",
+            }
+        else:
+            print("偵錯：天氣 API 回傳資料不完整。")
+
+    except Exception as e:
+        print(f"無法獲取天氣數據：{e}")
+
+    # 2. 匯率 API (顯示主要貨幣對)
+    currency_data = {}
+    try:
+        r = requests.get('https://tw.rter.info/capi.php', timeout=5)
+        r.raise_for_status()
+        currency_json = r.json()
+
+        # 安全地獲取匯率，並檢查鍵是否存在
+        usd_rate = currency_json.get('USD', {}).get('Exrate')
+        jpy_rate = currency_json.get('JPY', {}).get('Exrate')
+        hkd_rate = currency_json.get('HKD', {}).get('Exrate')
+
+        if usd_rate and jpy_rate and hkd_rate:
+            # 這裡我們只顯示港幣兌台幣的匯率，因為 HTML 模板中是固定的
+            hkd_to_twd = (1 / hkd_rate) * usd_rate
+            currency_data = {
+                'rate': f"{hkd_to_twd:.2f}",
+                'change': "+0.20%" # 此API未提供，使用預設值
+            }
+        else:
+            print("偵錯：匯率 API 回傳資料缺少必要的貨幣資訊。")
+
+    except Exception as e:
+        print(f"無法獲取匯率數據：{e}")
+
+    # 3. 股票 API (獲取多個通用指數)
+    stock_data = []
+    try:
+        twse_url = "https://openapi.twse.com.tw/v1/exchangereport/MI_INDEX"
+        response = requests.get(twse_url, timeout=5)
+        response.raise_for_status()
+        stock_json = response.json()
+
+        if isinstance(stock_json, list) and stock_json:
+            # 獲取第一筆數據作為主要指數
+            main_index = stock_json[0]
+            stock_data.append({
+                'name': main_index.get('指數名稱', '大盤指數'),
+                'symbol': main_index.get('指數代號', 'N/A'),
+                'change': main_index.get('漲跌百分比', '0.00'),
+            })
+
+            # 嘗試獲取臺灣50指數
+            taiwan50_data = next((item for item in stock_json if item.get('指數名稱') == '臺灣50指數'), None)
+            if taiwan50_data:
+                stock_data.append({
+                    'name': '台灣50指數',
+                    'symbol': 'TWS0',
+                    'change': taiwan50_data.get('漲跌百分比', '0.00'),
+                })
+        else:
+            print("偵錯：TWSE API 回傳資料不是列表或為空。")
+        
+        # 硬編碼其他市場的資訊，因為TWSE API不包含這些
+        stock_data.append({
+            'name': 'CBOE恐慌指數',
+            'symbol': 'VIX',
+            'change': '-1.19' # 硬編碼值
+        })
+        stock_data.append({
+            'name': '台積電',
+            'symbol': 'TSM',
+            'change': '+0.29' # 硬編碼值
+        })
+
+    except Exception as e:
+        print(f"無法獲取股票數據：{e}")
+    # === 動態資料獲取區塊結束 ===
+
+
     if query:
         print(f"偵錯：夢境輸入或預設關鍵字為: {query}")
         try:
@@ -1731,7 +2045,7 @@ def dream_news(request):
                     title = article.get('title', '')
                     description = article.get('description', '')
                     url = article.get('url', '#')
-                    urlToImage = article.get('urlToImage')  # ✅ 新增：獲取圖片URL
+                    urlToImage = article.get('urlToImage')
                     
                     document_text = f"{title or ''} {description or ''}"
                     
@@ -1745,15 +2059,15 @@ def dream_news(request):
                             'title': title,
                             'description': description,
                             'url': url,
-                            'urlToImage': urlToImage,  # ✅ 新增：傳遞圖片URL
+                            'urlToImage': urlToImage,
                             'similarity_score': round(similarity_score, 2)
                         })
 
                 news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
                 
                 if news_results:
-                    main_news = news_results.pop(0) # 取出第一篇作為主要新聞
-                    other_news = news_results[:10] # 其餘為其他新聞
+                    main_news = news_results.pop(0)
+                    other_news = news_results[:10]
             
         except requests.exceptions.RequestException as e:
             print(f"偵錯：新聞 API 請求失敗，錯誤: {e}")
@@ -1772,36 +2086,131 @@ def dream_news(request):
         'other_news': other_news,
         'dream_input': dream_input,
         'popular_tags': popular_tags,
+        'weather_data': weather_data,
+        'currency_data': currency_data,
+        'stock_data': stock_data,
     }
     print("--- 渲染模板並回傳 ---")
     return render(request, 'dreams/dream_news.html', context)
 
-# 心理諮商頁面分享夢境給心理師
+# 使用者查看已預約時段
+@require_GET #只有使用者看得到
+def get_therapist_booked_slots(request, therapist_id):
+    appointments = TherapyAppointment.objects.filter(
+        therapist_id=therapist_id,
+        is_cancelled=False,
+        is_confirmed=True
+    )
+
+    # 修正這一行
+    booked_slots = [
+    localtime(appt.scheduled_time).strftime("%Y-%m-%dT%H:%M") 
+    for appt in appointments
+]
+
+    return JsonResponse({'booked_slots': booked_slots})
+
+# 使用者進行心理師預約及夢境分享
 @login_required
-def share_dreams(request):
+def share_and_schedule(request):
+    therapists = User.objects.filter(
+        userprofile__is_therapist=True,
+        userprofile__is_verified_therapist=True
+    )
+
     if request.method == 'POST':
         therapist_id = request.POST.get('therapist_id')
-        therapist = User.objects.get(id=therapist_id)
+        scheduled_time = request.POST.get('scheduled_time')
+        message_content = request.POST.get('message')
+        dream_id = request.POST.get('dream_id')  # ✅ 從表單取夢境 ID
 
-        if not therapist.userprofile.is_therapist:
-            return HttpResponseForbidden("只能分享給心理師")
+        try:
+            therapist = User.objects.get(id=therapist_id)
+        except User.DoesNotExist:
+            messages.error(request, "找不到該心理師。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-        DreamShareAuthorization.objects.update_or_create(
-            user=request.user,
+        try:
+            from datetime import datetime
+            scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
+            if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
+                messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
+                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+        except Exception:
+            messages.error(request, "預約時間格式錯誤。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+        # 只擋已確認的預約時段
+        if TherapyAppointment.objects.filter(
             therapist=therapist,
-            defaults={'is_active': True}
-        )
+            scheduled_time=scheduled_dt,
+            is_cancelled=False,
+            is_confirmed=True
+        ).exists():
+            messages.error(request, "此時間已被確認預約，請選擇其他時間。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
-        messages.success(request, f"已成功分享夢境給 {therapist.username} 心理師！")
-        return redirect('dream_form')  # 或你想回到的頁面
+        # 確認使用者點數
+        user_profile = request.user.userprofile
+        therapist_profile = therapist.userprofile
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
 
-    # 補上 GET 請求的回傳（渲染頁面或其他）
-    therapists = User.objects.filter(userprofile__is_therapist=True)
-    return render(request, 'dreams/share_dreams.html', {'therapists': therapists})
+        if user_profile.points < appointment_cost:
+            messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
+            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
 
+        # 扣點並建立預約
+        with transaction.atomic():
+            user_profile.points -= appointment_cost
+            user_profile.save()
 
+            PointTransaction.objects.create(
+                user=request.user,
+                amount=-appointment_cost,
+                description=f"預約心理師 {therapist.username} 諮商（1 小時，待確認）"
+            )
 
-#取消分享夢境 
+            appointment = TherapyAppointment.objects.create(
+                user=request.user,
+                therapist=therapist,
+                scheduled_time=scheduled_dt,
+                is_confirmed=False,
+                is_cancelled=False,
+            )
+
+            # 1. 建立或啟用授權
+            DreamShareAuthorization.objects.update_or_create(
+                user=request.user,
+                therapist=therapist,
+                defaults={'is_active': True}
+            )
+
+            # 2. 確認夢境並建立分享紀錄
+            if dream_id:
+                try:
+                    dream = Dream.objects.get(id=dream_id, user=request.user)
+                    DreamShare.objects.get_or_create(
+                        user=request.user,
+                        therapist=therapist,
+                        dream=dream
+                    )
+                except Dream.DoesNotExist:
+                    messages.warning(request, "找不到該夢境，已略過夢境分享。")
+
+            # 3. 建立初始訊息
+            if message_content:
+                TherapyMessage.objects.create(
+                    sender=request.user,
+                    receiver=therapist,
+                    content=message_content
+                )
+
+        messages.success(request, "預約已送出並扣除點數，已分享夢境，請等待心理師確認。")
+        return redirect('user_appointments')
+
+    return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
+
+# 使用者取消分享夢境 
 @login_required
 @require_POST
 def cancel_share(request, therapist_id):
@@ -1815,17 +2224,135 @@ def cancel_share(request, therapist_id):
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
+# 使用者查看自己的預約
+@login_required
+def user_appointments(request):
+    appointments = TherapyAppointment.objects.filter(
+    user=request.user
+    ).order_by('-created_at')  # 按建立時間最新的排在最上面
+
+    # 找出使用者已授權的心理師
+    therapists = [
+        share.therapist for share in DreamShareAuthorization.objects.filter(
+            user=request.user, is_active=True
+        ).select_related('therapist')
+    ]
+
+    # 找出所有已確認的預約心理師 id
+    confirmed_therapist_ids = set(
+        appointments.filter(is_confirmed=True).values_list('therapist_id', flat=True)
+    )
+
+    for appt in appointments:
+        therapist_profile = appt.therapist.userprofile
+        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
+        if appt.is_cancelled:
+            appt.point_change = appointment_cost  # 已經是正數
+        elif appt.is_confirmed:
+            appt.point_change = -appointment_cost
+        else:
+            appt.point_change = 0
+        appt.abs_point_change = abs(appt.point_change)  # 新增正數版本
 
 
-#心理師可以看到分享的列表    
-from django.db.models import Max
-from django.db.models.functions import Greatest
+    return render(request, 'dreams/user_appointments.html', {
+        'appointments': appointments,
+        'therapists': therapists,
+        'confirmed_therapist_ids': confirmed_therapist_ids,
+    })
 
-from django.http import HttpResponseForbidden
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .models import Dream, DreamShareAuthorization, ChatInvitation, User
+# 使用者取消未確認的預約
+@require_POST
+@login_required
+def cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
 
+    if appointment.user != request.user:
+        return HttpResponseForbidden("您無權取消此預約")
+
+    if appointment.is_confirmed:
+        return HttpResponseForbidden("已確認的預約無法取消")
+
+    # 標記為已取消
+    appointment.is_cancelled = True
+    appointment.save()
+
+    # 依照心理師設定的 coin_price 退點（預設 1500）
+    therapist_profile = appointment.therapist.userprofile
+    appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
+
+    profile = request.user.userprofile
+    profile.points += appointment_cost
+    profile.save()
+
+    # 點數紀錄
+    PointTransaction.objects.create(
+        user=request.user,
+        transaction_type='GAIN',
+        amount=appointment_cost,
+        description=f"取消預約退還 {appointment.therapist.username} 諮商點數"
+    )
+
+    return redirect('user_appointments')
+
+# 使用者刪除已取消的預約
+@require_POST
+@login_required
+def delete_appointment(request, appointment_id):
+    appointment = get_object_or_404(TherapyAppointment, id=appointment_id, user=request.user)
+
+    if not appointment.is_cancelled:
+        return HttpResponseForbidden("只能刪除已取消的預約")
+
+    appointment.delete()
+    return redirect('user_appointments')
+
+# 使用者全部刪除已取消的預約
+@require_POST
+@login_required
+def delete_all_cancelled_appointments(request):
+    TherapyAppointment.objects.filter(user=request.user, is_cancelled=True).delete()
+    return redirect('user_appointments')
+
+# 使用者看到的聊天對象列表
+@login_required
+def therapist_list_with_chat(request):
+    # 授權紀錄（不限定 is_active）
+    authorized_records = DreamShareAuthorization.objects.filter(
+        user=request.user,
+        therapist__userprofile__is_therapist=True,
+        therapist__userprofile__is_verified_therapist=True
+    ).select_related('therapist')
+
+    therapist_statuses = []
+    for record in authorized_records:
+        therapist_statuses.append({
+            'therapist': record.therapist,
+            'is_active': record.is_active
+        })
+
+    # 查出哪些心理師的預約已確認
+    confirmed_therapist_ids = set(
+        TherapyAppointment.objects.filter(
+            user=request.user,
+            is_confirmed=True
+        ).values_list('therapist_id', flat=True)
+    )
+
+    # 加上聊天室邀請
+    chat_invitations = []
+    if not request.user.userprofile.is_therapist:
+        chat_invitations = ChatInvitation.objects.filter(user=request.user).order_by('-created_at')
+
+    return render(request, 'dreams/therapist_list.html', {
+        'therapist_statuses': therapist_statuses,
+        'confirmed_therapist_ids': confirmed_therapist_ids,
+        'chat_invitations': chat_invitations,  # ✅ 一定要補上這行
+    })
+
+
+
+# 心理師端能看到的匿名排行列表    
 @login_required
 def shared_with_me(request):
     """心理師查看所有曾經分享過的使用者（包含取消分享），並顯示情緒指數排行榜與聊天室邀請狀態"""
@@ -1878,269 +2405,40 @@ def shared_with_me(request):
     })
 
 
-
-#心理師可以看到分享的夢境
+#心理師端能看到的使用者夢境
 @login_required
 def view_user_dreams(request, user_id):
     if not request.user.userprofile.is_therapist:
         return HttpResponseForbidden("只有心理師可以查看夢境")
 
-    # 不只查 is_active=True 的授權，而是找所有授權紀錄
-    share = DreamShareAuthorization.objects.filter(
+    # 確認授權（DreamShareAuthorization 作為總開關）
+    share_auth = DreamShareAuthorization.objects.filter(
         user_id=user_id,
-        therapist=request.user
+        therapist=request.user,
+        is_active=True
     ).first()
 
-    if not share:
+    if not share_auth:
         return HttpResponseForbidden("您沒有查看此使用者夢境的權限")
 
-    # 分享是否啟用決定夢境資料是否取出
-    dreams = Dream.objects.filter(user_id=user_id).order_by('-created_at') if share.is_active else []
+    # 取該使用者分享給該心理師的夢境（移除 DreamShare 的 is_active 篩選）
+    dreams = Dream.objects.filter(
+        id__in=DreamShare.objects.filter(
+            user_id=user_id,
+            therapist=request.user
+            # 不要用 is_active 篩選，因為該欄位不存在
+        ).values_list('dream_id', flat=True)
+    ).select_related('user').order_by('-created_at')
 
     target_user = User.objects.get(id=user_id)
 
     return render(request, 'dreams/therapist/user_dreams_for_therapist.html', {
         'dreams': dreams,
         'target_user': target_user,
-        'is_active_share': share.is_active,
+        'is_active_share': share_auth.is_active,
     })
 
-
-# 心理諮商預約及對話
-@login_required
-def share_and_schedule(request):
-    therapists = User.objects.filter(
-        userprofile__is_therapist=True,
-        userprofile__is_verified_therapist=True
-    )
-
-    if request.method == 'POST':
-        therapist_id = request.POST.get('therapist_id')
-        scheduled_time = request.POST.get('scheduled_time')
-        message_content = request.POST.get('message')
-
-        try:
-            therapist = User.objects.get(id=therapist_id)
-        except User.DoesNotExist:
-            messages.error(request, "找不到該心理師。")
-            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-        try:
-            from datetime import datetime
-            scheduled_dt = datetime.strptime(scheduled_time, "%Y-%m-%dT%H:%M")
-            if scheduled_dt.minute != 0 or scheduled_dt.second != 0:
-                messages.error(request, "預約時間必須為整點（例如 14:00、15:00）。")
-                return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-        except Exception:
-            messages.error(request, "預約時間格式錯誤。")
-            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-        # 只擋已確認的預約時段
-        if TherapyAppointment.objects.filter(
-            therapist=therapist,
-            scheduled_time=scheduled_dt,
-            is_cancelled=False,
-            is_confirmed=True
-        ).exists():
-            messages.error(request, "此時間已被確認預約，請選擇其他時間。")
-            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-        user_profile = request.user.userprofile
-        therapist_profile = therapist.userprofile
-        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
-
-        if user_profile.points < appointment_cost:
-            messages.error(request, f"點數不足（需 {appointment_cost} 點），請先儲值。")
-            return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-        # 扣點並建立預約（狀態未確認）
-        with transaction.atomic():
-            user_profile.points -= appointment_cost
-            user_profile.save()
-
-            PointTransaction.objects.create(
-                user=request.user,
-                amount=-appointment_cost,
-                description=f"預約心理師 {therapist.username} 諮商（1 小時，待確認）"
-            )
-
-            appointment = TherapyAppointment.objects.create(
-                user=request.user,
-                therapist=therapist,
-                scheduled_time=scheduled_dt,
-                is_confirmed=False,
-                is_cancelled=False,
-            )
-
-            # 分享授權
-            DreamShareAuthorization.objects.update_or_create(
-                user=request.user,
-                therapist=therapist,
-                defaults={'is_active': True}
-            )
-
-            if message_content:
-                TherapyMessage.objects.create(
-                    sender=request.user,
-                    receiver=therapist,
-                    content=message_content
-                )
-
-        messages.success(request, "預約已送出並扣除點數，請等待心理師確認。")
-        return redirect('user_appointments')
-
-    return render(request, 'dreams/mental_health_dashboard.html', {'therapists': therapists})
-
-
-#使用者查看自己的預約
-@login_required
-def user_appointments(request):
-    appointments = TherapyAppointment.objects.filter(
-    user=request.user
-    ).order_by('-created_at')  # 按建立時間最新的排在最上面
-
-    # 找出使用者已授權的心理師
-    therapists = [
-        share.therapist for share in DreamShareAuthorization.objects.filter(
-            user=request.user, is_active=True
-        ).select_related('therapist')
-    ]
-
-    # 找出所有已確認的預約心理師 id
-    confirmed_therapist_ids = set(
-        appointments.filter(is_confirmed=True).values_list('therapist_id', flat=True)
-    )
-
-    for appt in appointments:
-        therapist_profile = appt.therapist.userprofile
-        appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
-        if appt.is_cancelled:
-            appt.point_change = appointment_cost  # 已經是正數
-        elif appt.is_confirmed:
-            appt.point_change = -appointment_cost
-        else:
-            appt.point_change = 0
-        appt.abs_point_change = abs(appt.point_change)  # 新增正數版本
-
-
-    return render(request, 'dreams/user_appointments.html', {
-        'appointments': appointments,
-        'therapists': therapists,
-        'confirmed_therapist_ids': confirmed_therapist_ids,
-    })
-
-
-#使用者查看已預約時段
-@require_GET #只有使用者看得到
-def get_therapist_booked_slots(request, therapist_id):
-    appointments = TherapyAppointment.objects.filter(
-        therapist_id=therapist_id,
-        is_cancelled=False,
-        is_confirmed=True
-    )
-
-    # 修正這一行
-    booked_slots = [
-    localtime(appt.scheduled_time).strftime("%Y-%m-%dT%H:%M") 
-    for appt in appointments
-]
-
-    return JsonResponse({'booked_slots': booked_slots})
-
-
-#使用者取消未確認的預約
-@require_POST
-@login_required
-def cancel_appointment(request, appointment_id):
-    appointment = get_object_or_404(TherapyAppointment, id=appointment_id)
-
-    if appointment.user != request.user:
-        return HttpResponseForbidden("您無權取消此預約")
-
-    if appointment.is_confirmed:
-        return HttpResponseForbidden("已確認的預約無法取消")
-
-    # 標記為已取消
-    appointment.is_cancelled = True
-    appointment.save()
-
-    # 依照心理師設定的 coin_price 退點（預設 1500）
-    therapist_profile = appointment.therapist.userprofile
-    appointment_cost = therapist_profile.coin_price if therapist_profile.coin_price else 1500
-
-    profile = request.user.userprofile
-    profile.points += appointment_cost
-    profile.save()
-
-    # 點數紀錄
-    PointTransaction.objects.create(
-        user=request.user,
-        transaction_type='GAIN',
-        amount=appointment_cost,
-        description=f"取消預約退還 {appointment.therapist.username} 諮商點數"
-    )
-
-    return redirect('user_appointments')
-
-#刪除已取消的預約
-@require_POST
-@login_required
-def delete_appointment(request, appointment_id):
-    appointment = get_object_or_404(TherapyAppointment, id=appointment_id, user=request.user)
-
-    if not appointment.is_cancelled:
-        return HttpResponseForbidden("只能刪除已取消的預約")
-
-    appointment.delete()
-    return redirect('user_appointments')
-
-#全部刪除已取消的預約
-@require_POST
-@login_required
-def delete_all_cancelled_appointments(request):
-    TherapyAppointment.objects.filter(user=request.user, is_cancelled=True).delete()
-    return redirect('user_appointments')
-
-
-
-#聊天室
-@login_required
-def therapist_list_with_chat(request):
-    # 授權紀錄（不限定 is_active）
-    authorized_records = DreamShareAuthorization.objects.filter(
-        user=request.user,
-        therapist__userprofile__is_therapist=True,
-        therapist__userprofile__is_verified_therapist=True
-    ).select_related('therapist')
-
-    therapist_statuses = []
-    for record in authorized_records:
-        therapist_statuses.append({
-            'therapist': record.therapist,
-            'is_active': record.is_active
-        })
-
-    # 查出哪些心理師的預約已確認
-    confirmed_therapist_ids = set(
-        TherapyAppointment.objects.filter(
-            user=request.user,
-            is_confirmed=True
-        ).values_list('therapist_id', flat=True)
-    )
-
-    # 加上聊天室邀請
-    chat_invitations = []
-    if not request.user.userprofile.is_therapist:
-        chat_invitations = ChatInvitation.objects.filter(user=request.user).order_by('-created_at')
-
-    return render(request, 'dreams/therapist_list.html', {
-        'therapist_statuses': therapist_statuses,
-        'confirmed_therapist_ids': confirmed_therapist_ids,
-        'chat_invitations': chat_invitations,  # ✅ 一定要補上這行
-    })
-
-
-# 心理師邀請聊天
+# 心理師邀請聊天功能
 @require_POST
 @login_required
 def respond_invitation(request, invitation_id):
@@ -2174,10 +2472,7 @@ def respond_invitation(request, invitation_id):
     invitation.responded_at = now()
     invitation.save()
 
-    if action == 'accept':
-        return redirect('chat_with_therapist', therapist_id=invitation.therapist.id)
-    else:
-        return redirect('my_therapists')
+    return redirect('my_therapists')
 
 
 
@@ -2192,8 +2487,18 @@ def delete_invitation(request, invitation_id):
     messages.success(request, "邀請記錄已刪除")
     return redirect('my_therapists')
 
+# 刪除邀請記錄
+@require_POST
+@login_required
+def delete_chat_invitation(request, user_id):
+    # 這邊你需要根據心理師和user_id找到邀請，並刪除或標記刪除
+    invitation = ChatInvitation.objects.filter(user_id=user_id, therapist=request.user).first()
+    if invitation:
+        invitation.delete()
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-# 心理師端的預約時間
+
+# 心理師端能看到的使用者預約時間
 @login_required
 def consultation_schedule(request, user_id):
     from django.utils.timezone import now
@@ -2244,11 +2549,7 @@ def all_users_appointments(request):
         'coin_price': coin_price,
     })
 
-
-
-
-
-# 心理師端的確認預約按鈕
+# 心理師端確認使用者預約的按鈕
 @require_POST
 @login_required
 def confirm_appointment(request, appointment_id):
@@ -2328,9 +2629,7 @@ def confirm_appointment(request, appointment_id):
     return redirect('consultation_schedule', user_id=appointment.user.id)
 
 
-
-
-# 心理師端的刪除預約按鈕
+# 心理師端刪除使用者預約的按鈕
 @require_POST
 @login_required
 def therapist_delete_appointment(request, appointment_id):
@@ -2362,88 +2661,16 @@ def therapist_delete_appointment(request, appointment_id):
     messages.success(request, f"預約已刪除並退還使用者 {refund_points} 點。")
     return redirect('therapist_view_client_appointments', user_id=appointment.user.id)
 
-
-
-# 心理師端的聊天室
-@login_required
-def my_clients(request):
-    # 只限心理師存取
-    if not request.user.userprofile.is_therapist:
-        return HttpResponseForbidden("只有心理師可以使用此功能")
-
-    # 找出授權給我的使用者
-    shared_users = DreamShareAuthorization.objects.filter(
-        therapist=request.user,
-        is_active=True
-    ).select_related('user')
-
-    return render(request, 'dreams/therapist/my_clients.html', {
-        'shared_users': shared_users,  # 傳入整個 queryset
-    })
-
-
-@login_required
-def chat_with_client(request, user_id):
-    chat_user = get_object_or_404(User, id=user_id)
-
-    # 移除授權檢查，心理師可以跟所有使用者聊天
-    # authorized = DreamShareAuthorization.objects.filter(
-    #     therapist=request.user,
-    #     user=chat_user,
-    #     is_active=True
-    # ).exists()
-    # if not authorized:
-    #     return HttpResponseForbidden("尚未獲得該使用者授權")
-
-    messages = ChatMessage.objects.filter(
-        Q(sender=request.user, receiver=chat_user) |
-        Q(sender=chat_user, receiver=request.user)
-    ).order_by('timestamp')
-
-    if request.method == 'POST':
-        message_text = request.POST.get('message', '').strip()
-        if message_text:
-            ChatMessage.objects.create(sender=request.user, receiver=chat_user, message=message_text)
-            return redirect('chat_with_client', user_id=user_id)
-
-    return render(request, 'dreams/chat_room.html', {
-        'messages': messages,
-        'chat_user': chat_user,
-    })
-
-
-
-@login_required
-def chat_with_therapist(request, therapist_id):
-    chat_user = get_object_or_404(User, id=therapist_id)
-
-    messages = ChatMessage.objects.filter(
-        Q(sender=request.user, receiver=chat_user) |
-        Q(sender=chat_user, receiver=request.user)
-    ).order_by('timestamp')
-
-    if request.method == 'POST':
-        message_text = request.POST.get('message', '').strip()
-        if message_text:
-            ChatMessage.objects.create(sender=request.user, receiver=chat_user, message=message_text)
-            return redirect('chat_with_therapist', therapist_id=therapist_id)
-
-    return render(request, 'dreams/chat_room.html', {
-        'messages': messages,
-        'chat_user': chat_user,
-    })
-
-
-
+# 聊天室
 @login_required
 def chat_room(request, chat_user_id):
     chat_user = get_object_or_404(User, id=chat_user_id)
 
     if request.method == 'POST':
-        msg = request.POST.get('message')
+        msg = request.POST.get('message', '').strip()
         if msg:
             ChatMessage.objects.create(sender=request.user, receiver=chat_user, message=msg)
-            return redirect('chat_room', chat_user_id=chat_user.id)  # 重導避免表單重送
+            return redirect('chat_room', chat_user_id=chat_user.id)  # 避免表單重送
 
     messages = ChatMessage.objects.filter(
         Q(sender=request.user, receiver=chat_user) |
@@ -2455,15 +2682,13 @@ def chat_room(request, chat_user_id):
         'messages': messages,
     })
 
-
+#  確保心理師與使用者間有雙向授權才能聊天
 @login_required
 def chat_with_user(request, user_id):
-    """
-    此函數為整合後的版本，用於處理聊天室頁面的所有邏輯。
-    """
     other_user = get_object_or_404(User, id=user_id)
     is_self_therapist = request.user.userprofile.is_therapist
     is_other_therapist = other_user.userprofile.is_therapist
+    
 
     # 授權檢查
     if is_self_therapist:
@@ -2543,8 +2768,6 @@ def chat_with_user(request, user_id):
         'consultation_history': consultation_history,
         'is_therapist': request.user.userprofile.is_therapist, # 新增，用於前端顯示不同的功能
     })
-
-
 
 # 綠界第三方支付
 def ecpay_checkout(request):
@@ -2710,330 +2933,117 @@ def ecpay_result(request):
     return HttpResponse("這是綠界付款完成後導回的頁面")
 
 
-
-
-
-
-from django.http import JsonResponse
+# 天氣預報視圖
 @login_required
-@require_POST 
-def toggle_comment_like(request, comment_id):
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
-
-    comment = get_object_or_404(DreamComment, id=comment_id)
-    user = request.user
+def weather_forecast(request):
+    forecast_locations = []
+    # 預設不傳入任何地點參數，以獲取所有縣市的資料
+    search_query = request.GET.get('q', '') 
 
     try:
-        like = CommentLike.objects.get(comment=comment, user=user)
-        like.delete() # 如果已按讚，則取消按讚
-        liked = False
-        message = '已取消按讚'
-    except CommentLike.DoesNotExist:
-        CommentLike.objects.create(comment=comment, user=user) # 如果未按讚，則按讚
-        liked = True
-        message = '已按讚'
+        cwa_api_key = "CWA-8651080D-A7CB-45BF-A520-901BCD852AAC"
+        # 移除 locationName 參數，以獲取所有縣市的預報資料
+        forecast_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization={cwa_api_key}"
+        response = requests.get(forecast_url, timeout=5)
+        response.raise_for_status()
+        forecast_json = response.json()
+        
+        if forecast_json.get('success') == 'true' and forecast_json.get('records', {}).get('locations', []):
+            all_locations = forecast_json['records']['locations'][0]['location']
+            
+            # 如果有搜尋關鍵字，則進行過濾
+            if search_query:
+                # 模糊搜尋功能：如果地名中包含搜尋關鍵字，就顯示
+                forecast_locations = [loc for loc in all_locations if search_query in loc['locationName']]
+                if not forecast_locations:
+                    messages.warning(request, f"找不到符合「{search_query}」的天氣預報，已顯示所有縣市。")
+                    forecast_locations = all_locations
+            else:
+                forecast_locations = all_locations
+        else:
+            messages.error(request, "無法取得天氣預報數據，請稍後再試。")
 
-    # 獲取最新的按讚數量
-    likes_count = comment.likes.count()
-    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
+    except Exception as e:
+        messages.error(request, f"天氣 API 請求失敗：{e}")
 
-
-
-
-
-# 黃忠
-from django.db.models import Count 
-
-@login_required
-@require_POST
-def toggle_post_like(request, post_id):
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
-
-    post = get_object_or_404(DreamPost, id=post_id)
-    user = request.user
-
-    try:
-        like = PostLike.objects.get(post=post, user=user)
-        like.delete()
-        liked = False
-        message = '已取消按讚貼文'
-    except PostLike.DoesNotExist:
-        PostLike.objects.create(post=post, user=user)
-        liked = True
-        message = '已按讚貼文'
-
-    likes_count = post.likes.count()
-    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
-
-
-from django.http import JsonResponse
-@login_required
-@require_POST
-def toggle_comment_like(request, comment_id):
-    if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'error': '請先登入'}, status=401)
-
-    comment = get_object_or_404(DreamComment, id=comment_id)
-    user = request.user
-
-    try:
-        like = CommentLike.objects.get(comment=comment, user=user)
-        like.delete()
-        liked = False
-        message = '已取消按讚'
-    except CommentLike.DoesNotExist:
-        CommentLike.objects.create(comment=comment, user=user)
-        liked = True
-        message = '已按讚'
-
-    likes_count = comment.likes.count()
-    return JsonResponse({'success': True, 'liked': liked, 'likes_count': likes_count, 'message': message})
-
-@login_required
-def profile_view_other(request, user_id):
-    """
-    查看其他使用者的個人檔案。
-    """
-    target_user = get_object_or_404(User, id=user_id)
-    
-    # 防止用戶查看自己的 profile_view_other (可選，但通常會導向標準的 profile 頁面)
-    if target_user == request.user:
-        return redirect('profile') # 導向自己的個人檔案頁面
-
-    try:
-        user_profile_instance = target_user.userprofile
-    except UserProfile.DoesNotExist:
-        user_profile_instance = None 
-    unlocked_achievements = UserAchievement.objects.filter(user=target_user).select_related('achievement').order_by('-unlocked_at')
-
-    context = {
-        'target_user': target_user,
-        'user_profile': user_profile_instance,
-        'unlocked_achievements': unlocked_achievements,
-        'is_other_user_profile': True, # 用於模板判斷是否顯示編輯按鈕等
-    }
-    return render(request, 'dreams/profile_view_other.html', context)
-
-
-# 聊天室邀請
-from django.http import JsonResponse, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-
-@login_required
-@require_POST
-def send_chat_invitation(request):
-    if not request.user.userprofile.is_therapist:
-        return JsonResponse({'success': False, 'error': '只有心理師可以發送邀請'}, status=403)
-
-    user_id = request.POST.get('user_id')
-    if not user_id:
-        return JsonResponse({'success': False, 'error': '缺少 user_id'}, status=400)
-
-    try:
-        target_user = User.objects.get(id=user_id)
-        invitation, created = ChatInvitation.objects.get_or_create(
-            therapist=request.user,
-            user=target_user,
-            defaults={'status': 'pending'}
-        )
-
-        # 新增：發送通知給使用者
-        Notification.objects.create(
-            recipient=target_user,
-            sender=request.user,
-            title="💌 聊天邀請",
-            content=f"您好，{request.user.username} 心理師向您發送了聊天邀請，點此回覆：[連結到回覆頁面]。",
-            is_system_message=False
-        )
-        return JsonResponse({'success': True, 'message': '邀請送出成功'})
-    
-    except User.DoesNotExist:
-        return JsonResponse({'success': False, 'error': '使用者不存在'}, status=404)
-
-    invitation, created = ChatInvitation.objects.get_or_create(
-        therapist=request.user,
-        user=target_user,
-        defaults={'status': 'pending'}
-    )
-
-    if not created and invitation.status == 'pending':
-        return JsonResponse({'success': True, 'message': '邀請已送出，等待使用者回覆'})
-
-    if invitation.status in ['accepted', 'rejected']:
-        invitation.status = 'pending'
-        invitation.save()
-        return JsonResponse({'success': True, 'message': '邀請已重新送出'})
-
-    return JsonResponse({'success': True, 'message': '邀請送出成功'})
-
-
-@login_required
-def leaderboard_view(request):
-    # 取出已接受邀請的使用者ID（聊天室已開通）
-    accepted_user_ids = ChatInvitation.objects.filter(
-        therapist=request.user,
-        status='accepted'
-    ).values_list('user_id', flat=True)
-
-    # 排除已接受的使用者，取得排行榜
-    leaderboard = UserEmotionData.objects.exclude(
-        user_id__in=accepted_user_ids
-    ).order_by('-max_emotion')
-
-    # 取得這些排行榜使用者的邀請狀態
-    if request.user.userprofile.is_therapist:
-        invitations = ChatInvitation.objects.filter(
-            therapist=request.user,
-            user_id__in=[u.user_id for u in leaderboard]
-        )
-        invitation_dict = {inv.user_id: inv.status for inv in invitations}
-    else:
-        invitation_dict = {}
-
-    # 動態為每個 UserEmotionData 物件加上邀請狀態欄位
-    for user_emotion in leaderboard:
-        user_emotion.invitation_status = invitation_dict.get(user_emotion.user_id, 'none')
-
-    return render(request, 'dreams/therapist/shared_users.html', {
-        'leaderboard': leaderboard,
-        # 你需要的其他上下文變數
+    return render(request, 'dreams/weather_forecast.html', {
+        'forecast_locations': forecast_locations,
+        'search_query': search_query
     })
 
-
-from django.views.decorators.http import require_POST
-from django.http import HttpResponseRedirect
-
-
-
-@require_POST
+# ✅ 新增：關注清單管理視圖
 @login_required
-def delete_chat_invitation(request, user_id):
-    # 這邊你需要根據心理師和user_id找到邀請，並刪除或標記刪除
-    invitation = ChatInvitation.objects.filter(user_id=user_id, therapist=request.user).first()
-    if invitation:
-        invitation.delete()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
-
-from django.shortcuts import get_object_or_404, render
-from django.http import JsonResponse
-from .models import Notification
-
-@login_required
-def notification_list(request):
-    """顯示使用者的所有通知信件"""
-    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-    return render(request, 'dreams/notification_list.html', {'notifications': notifications})
-
-@login_required
-def notification_detail(request, notification_id):
-    """顯示單封信件詳細內容並標記為已讀"""
-    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
-    if not notification.is_read:
-        notification.is_read = True
-        notification.save()
-    return render(request, 'dreams/notification_detail.html', {'notification': notification})
-
-@login_required
-@require_POST
-def mark_notification_as_read(request, notification_id):
-    """透過 AJAX 將信件標記為已讀"""
-    try:
-        notification = Notification.objects.get(id=notification_id, recipient=request.user)
-        notification.is_read = True
-        notification.save()
-        return JsonResponse({'success': True})
-    except Notification.DoesNotExist:
-        return JsonResponse({'success': False}, status=404)
+def manage_watchlist(request):
+    watchlist, created = Watchlist.objects.get_or_create(user=request.user)
     
-
-# views.py (假設有一個管理員專用視圖)
-def send_system_broadcast(request, title, content):
-    users = User.objects.all()
-    for user in users:
-        Notification.objects.create(
-            recipient=user,
-            title=title,
-            content=content,
-            is_system_message=True
-        )
-
-
-from django.contrib import messages
-from .models import Notification
-@staff_member_required
-def send_broadcast(request):
     if request.method == 'POST':
-        target = request.POST.get('target')
-        title = request.POST.get('title')
-        content = request.POST.get('content')
-        specific_user_id = request.POST.get('specific_user_id')
+        symbol = request.POST.get('symbol', '').strip().upper()
+        name = request.POST.get('name', '').strip()
+        
+        if symbol and name:
+            WatchlistItem.objects.get_or_create(watchlist=watchlist, symbol=symbol, defaults={'name': name})
+            messages.success(request, f"已將 {name} 加入您的關注清單！")
+        
+        return redirect('manage_watchlist')
 
-        recipients = []
-        if target == 'all':
-            recipients = User.objects.all()
-        elif target == 'therapists':
-            recipients = User.objects.filter(userprofile__is_therapist=True, userprofile__is_verified_therapist=True)
-        elif target == 'specific' and specific_user_id:
-            try:
-                user = User.objects.get(id=specific_user_id)
-                recipients = [user]
-            except User.DoesNotExist:
-                messages.error(request, '指定的用戶不存在。')
-                return redirect('send_broadcast')
+    items = watchlist.items.all().order_by('name')
+    return render(request, 'dreams/community/manage_watchlist.html', {'watchlist_items': items})
 
-        if recipients:
-            for recipient in recipients:
-                Notification.objects.create(
-                    recipient=recipient,
-                    sender=request.user,  # 設定發送者為當前登入的管理員
-                    title=title,
-                    content=content,
-                    is_system_message=True
-                )
-            messages.success(request, '消息已成功發送。')
-            return redirect('admin_dashboard')
+# ✅ 新增：獲取關注清單即時數據的 API 視圖
+@login_required
+def get_watchlist_data(request):
+    watchlist, created = Watchlist.objects.get_or_create(user=request.user)
+    items = watchlist.items.all()
     
-    # 獲取所有用戶以供選擇
-    all_users = User.objects.all()
-    context = {
-        'all_users': all_users,
-    }
-    return render(request, 'dreams/admin_dashboard.html', context)
+    # 這裡您需要呼叫真實的股票 API 來獲取即時數據
+    # 這段程式碼僅為示意，需要替換為實際的 API 請求
+    data = []
+    for item in items:
+        # 這裡應該呼叫一個能返回即時數據的 API
+        # 例如：requests.get(f'https://stockapi.com/v1/{item.symbol}')
+        live_price = "N/A"
+        change_percent = "N/A"
+        
+        data.append({
+            'name': item.name,
+            'symbol': item.symbol,
+            'price': live_price,
+            'change': change_percent,
+        })
+    
+    return JsonResponse({'watchlist_data': data})
 
 
 
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+@login_required
+@require_POST
+@csrf_exempt 
+def save_private_notes(request):
+    try:
+        user_profile = request.user.userprofile
+        notes = request.POST.get('notes')
+        user_profile.private_notes = notes
+        user_profile.save()
+        return JsonResponse({'success': True, 'message': '筆記已儲存'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
 
 
 @login_required
 @require_POST
-def send_chat_message(request, user_id):
-    """
-    處理 AJAX 發送的聊天訊息和貼圖。
-    """
-    other_user = get_object_or_404(User, id=user_id)
-    
-    # 這裡可以保留授權檢查
-    authorized = DreamShareAuthorization.objects.filter(
-        Q(therapist=other_user, user=request.user) | Q(therapist=request.user, user=other_user),
-        is_active=True
-    ).exists()
-    if not authorized:
-        return JsonResponse({'success': False, 'error': '尚未取得授權或無效聊天對象'}, status=403)
-
-    # 檢查是貼圖還是文字訊息
-    sticker = request.POST.get('sticker')
-    message = request.POST.get('message', '')
-
-    if sticker:
-        ChatMessage.objects.create(sender=request.user, receiver=other_user, sticker=sticker)
-        return JsonResponse({'success': True, 'type': 'sticker', 'sticker': sticker})
-    elif message:
-        ChatMessage.objects.create(sender=request.user, receiver=other_user, message=message)
-        return JsonResponse({'success': True, 'type': 'message', 'message': message})
-    
-    return JsonResponse({'success': False, 'error': '無效的訊息或貼圖'}, status=400)
-
+def set_preferred_location(request):
+    location_name = request.POST.get('locationName')
+    if location_name:
+        user_profile = request.user.userprofile
+        user_profile.preferred_location = location_name
+        user_profile.save()
+        messages.success(request, f"已將 {location_name} 設定為您的主要地點。")
+        return redirect('dream_news')
+    messages.error(request, "設定地點失敗。")
+    return redirect('weather_forecast')
