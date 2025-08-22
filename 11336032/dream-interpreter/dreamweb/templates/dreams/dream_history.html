@@ -1,3 +1,4 @@
+<!-- 使用者夢境歷史 -->
 {% extends 'dreams/base.html' %}
 
 {% block title %} - 夢境歷史{% endblock %}
@@ -34,7 +35,8 @@
                 <div class="dream-card h-100">
                     <div class="d-flex justify-content-between mb-3">
                         <h3 class="h5">
-                            <i class="fas fa-moon me-2 text-primary"></i>夢境 #{{ dream.id }}
+                            <i class="fas fa-moon me-2 text-primary"></i>夢境 #{{ dream.dream_number }}
+
                         </h3>
                         <span class="badge bg-light text-dark">{{ dream.created_at|date:"Y-m-d" }}</span>
                     </div>

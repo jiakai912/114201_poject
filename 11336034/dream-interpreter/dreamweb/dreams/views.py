@@ -1908,55 +1908,98 @@ def update_dream_trends():
 # 夢境與相關新聞
 def dream_news(request):
     news_results = []
-    articles = []  # 在這裡初始化 articles 變數，避免未定義的錯誤
+    dream_input = ""
+    popular_tags = []
+    
+    main_news = None
+    other_news = []
+    
+    try:
+        latest_trend = DreamTrend.objects.latest('date')
+        if latest_trend:
+            trend_data = latest_trend.trend_data
+            popular_tags = list(trend_data.keys())[:10]
+    except DreamTrend.DoesNotExist:
+        popular_tags = []
+
+    print("--- 請求開始 ---")
+    
+    query = ""
     if request.method == 'POST':
+        print("偵錯：接收到 POST 請求。")
         dream_input = request.POST.get('dream_input')
+        query = dream_input
+    elif popular_tags:
+        print("偵錯：接收到 GET 請求，自動載入熱門新聞。")
+        query = popular_tags[0]
+    else:
+        print("偵錯：接收到 GET 請求，但無熱門關鍵字。使用預設關鍵字。")
+        query = "台灣 新聞"
 
-        # 1. 抓取新聞資料
-        news_api_url = f'https://newsapi.org/v2/everything?q={dream_input}&language=zh&apiKey=44c026b581564a6f9d55df137196c6f4'
-        response = requests.get(news_api_url)
-        news_data = response.json()
+    if query:
+        print(f"偵錯：夢境輸入或預設關鍵字為: {query}")
+        try:
+            news_api_key = "1ba64fa6fbbf4d98978fc53f829ca6e9"
+            if not news_api_key:
+                raise ValueError("NewsAPI 金鑰未設定。")
 
-        # 打印 NewsAPI 回應
-        print("NewsAPI 回應: ", news_data)
-
-        # 2. 計算新聞與夢境的相似度
-        if news_data.get('status') == 'ok':
+            news_api_url = f'https://newsapi.org/v2/everything?q={query}&language=zh&apiKey={news_api_key}'
+            print(f"偵錯：正在呼叫 API: {news_api_url}")
+            response = requests.get(news_api_url, timeout=10)
+            response.raise_for_status()
+            news_data = response.json()
             articles = news_data.get('articles', [])
-            print(f"找到 {len(articles)} 條新聞")  # 打印找到的新聞數量
-            
-            for article in articles:
-                title = article['title']
-                description = article['description']
-                url = article['url']
+            print(f"偵錯：API 回傳了 {len(articles)} 篇文章。")
+
+            if articles:
+                for article in articles:
+                    title = article.get('title', '')
+                    description = article.get('description', '')
+                    url = article.get('url', '#')
+                    urlToImage = article.get('urlToImage')  # ✅ 新增：獲取圖片URL
+                    
+                    document_text = f"{title or ''} {description or ''}"
+                    
+                    if document_text.strip():
+                        documents = [query, document_text]
+                        vectorizer = TfidfVectorizer()
+                        tfidf_matrix = vectorizer.fit_transform(documents)
+                        similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0] * 100
+
+                        news_results.append({
+                            'title': title,
+                            'description': description,
+                            'url': url,
+                            'urlToImage': urlToImage,  # ✅ 新增：傳遞圖片URL
+                            'similarity_score': round(similarity_score, 2)
+                        })
+
+                news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
                 
-                # 計算夢境與新聞的相似度
-                documents = [dream_input, (title or "") + " " + (description or "")]
-                vectorizer = TfidfVectorizer(stop_words='english')
-                tfidf_matrix = vectorizer.fit_transform(documents)
-                similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0] * 100
+                if news_results:
+                    main_news = news_results.pop(0) # 取出第一篇作為主要新聞
+                    other_news = news_results[:10] # 其餘為其他新聞
+            
+        except requests.exceptions.RequestException as e:
+            print(f"偵錯：新聞 API 請求失敗，錯誤: {e}")
+            messages.error(request, f"新聞 API 請求失敗: {e}")
+        except ValueError as e:
+            print(f"偵錯：金鑰錯誤或環境變數未設定，錯誤: {e}")
+            messages.error(request, str(e))
+        except Exception as e:
+            print(f"偵錯：處理新聞資料時發生未知錯誤: {e}")
+            messages.error(request, f"處理新聞資料時發生錯誤: {e}")
+    else:
+        print("偵錯：接收到 GET 請求。")
 
-                news_results.append({
-                    'title': title,
-                    'description': description,
-                    'url': url,
-                    'similarity_score': round(similarity_score, 2)
-                })
-        # 只將相似度大於 0 的新聞加入 news_results
-        news_results = [article for article in news_results if article['similarity_score'] > 0]
-
-        # 如果沒有找到新聞，提供提示
-        if not articles:
-            print("沒有找到相關新聞")
-            news_results.append({'title': '沒有找到相關新聞', 'description': '請稍後再試', 'url': '#', 'similarity_score': 0})
-
-        # 按相似度從高到低排序
-        news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
-
-    print("返回的新聞結果: ", news_results)  # 打印返回的新聞結果
-
-    return render(request, 'dreams/dream_news.html', {'news_results': news_results})
-
+    context = {
+        'main_news': main_news,
+        'other_news': other_news,
+        'dream_input': dream_input,
+        'popular_tags': popular_tags,
+    }
+    print("--- 渲染模板並回傳 ---")
+    return render(request, 'dreams/dream_news.html', context)
 
 # 使用者查看已預約時段
 @require_GET #只有使用者看得到
