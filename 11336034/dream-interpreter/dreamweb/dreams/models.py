@@ -249,7 +249,10 @@ class ChatMessage(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.sender.username} -> {self.receiver.username}: {self.message[:20]}"
+        msg_preview = self.message[:20] if self.message else ""
+        return f"{self.sender.username} -> {self.receiver.username}: {msg_preview}"
+
+    
 
 
 # 點券使用記錄

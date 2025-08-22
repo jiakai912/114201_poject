@@ -18,13 +18,24 @@
                 <p>{{ dream.interpretation|linebreaks }}</p>
         <!-- 語音選擇 -->
             <div class="mt-2 d-flex align-items-center gap-2">
-            <a href="{% url 'dream_history' %}" class="btn btn-secondary">返回歷史記錄</a>
-            <a href="{% url 'dream_form' %}" class="btn btn-primary">解析新夢境</a>
-            <button id="speakInterpretation" class="btn btn-warning">
-            <i class="fas fa-volume-up me-1"></i> 播放解析結果
-            </button>
-            <label for="voiceSelect" class="form-label mb-0 me-2"></label>
-            <select id="voiceSelect" class="form-select" style="max-width: 300px;"></select>
+                <a href="{% url 'dream_history' %}" class="btn btn-secondary">返回歷史記錄</a>
+                <a href="{% url 'dream_form' %}" class="btn btn-primary">解析新夢境</a>
+
+                <button id="speakInterpretation" class="btn btn-warning">
+                <i class="fas fa-volume-up me-1"></i> 播放解析結果
+                </button>
+
+                <label for="voiceSelect" class="form-label mb-0 me-2"></label>
+                <select id="voiceSelect" class="form-select" style="max-width: 300px;"></select>
+
+                <!-- ✅ 刪除夢境按鈕放右邊 -->
+                <form method="post" action="{% url 'user_delete_dream' dream.id %}" 
+                    onsubmit="return confirm('確定要刪除這個夢境嗎？');" class="ms-auto">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> 刪除夢境
+                    </button>
+                </form>
             </div>
        
             <script>
