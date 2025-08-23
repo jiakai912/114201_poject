@@ -1465,21 +1465,27 @@ def community(request):
 
 # 用這個來獲取當天的熱門趨勢
 def dream_community(request):
-    # 獲取今日熱門夢境趨勢
-    trend_data = DreamTrend.objects.filter(date=timezone.now().date()).first()
-    if trend_data:
-        trend_data = json.loads(trend_data.trend_data)  # 將 JSON 字符串解析為字典
+    today = timezone.now().date()
+    trend_data_obj = DreamTrend.objects.filter(date=today).first()
+
+    if not trend_data_obj:
+        # 如果今天沒有，就拿最近的一筆
+        trend_data_obj = DreamTrend.objects.order_by('-date').first()
+
+    if trend_data_obj:
+        trend_data = trend_data_obj.trend_data or {}
     else:
         trend_data = {}
 
-    # 按次數降序排序，並且只取前 8 個
-    top_8_trend_data = dict(sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8])
+    # 排序並取前 8
+    top_8_trend_data = dict(
+        sorted(trend_data.items(), key=lambda item: item[1], reverse=True)[:8]
+    )
 
-    # 將資料傳遞給模板
     context = {
-        'trend_data': top_8_trend_data,  # 傳遞已排序並限制為 8 條的資料
+        'trend_data': top_8_trend_data,
+        'trend_date': trend_data_obj.date if trend_data_obj else None
     }
-
     return render(request, 'dreams/community/community.html', context)
 
 
@@ -1936,6 +1942,111 @@ def dream_news(request):
         print("偵錯：接收到 GET 請求，但無熱門關鍵字。使用預設關鍵字。")
         query = "台灣 新聞"
 
+    # === 動態資料獲取區塊 ===
+    # 1. 天氣 API (不指定區域，抓取第一筆可用資料)
+    weather_data = {}
+    weather_data = {}
+    try:
+        user_profile = request.user.userprofile
+        # 取得偏好地點，如果沒有則預設為 '臺北市'
+        preferred_location = user_profile.preferred_location or '臺北市'
+
+        cwa_api_key = "CWA-8651080D-A7CB-45BF-A520-901BCD852AAC"
+        weather_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization={cwa_api_key}&locationName={preferred_location}"
+        response = requests.get(weather_url, timeout=5)
+        response.raise_for_status()
+        cwa_data = response.json()
+        
+        # 確保資料結構存在且不為空
+        if cwa_data.get('success') == 'true' and cwa_data.get('records', {}).get('location', []):
+            location_data = cwa_data['records']['location'][0]
+            weather_elements = {item['elementName']: item for item in location_data.get('weatherElement', [])}
+            
+            temp_data = weather_elements.get('MinT', {}).get('time', [{}])[0].get('parameter', {}).get('parameterName', 'N/A')
+            weather_desc = weather_elements.get('Wx', {}).get('time', [{}])[0].get('parameter', {}).get('parameterName', 'N/A')
+            
+            weather_data = {
+                'location': location_data.get('locationName', 'N/A'),
+                'temp': temp_data,
+                'description': weather_desc,
+                'icon': "fas fa-sun" if "晴" in weather_desc else "fas fa-cloud" if "陰" in weather_desc else "fas fa-cloud-showers-heavy",
+            }
+        else:
+            print("偵錯：天氣 API 回傳資料不完整。")
+
+    except Exception as e:
+        print(f"無法獲取天氣數據：{e}")
+
+    # 2. 匯率 API (顯示主要貨幣對)
+    currency_data = {}
+    try:
+        r = requests.get('https://tw.rter.info/capi.php', timeout=5)
+        r.raise_for_status()
+        currency_json = r.json()
+
+        # 安全地獲取匯率，並檢查鍵是否存在
+        usd_rate = currency_json.get('USD', {}).get('Exrate')
+        jpy_rate = currency_json.get('JPY', {}).get('Exrate')
+        hkd_rate = currency_json.get('HKD', {}).get('Exrate')
+
+        if usd_rate and jpy_rate and hkd_rate:
+            # 這裡我們只顯示港幣兌台幣的匯率，因為 HTML 模板中是固定的
+            hkd_to_twd = (1 / hkd_rate) * usd_rate
+            currency_data = {
+                'rate': f"{hkd_to_twd:.2f}",
+                'change': "+0.20%" # 此API未提供，使用預設值
+            }
+        else:
+            print("偵錯：匯率 API 回傳資料缺少必要的貨幣資訊。")
+
+    except Exception as e:
+        print(f"無法獲取匯率數據：{e}")
+
+    # 3. 股票 API (獲取多個通用指數)
+    stock_data = []
+    try:
+        twse_url = "https://openapi.twse.com.tw/v1/exchangereport/MI_INDEX"
+        response = requests.get(twse_url, timeout=5)
+        response.raise_for_status()
+        stock_json = response.json()
+
+        if isinstance(stock_json, list) and stock_json:
+            # 獲取第一筆數據作為主要指數
+            main_index = stock_json[0]
+            stock_data.append({
+                'name': main_index.get('指數名稱', '大盤指數'),
+                'symbol': main_index.get('指數代號', 'N/A'),
+                'change': main_index.get('漲跌百分比', '0.00'),
+            })
+
+            # 嘗試獲取臺灣50指數
+            taiwan50_data = next((item for item in stock_json if item.get('指數名稱') == '臺灣50指數'), None)
+            if taiwan50_data:
+                stock_data.append({
+                    'name': '台灣50指數',
+                    'symbol': 'TWS0',
+                    'change': taiwan50_data.get('漲跌百分比', '0.00'),
+                })
+        else:
+            print("偵錯：TWSE API 回傳資料不是列表或為空。")
+        
+        # 硬編碼其他市場的資訊，因為TWSE API不包含這些
+        stock_data.append({
+            'name': 'CBOE恐慌指數',
+            'symbol': 'VIX',
+            'change': '-1.19' # 硬編碼值
+        })
+        stock_data.append({
+            'name': '台積電',
+            'symbol': 'TSM',
+            'change': '+0.29' # 硬編碼值
+        })
+
+    except Exception as e:
+        print(f"無法獲取股票數據：{e}")
+    # === 動態資料獲取區塊結束 ===
+
+
     if query:
         print(f"偵錯：夢境輸入或預設關鍵字為: {query}")
         try:
@@ -1956,7 +2067,7 @@ def dream_news(request):
                     title = article.get('title', '')
                     description = article.get('description', '')
                     url = article.get('url', '#')
-                    urlToImage = article.get('urlToImage')  # ✅ 新增：獲取圖片URL
+                    urlToImage = article.get('urlToImage')
                     
                     document_text = f"{title or ''} {description or ''}"
                     
@@ -1970,15 +2081,15 @@ def dream_news(request):
                             'title': title,
                             'description': description,
                             'url': url,
-                            'urlToImage': urlToImage,  # ✅ 新增：傳遞圖片URL
+                            'urlToImage': urlToImage,
                             'similarity_score': round(similarity_score, 2)
                         })
 
                 news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
                 
                 if news_results:
-                    main_news = news_results.pop(0) # 取出第一篇作為主要新聞
-                    other_news = news_results[:10] # 其餘為其他新聞
+                    main_news = news_results.pop(0)
+                    other_news = news_results[:10]
             
         except requests.exceptions.RequestException as e:
             print(f"偵錯：新聞 API 請求失敗，錯誤: {e}")
@@ -1997,9 +2108,13 @@ def dream_news(request):
         'other_news': other_news,
         'dream_input': dream_input,
         'popular_tags': popular_tags,
+        'weather_data': weather_data,
+        'currency_data': currency_data,
+        'stock_data': stock_data,
     }
     print("--- 渲染模板並回傳 ---")
     return render(request, 'dreams/dream_news.html', context)
+
 
 # 使用者查看已預約時段
 @require_GET #只有使用者看得到
@@ -2832,6 +2947,20 @@ def point_history(request):
     transactions = PointTransaction.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'dreams/point_history.html', {'transactions': transactions})
 
+
+@login_required
+def point_history(request):
+    transactions = PointTransaction.objects.filter(user=request.user).order_by('-created_at')
+    
+    # 使用 Paginator，每頁顯示 10 筆
+    paginator = Paginator(transactions, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'dreams/point_history.html', {
+        'transactions': page_obj,   # 傳給前端的資料
+        'page_obj': page_obj,
+    })
 
 # 綠界測試付款完成頁
 @csrf_exempt

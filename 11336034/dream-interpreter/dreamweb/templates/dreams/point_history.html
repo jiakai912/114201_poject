@@ -3,39 +3,92 @@
 {% block title %} - 點券記錄{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2><i class="fas fa-history me-2"></i>點券使用記錄</h2>
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>時間</th>
-                <th>類型</th>
-                <th>點數</th>
-                <th>說明</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tx in transactions %}
-                <tr>
-                    <td>{{ tx.created_at|date:"Y/m/d H:i" }}</td>
-                    <td>
-                        {% if tx.is_gain %}
-                            <span class="text-success">獲得</span>
-                        {% else %}
-                            <span class="text-danger">使用</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if tx.is_gain %}+{% else %} {% endif %}{{ tx.amount }}
-                    </td>
-                    <td>{{ tx.description }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">尚無點券交易紀錄</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container py-5">
+    <div class="card shadow-lg rounded-4 border-0">
+        <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-top-4 d-flex align-items-center">
+            <i class="fas fa-history me-2"></i>
+            <h4 class="mb-0">點券使用記錄</h4>
+        </div>
+        <div class="card-body p-4">
+            <table class="table align-middle table-hover">
+                <thead class="table-light">
+                    <tr class="text-center">
+                        <th style="width: 20%">時間</th>
+                        <th style="width: 15%">類型</th>
+                        <th style="width: 15%">點數</th>
+                        <th style="width: 50%">說明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                        <tr class="text-center">
+                            <td class="fw-semibold text-muted">{{ tx.created_at|date:"Y/m/d H:i" }}</td>
+                            <td>
+                                {% if tx.is_gain %}
+                                    <span class="badge bg-success px-3 py-2 shadow-sm">獲得</span>
+                                {% else %}
+                                    <span class="badge bg-danger px-3 py-2 shadow-sm">使用</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold {% if tx.is_gain %}text-success{% else %}text-danger{% endif %}">
+                                {% if tx.is_gain %}+{% else %}-{% endif %}{{ tx.amount }}
+                            </td>
+                            <td class="text">{{ tx.description }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="fas fa-ticket-alt fa-2x d-block mb-2 text-secondary"></i>
+                                尚無點券交易紀錄
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<!-- 分頁區塊 -->
+<div class="card-footer text-center py-3">
+    {% if page_obj.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+
+                <!-- 上一頁 -->
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link page-gradient" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+
+                <!-- 頁碼範圍 -->
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                        <li class="page-item"><a class="page-link page-gradient" href="?page={{ num }}">{{ num }}</a></li>
+                    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                        <li class="page-item"><a class="page-link page-gradient" href="?page={{ num }}">{{ num }}</a></li>
+                    {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- 下一頁 -->
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link page-gradient" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+
 {% endblock %}

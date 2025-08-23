@@ -69,7 +69,7 @@
         <main class="col-md-9">
             <div class="card mb-4">
                 <div class="card-header  text-white">
-                    <h2 class="h5 mb-0">今日熱門夢境主題</h2>
+                    <h2 class="h5 mb-0">本週熱門夢境主題</h2>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -83,7 +83,7 @@
                             {% endfor %}
                         {% else %}
                             <div class="col-12">
-                                <p class="text-muted">今天還沒有熱門趨勢數據</p>
+                                <p class="text-muted">本週還沒有熱門趨勢數據</p>
                             </div>
                         {% endif %}
                     </div>
@@ -193,42 +193,51 @@
                 </div>
             </div>
 
-            <!-- 分頁區塊 -->
+           <!-- 分頁區塊 -->
             <div class="card-footer text-center py-3">
-            {% if page_obj.has_other_pages %}
-                <nav>
-                <ul class="pagination justify-content-center mb-0">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">&laquo;</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-                    {% endif %}
+                {% if page_obj.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center mb-0">
 
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                    {% endfor %}
+                            <!-- 上一頁 -->
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link page-gradient" href="?page={{ page_obj.previous_page_number }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">&laquo;</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                            {% endif %}
 
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">&raquo;</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-                    {% endif %}
-                </ul>
-                </nav>
-            {% endif %}
+                            <!-- 頁碼範圍 -->
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num == page_obj.number %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                                    <li class="page-item">
+                                        <a class="page-link page-gradient" href="?page={{ num }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                                    <li class="page-item">
+                                        <a class="page-link page-gradient" href="?page={{ num }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- 下一頁 -->
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link page-gradient" href="?page={{ page_obj.next_page_number }}{% if sort_type %}&sort={{ sort_type }}{% endif %}">&raquo;</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                            {% endif %}
+
+                        </ul>
+                    </nav>
+                {% endif %}
             </div>
-
-
         </main>
     </div>
 </div>

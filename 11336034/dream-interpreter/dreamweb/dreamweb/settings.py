@@ -17,12 +17,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dreams',
-    'django_crontab',  # 添加 crontab 支持
+    'django_crontab', # 夢境主題更新
     'django.contrib.sites',  # 必要
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',  # Google 驗證
+]
+
+# 夢境主題更新
+CRONJOBS = [
+    ('0 1 * * *', 'dreams.tasks.update_dream_trends'),  
 ]
 
 
