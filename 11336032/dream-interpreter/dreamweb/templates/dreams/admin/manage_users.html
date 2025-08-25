@@ -1,0 +1,121 @@
+{% extends 'dreams/base.html' %}
+{% block title %}使用者管理{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow rounded-4">
+    <div class="card-header btn-primary text-white d-flex justify-content-between align-items-center px-4 py-3">
+      <h4 class="mb-0">
+        <i class="fas fa-user-cog me-2"></i>使用者管理
+      </h4>
+      <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
+        <div class="input-group">
+          <input type="text" name="q" class="form-control me-2" placeholder="搜尋使用者名稱或 Email..." value="{{ request.GET.q }}">
+          <button class="btn btn-light btn-sm" type="submit">
+            <i class="fas fa-search me-1"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="card-body table-responsive p-0">
+      <table class="table table-hover align-middle mb-0 text-center">
+        <thead class="table-secondary small text-nowrap">
+          <tr>
+            <th>名稱</th>
+            <th>身分</th>
+            <th>狀態</th>
+            <th>點數</th>
+            <th>最後登入</th>
+            <th>註冊時間</th>
+            <th class="text-center">操作</th>
+          </tr>
+        </thead>
+        <tbody class="small">
+          {% for user in users %}
+          <tr>
+            <!-- 顯示前 3 個字元，其餘以 *** 取代 -->
+            <td class="px-3">
+              {% if user.username|length > 1 %}
+                {{ user.username|slice:":1" }}*{{ user.username|slice:"2:" }}
+              {% else %}
+                {{ user.username }}
+              {% endif %}
+            </td>
+
+            <td class="px-3 text-center">
+              {% if user.is_superuser %}
+                管理員
+              {% elif user.userprofile and user.userprofile.is_verified_therapist %}
+                認證心理師
+              {% elif user.userprofile and user.userprofile.is_therapist %}
+                未認證心理師
+              {% else %}
+                一般使用者
+              {% endif %}
+            </td>
+            <td class="px-3 text-center">
+              {% if user.is_active %}
+                <span class="badge bg-success">啟用中</span>
+              {% else %}
+                <span class="badge bg-danger">已停用</span>
+              {% endif %}
+            </td>
+            <td class="px-3 text-center">
+              {% if user.userprofile %}
+                {{ user.userprofile.points }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="px-3 text-center">{{ user.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
+            <td class="px-3 text-center">{{ user.date_joined|date:"Y-m-d" }}</td>
+            <td class="px-3 text-center">
+              <div class="btn-group" role="group">
+                <a href="{% url 'view_user_detail' user.id %}" class="btn btn-sm btn-outline-primary">編輯</a>
+                {% if user.is_active %}
+                  <a href="{% url 'block_user' user.id %}" 
+                    class="btn btn-sm btn-outline-danger" 
+                    onclick="return confirm('確定要停用這個使用者嗎？停用後該使用者將無法登入。');">
+                    停用
+                  </a>
+                {% else %}
+                  <a href="{% url 'unblock_user' user.id %}" class="btn btn-sm btn-outline-success">解除</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">查無使用者</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- 分頁控制 -->
+      {% if users.has_other_pages %}
+      <nav>
+        <ul class="pagination justify-content-center">
+          {% if users.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?q={{ request.GET.q }}&page={{ users.previous_page_number }}">上一頁</a>
+            </li>
+          {% endif %}
+          {% for num in users.paginator.page_range %}
+            <li class="page-item {% if users.number == num %}active{% endif %}">
+              <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+            </li>
+          {% endfor %}
+          {% if users.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?q={{ request.GET.q }}&page={{ users.next_page_number }}">下一頁</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

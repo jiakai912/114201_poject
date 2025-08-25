@@ -1,0 +1,198 @@
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 夢境分析數據{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="dream-icon">
+        <i class="fas fa-chart-line"></i>
+    </div>
+    <h1>夢境分析數據</h1>
+    <p class="text-muted">回顧您過去的夢境分析數據</p>
+</div>
+
+<div class="space-background">
+    <div class="planet"></div>
+    <div class="shooting-star"></div>
+    <div class="shooting-star" style="animation-delay: 5s; transform: rotate(180deg);"></div>
+</div>
+
+<div class="controls d-flex justify-content-between align-items-center mb-4">
+    <button id="prevBtn" class="btn btn-outline-light rounded-circle"><i class="fas fa-chevron-left"></i></button>
+    <h2 id="chartTitle" class="text-white text-center mb-0"></h2>
+    <button id="nextBtn" class="btn btn-outline-light rounded-circle"><i class="fas fa-chevron-right"></i></button>
+</div>
+
+<div class="chart-container-wrapper">
+    <div class="chart-card card active-chart">
+        <div class="card-body">
+            <h5 class="card-title text-center">個人關鍵字紀錄</h5>
+            <canvas id="keywordBarChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    
+    <div class="chart-card card">
+        <div class="card-body">
+            <h5 class="card-title text-center">熱門夢境關鍵字</h5>
+            <canvas id="globalTrendsChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    
+    <div class="chart-card card">
+        <div class="card-body">
+            <h5 class="card-title text-center">快樂情緒趨勢圖</h5>
+            <canvas id="happyChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card card">
+        <div class="card-body">
+            <h5 class="card-title text-center">焦慮情緒趨勢圖</h5>
+            <canvas id="anxietyChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card card">
+        <div class="card-body">
+            <h5 class="card-title text-center">恐懼情緒趨勢圖</h5>
+            <canvas id="fearChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card card">
+        <div class="card-body">
+            <h5 class="card-title text-center">興奮情緒趨勢圖</h5>
+            <canvas id="excitedChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    
+    <div class="chart-card card">
+        <div class="card-body">
+            <h5 class="card-title text-center">悲傷情緒趨勢圖</h5>
+            <canvas id="sadChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartIds = ["keywordBarChart", "globalTrendsChart", "happyChart", "anxietyChart", "fearChart", "excitedChart", "sadChart"];
+        const chartTitles = ["個人關鍵字紀錄", "熱門夢境關鍵字", "快樂情緒趨勢圖", "焦慮情緒趨勢圖", "恐懼情緒趨勢圖", "興奮情緒趨勢圖", "悲傷情緒趨勢圖"];
+        let currentChartIndex = 0;
+        const chartWrappers = document.querySelectorAll('.chart-card');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const chartTitleElement = document.getElementById('chartTitle');
+        const planetElement = document.querySelector('.planet');
+
+        const chartInstances = {};
+
+        // 載入所有圖表資料
+        const loadAllCharts = async () => {
+            const [
+                emotionData,
+                globalTrendsData,
+                keywordData
+            ] = await Promise.all([
+                fetch("/api/emotion-data/").then(res => res.json()),
+                fetch("/api/global-trends/").then(res => res.json()),
+                fetch("/api/user-keywords/").then(res => res.json())
+            ]);
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100 } }
+            };
+
+            const createLineChart = (id, datasetIndex, bgColor, borderColor) => {
+                const ctx = document.getElementById(id).getContext("2d");
+                chartInstances[id] = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: emotionData.labels,
+                        datasets: [{
+                            ...emotionData.datasets[datasetIndex],
+                            backgroundColor: bgColor,
+                            borderColor: borderColor,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: chartOptions
+                });
+            };
+
+            const createBarChart = (id, labels, data, bgColor, borderColor, labelText, yMax = null) => {
+                const ctx = document.getElementById(id).getContext("2d");
+                const options = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                };
+                if (yMax) {
+                    options.scales.y.max = yMax;
+                }
+                chartInstances[id] = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: labelText,
+                            data: data,
+                            backgroundColor: bgColor,
+                            borderColor: borderColor,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: options
+                });
+            };
+
+            // 創建所有圖表實例
+            createBarChart("keywordBarChart", keywordData.map(item => item.keyword), keywordData.map(item => item.count), "rgba(106, 90, 205, 0.2)", "rgba(106, 90, 205, 1)", "關鍵字頻率");
+            createBarChart("globalTrendsChart", globalTrendsData.map(item => item.text), globalTrendsData.map(item => item.percentage), "rgba(146, 9, 232, 0.2)", "rgb(136, 37, 235)", "夢境關鍵字比例", 10);
+            createLineChart("happyChart", 0, "rgba(255, 99, 132, 0.2)", "rgba(255, 99, 132, 1)");
+            createLineChart("anxietyChart", 1, "rgba(255, 165, 0, 0.2)", "rgba(255, 165, 0, 1)");
+            createLineChart("fearChart", 2, "rgba(153, 102, 255, 0.2)", "rgba(153, 102, 255, 1)");
+            createLineChart("excitedChart", 3, "rgba(75, 192, 192, 0.2)", "rgba(75, 192, 192, 1)");
+            createLineChart("sadChart", 4, "rgba(94, 204, 238, 0.35)", "rgba(54, 162, 235, 1)");
+            
+            showChart(currentChartIndex);
+        };
+
+        const showChart = (index) => {
+            chartWrappers.forEach((wrapper, i) => {
+                wrapper.classList.remove('active-chart');
+                if (i === index) {
+                    wrapper.classList.add('active-chart');
+                }
+            });
+            chartTitleElement.textContent = chartTitles[index];
+            updatePlanetRotation(index);
+        };
+
+        const updatePlanetRotation = (index) => {
+            const rotationDegrees = index * 45; // 每個圖表旋轉45度
+            planetElement.style.transform = `translateX(-50%) rotateY(${rotationDegrees}deg)`;
+        };
+        
+        prevBtn.addEventListener('click', () => {
+            currentChartIndex = (currentChartIndex - 1 + chartIds.length) % chartIds.length;
+            showChart(currentChartIndex);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentChartIndex = (currentChartIndex + 1) % chartIds.length;
+            showChart(currentChartIndex);
+        });
+        
+        loadAllCharts();
+    });
+</script>
+
+{% endblock %}

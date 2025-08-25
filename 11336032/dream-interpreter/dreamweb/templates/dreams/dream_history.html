@@ -1,0 +1,162 @@
+<!-- 使用者夢境歷史 -->
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 夢境歷史{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <!-- 🔹 全站共用的訊息提示 -->
+    {% if messages %}
+    <div class="mt-3 d-flex flex-column align-items-center">
+        {% for message in messages %}
+        <div class="alert alert-dismissible fade show d-flex justify-content-between align-items-center"
+            role="alert"
+            style="
+                max-width: 500px;
+                width: 100%;
+                background: linear-gradient(135deg,  #4e85e6, #6a9ff8);
+                color: #fff;
+                border-radius: 12px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                padding: 0.75rem 1.25rem;
+            ">
+            <span>{{ message }}</span>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="dream-icon">
+        <i class="fas fa-history"></i>
+    </div>
+    <h1>夢境歷史記錄</h1>
+    <p class="text-muted">回顧您過去的夢境解析</p>
+</div>
+
+{% if page_obj %}
+    <div class="mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <p>總共有 <span class="badge bg-primary">{{ page_obj.paginator.count }}</span> 條夢境記錄</p>
+            </div>
+            <div class="col-md-4">
+                <form method="get" class="input-group mb-4">
+                    <input type="text" name="q" id="searchDreams" class="form-control" placeholder="搜尋夢境..." value="{{ query|default:'' }}">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>                
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="dreamsList">
+        {% for dream in page_obj %}
+            <div class="col-lg-6 mb-4 dream-item">
+                <div class="dream-card h-100">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3 class="h5">
+                            <i class="fas fa-moon me-2 text-primary"></i>夢境 #{{ dream.dream_number }}
+
+                        </h3>
+                        <span class="badge bg-light text-dark">{{ dream.created_at|date:"Y-m-d" }}</span>
+                    </div>
+                    <p class="dream-content">{{ dream.dream_content|slice:":30" }}{% if dream.dream_content|length > 30 %}...{% endif %}</p>
+                    <div class="dream-preview bg-light p-2 rounded mb-3">
+                        <p class="small text-muted mb-0">
+                            <i class="fas fa-quote-left me-1 text-primary"></i>
+                            {{ dream.interpretation|truncatewords:15 }}
+                            <i class="fas fa-quote-right ms-1 text-primary"></i>
+                        </p>
+                    </div>
+                    <div class="text-end mt-auto">
+                        <a href="{% url 'dream_detail' dream.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye me-1"></i>查看詳情
+                        </a>
+                        <form action="{% url 'user_delete_dream' dream.id %}" method="post" style="display:inline;" 
+                            onsubmit="return confirm('確定要刪除這個夢境嗎？');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i>刪除夢境
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分頁控制 -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一頁</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">上一頁</span>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一頁</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">下一頁</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% else %}
+    <div class="card text-center py-5">
+        <div class="card-body">
+            <i class="fas fa-bed mb-4" style="font-size: 5rem; color: #ddd;"></i>
+            <h3 class="mb-3">您還沒有解析過的夢境</h3>
+            <p class="text-muted mb-4">記錄您的夢境，探索您的潛意識世界</p>
+            <a href="{% url 'dream_form' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-feather-alt me-2"></i>開始解析您的夢境
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+    // 簡單的搜尋功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchDreams');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const searchText = this.value.toLowerCase();
+                const dreamItems = document.querySelectorAll('.dream-item');
+                
+                dreamItems.forEach(item => {
+                    const content = item.querySelector('.dream-content').textContent.toLowerCase();
+                    if (content.includes(searchText)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+
+
+{% endblock %}

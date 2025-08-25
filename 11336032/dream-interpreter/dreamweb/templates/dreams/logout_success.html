@@ -1,0 +1,16 @@
+<!-- 這是登出介面 -->
+{% extends 'dreams/base.html' %}
+
+{% block title %} - 登出成功{% endblock %}
+
+{% block content %}
+
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh; background-color: #f4f6f9;">
+    <div class="text-center p-5 rounded shadow-lg" style="background-color: #ffffff; max-width: 500px; width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <h2>您已成功登出</h2>
+        <p>感謝您使用我們的夢境解析服務</p>
+        <a href="{% url 'login' %}" class="btn btn-primary">重新登入</a>
+    </div>
+</div>
+
+{% endblock %}

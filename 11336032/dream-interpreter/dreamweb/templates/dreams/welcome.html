@@ -1,0 +1,255 @@
+<!-- 這是燈箱 -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamEcho AI | 探索夢境的智能平台</title>
+  <link rel="stylesheet" href="{% static 'css/welcome.css' %}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc, #6a11cb);
+      background-size: 400% 400%;
+      animation: gradientBackground 20s ease infinite;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    @keyframes gradientBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    /* Floating particles animation */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+    
+    .lightbox {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 60px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(15px);
+      max-width: 500px;
+      width: 100%;
+      transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .lightbox:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.25);
+    }
+    
+    .logo {
+      margin-bottom: 25px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .logo i {
+      font-size: 2.5rem;
+      color: #fff;
+      margin-bottom: 15px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .lightbox h1 {
+      font-size: 3.2rem;
+      background: linear-gradient(to right, #fff, #c5b3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 25px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    
+    .lightbox p {
+      font-size: 1.3rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+    
+    .enter-btn {
+      background: linear-gradient(135deg, #ff79c6, #ff5ea2);
+      color: white;
+      font-size: 1.4rem;
+      padding: 16px 40px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(255, 121, 198, 0.5);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 1px;
+    }
+    
+    .enter-btn:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+    }
+    
+    .enter-btn:hover {
+      background: linear-gradient(135deg, #ff5ea2, #ff79c6);
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(255, 79, 155, 0.6);
+    }
+    
+    .enter-btn:hover:before {
+      left: 100%;
+    }
+    
+    .enter-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 15px rgba(255, 79, 155, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+      .lightbox {
+        padding: 40px 30px;
+        max-width: 90%;
+      }
+      
+      .lightbox h1 {
+        font-size: 2.5rem;
+      }
+      
+      .lightbox p {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+      }
+      
+      .enter-btn {
+        font-size: 1.2rem;
+        padding: 14px 30px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .lightbox {
+        padding: 30px 20px;
+      }
+      
+      .lightbox h1 {
+        font-size: 2rem;
+      }
+      
+      .lightbox p {
+        font-size: 1rem;
+      }
+      
+      .enter-btn {
+        font-size: 1.1rem;
+        padding: 12px 25px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating particles -->
+  <div class="particles" id="particles"></div>
+  
+  <div class="lightbox">
+    <div class="logo">
+      <i class="fas fa-moon"></i>
+    </div>
+    <h1>DreamEcho AI</h1>
+    <p>探索你的夢境，解析你的內心世界</p>
+    <a href="login">
+      <button class="enter-btn">開始探索 <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+    </a>
+  </div>
+
+  <script src="{% static 'js/welcome.js' %}"></script>
+  <script>
+    // Create floating particles
+    document.addEventListener('DOMContentLoaded', function() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 30;
+      
+      for (let i = 0; i < particleCount; i++) {
+        createParticle(particlesContainer);
+      }
+    });
+    
+    function createParticle(container) {
+      const particle = document.createElement('div');
+      particle.classList.add('particle');
+      
+      // Random properties
+      const size = Math.random() * 10 + 5;
+      const posX = Math.random() * 100;
+      const delay = Math.random() * 15;
+      const duration = Math.random() * 10 + 10;
+      
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.left = `${posX}%`;
+      particle.style.bottom = `-${size}px`;
+      particle.style.opacity = Math.random() * 0.5 + 0.1;
+      particle.style.animationDuration = `${duration}s`;
+      particle.style.animationDelay = `${delay}s`;
+      
+      container.appendChild(particle);
+      
+      // Remove and recreate particle after animation completes
+      setTimeout(() => {
+        particle.remove();
+        createParticle(container);
+      }, (delay + duration) * 1000);
+    }
+  </script>
+</body>
+</html>

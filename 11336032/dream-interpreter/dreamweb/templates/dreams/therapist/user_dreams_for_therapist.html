@@ -1,0 +1,42 @@
+<!-- 這是心理師看到的使用者資料 -->
+{% extends 'dreams/base.html' %}
+
+{% block title %}{{ target_user.username }} 的夢境紀錄{% endblock %}
+
+{% block content %}
+<p>授權狀態：{{ is_active_share }}</p>
+<p>夢境筆數：{{ dreams|length }}</p>
+
+<div class="container mt-5">
+  <h3 class="mb-4"> {{ target_user.username }} 的夢境紀錄</h3>
+
+  {% if is_active_share %}
+    {% for dream in dreams %}
+      <div class="card my-3">
+        <div class="card-header">
+          來自使用者 {{ dream.user.username }}（{{ dream.created_at|date:"Y-m-d H:i" }}）
+        </div>
+        <div class="card-body">
+          <p><strong>夢境內容：</strong>{{ dream.dream_content }}</p>
+          <p><strong>解析：</strong>{{ dream.interpretation }}</p>
+          <p><strong>情緒分析：</strong></p>
+          <ul>
+            <li>快樂：{{ dream.Happiness }}%</li>
+            <li>焦慮：{{ dream.Anxiety }}%</li>
+            <li>恐懼：{{ dream.Fear }}%</li>
+            <li>興奮：{{ dream.Excitement }}%</li>
+            <li>悲傷：{{ dream.Sadness }}%</li>
+          </ul>
+        </div>
+      </div>
+    {% empty %}
+      <p>目前沒有任何使用者授權的夢境紀錄。</p>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-warning">
+      此使用者已取消夢境分享，您無法查看夢境內容。
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

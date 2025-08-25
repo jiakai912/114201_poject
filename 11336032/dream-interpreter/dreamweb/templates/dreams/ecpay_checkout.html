@@ -1,0 +1,27 @@
+<!-- 綠界 -->
+{% extends 'dreams/base.html' %}
+
+{% block title %}導向綠界付款{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column justify-content-center align-items-center" style="height: 70vh;">
+    <div class="text-center">
+        <h2 class="mb-4">正在導向至綠界付款頁面，請稍候...</h2>
+        <div class="spinner-border text-primary" role="status" aria-live="polite" aria-label="載入中">
+            <span class="visually-hidden">載入中...</span>
+        </div>
+    </div>
+
+    <form id="ecpay-form" method="post" action="{{ action_url }}" class="d-none">
+
+        {% for key, value in final_params.items %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+    </form>
+</div>
+
+<script>
+    // 自動提交表單
+    document.getElementById('ecpay-form').submit();
+</script>
+{% endblock %}
