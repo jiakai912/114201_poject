@@ -17,7 +17,7 @@ def update_dream_trends():
         all_words.extend(list(words))
 
     # 停用詞過濾
-    stopwords = ['的', '是', '了', '在', '和', '我']
+    stopwords = ['的','到','看', '是', '了', '在', '和', '我']
     filtered_words = [w for w in all_words if w not in stopwords and len(w) > 1]
 
     # 統計詞頻

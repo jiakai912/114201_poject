@@ -398,7 +398,7 @@ def manage_points(request):
             Q(description__icontains=query)   # 加入說明欄位的搜尋
         )
 
-    paginator = Paginator(transactions, 15)  # 每頁15筆交易
+    paginator = Paginator(transactions, 10)  # 每頁15筆交易
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -629,7 +629,7 @@ def send_chat_invitation(request):
         recipient=target_user,
         sender=request.user,
         title="💌 聊天邀請",
-        content=f"您好，{request.user.username} 心理師向您發送了聊天邀請，點此回覆：[連結到回覆頁面]。",
+        content=f"您好，{request.user.username} 心理師向您發送了聊天邀請，請前往聊天室列表進行回覆。",
         is_system_message=False
     )
 
@@ -638,9 +638,16 @@ def send_chat_invitation(request):
 
 @login_required
 def notification_list(request):
-    """顯示使用者的所有通知信件"""
     notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-    return render(request, 'dreams/UserProfile/notification_list.html', {'notifications': notifications})
+    paginator = Paginator(notifications, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'dreams/UserProfile/notification_list.html', {
+        'notifications': page_obj,  # 保持模板原本用 notifications
+        'page_obj': page_obj
+    })
+
 
 @login_required
 def notification_detail(request, notification_id):
@@ -1075,29 +1082,6 @@ def get_user_keywords(request):
     result = [{"keyword": key, "count": value} for key, value in top_keywords.items()]
     return JsonResponse(result, safe=False)  # 返回 JSON 格式的結果
 
-# 熱門關鍵字
-def get_global_trends_data(request):
-    """返回所有過去的夢境趨勢資料，並合併成一個總圖"""
-    trend_entries = DreamTrend.objects.all()  # 獲取所有趨勢資料
-
-    if trend_entries:
-        all_trends = {}
-        for trend_entry in trend_entries:
-            trend_dict = trend_entry.trend_data  # 假設 trend_data 是字典
-            # 將每一天的趨勢數據合併
-            for keyword, percentage in trend_dict.items():
-                if keyword in all_trends:
-                    all_trends[keyword] += percentage
-                else:
-                    all_trends[keyword] = percentage
-
-        # 將合併後的數據按比例排序，並取前 8 條
-        top_8 = sorted(all_trends.items(), key=lambda x: x[1], reverse=True)[:8]
-        trend_data = [{'text': k, 'percentage': v} for k, v in top_8]
-    else:
-        trend_data = []
-
-    return JsonResponse(trend_data, safe=False)
 
 # 最近 7 筆夢境數據
 def get_emotion_data(request):
@@ -1463,7 +1447,7 @@ def community(request):
 
 
 
-# 用這個來獲取當天的熱門趨勢
+# 用這個來獲取本週的熱門趨勢
 def dream_community(request):
     today = timezone.now().date()
     trend_data_obj = DreamTrend.objects.filter(date=today).first()

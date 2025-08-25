@@ -4,11 +4,12 @@
 {% block title %} - 解析夢境{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
     <div class="dream-icon">
         <i class="fas fa-cloud-moon"></i>
     </div>
-    <h1>探索您的夢境世界</h1>
+    <h1 class="fw-bold">探索您的夢境世界</h1>
     <p class="text-muted">記錄並理解您的潛意識訊息</p>
 </div>
 
@@ -65,31 +66,42 @@
         </div>
         
         
-        <div class="card mt-4">
-            <div class="card-header">
+        <div class="card card-about mt-4">
+            <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
                 <h3><i class="fas fa-info-circle me-2"></i>關於夢境解析</h3>
             </div>
             <div class="card-body">
-                <p>夢境是您內心世界的反映，可能包含重要的潛意識訊息。我們的解析基於多種心理學理論，為您提供參考。</p>
-                <div class="row mt-4">
-                    <div class="col-md-4 text-center">
-                        <i class="fas fa-brain mb-3" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <p class=" text-center mb-4">
+                    夢境是您內心世界的鏡像，蘊含情緒、願望與潛意識的訊息。透過 DreamEcho AI，我們結合心理學理論與 AI 智能，幫助您理解夢境、洞察自己，探索未知的心靈角落。
+                </p>
+
+                <div class="row mt-4 text-center">
+                    <div class="col-md-4 mb-3">
+                        <i class="fas fa-brain mb-3" style="font-size: 3rem; color: var(--primary-color);"></i>
                         <h5>心理學視角</h5>
-                        <p class="small">基於榮格、佛洛伊德等心理學家的理論</p>
+                        <p class="small text-muted">
+                            基於榮格、佛洛伊德等心理學家的理論，解析夢境中的心理動力與潛在情緒。
+                        </p>
                     </div>
-                    <div class="col-md-4 text-center">
-                        <i class="fas fa-star mb-3" style="font-size: 2rem; color: var(--primary-color);"></i>
+                    <div class="col-md-4 mb-3">
+                        <i class="fas fa-star mb-3" style="font-size: 3rem; color: var(--primary-color);"></i>
                         <h5>象徵意義</h5>
-                        <p class="small">解讀夢中意象的多層含義</p>
+                        <p class="small text-muted">
+                            解讀夢中意象的多層含義，揭示您潛意識中的信號與提示。
+                        </p>
                     </div>
-                    <div class="col-md-4 text-center">
-                        <i class="fas fa-lightbulb mb-3" style="font-size: 2rem; color: var(--primary-color);"></i>
+                    <div class="col-md-4 mb-3">
+                        <i class="fas fa-lightbulb mb-3" style="font-size: 3rem; color: var(--primary-color);"></i>
                         <h5>啟發洞見</h5>
-                        <p class="small">幫助您從夢境中獲得自我啟發</p>
+                        <p class="small text-muted">
+                            從夢境中獲得自我啟發，激發創意、增進自我認識與生活洞察力。
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+
+
     </div>
     
     <div class="col-lg-4">
@@ -131,7 +143,7 @@
             <h3><i class="fas fa-tasks me-2"></i>每日任務</h3>
         </div>
         <div class="card-body text-center">
-            <p>完成以下任務可獲得 <strong>5 點券</strong> 獎勵！</p>
+            <p>完成以下任務每項可獲得 <strong style="color: #006affff;">5 點券</strong> 獎勵！</p>
 
             <div class="d-grid gap-2 mb-3">
             <button class="btn btn-primary daily-task-btn" data-task="daily_login" type="button">
