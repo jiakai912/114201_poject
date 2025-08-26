@@ -58,7 +58,8 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('login/', views.custom_login, name='login'),
     path('logout/',  views.logout_view, name='logout'),  # ✅ 修正
-    path('history/', views.dream_history, name='dream_history'),
+    path('history/', views.dream_history, name='dream_history'),# 夢境歷史
+    path('my-dreams/<int:dream_id>/delete/', views.user_delete_dream, name='user_delete_dream'), # 刪除夢境
     path('api/emotion-data/', views.get_emotion_data, name='emotion_data'),
     path('dream/<int:dream_id>/', views.dream_detail, name='dream_detail'),
     path('dashboard/', views.dream_dashboard, name='dream_dashboard'),
@@ -146,11 +147,12 @@ urlpatterns = [
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
 
-
+    
     path('weather/forecast/', views.weather_forecast, name='weather_forecast'),     # ✅ 新增：天氣預報頁面
     path('watchlist/', views.manage_watchlist, name='manage_watchlist'),    # ✅ 新增：關注清單管理
     path('api/watchlist-data/', views.get_watchlist_data, name='get_watchlist_data'),# ✅ 新增：API 接口，供前端獲取關注清單的即時數據
     path('api/save_notes/', views.save_private_notes, name='save_private_notes'),
+
 
 
 ]

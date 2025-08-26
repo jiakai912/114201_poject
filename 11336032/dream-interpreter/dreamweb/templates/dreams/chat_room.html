@@ -1,665 +1,91 @@
+<!-- 這是聊天室 -->
 {% extends 'dreams/base.html' %}
-{% load static %}
 
 {% block title %}與 {{ chat_user.username }} 聊天{% endblock %}
 
 {% block content %}
-<style>
-    /* 全新的 CSS 樣式，用於美化排版 */
-    :root {
-        --primary-color: #6a5acd;
-        --secondary-color: #9370db;
-        --accent-color: #483d8b;
-        --light-color: #f0f8ff;
-        --text-color: #333333;
-        --border-radius-lg: 1.5rem;
-        --border-radius-md: 1rem;
-        --box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        --bg-light: #f9f9fb;
-    }
-
-    body {
-        background-color: var(--bg-light);
-    }
-    
-    .chat-container {
-        padding: 1rem; /* 減少 container 的 padding */
-    }
-
-    .card-custom {
-        background-color: #ffffff;
-        border-radius: var(--border-radius-lg);
-        box-shadow: var(--box-shadow);
-        border: none;
-        transition: var(--transition);
-        overflow: hidden;
-        margin-bottom: 1rem; /* 新增間距以區隔卡片 */
-    }
-    
-    .card-custom:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    }
-    
-    /* 左側用戶資料卡片樣式 */
-    .profile-header {
-        position: relative;
-        padding-top: 80px; /* 調整 header 高度 */
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        border-top-left-radius: var(--border-radius-lg);
-        border-top-right-radius: var(--border-radius-lg);
-    }
-    .profile-avatar {
-        width: 100px; /* 調整頭像大小 */
-        height: 100px; /* 調整頭像大小 */
-        object-fit: cover;
-        border: 5px solid white;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    .profile-info {
-        margin-top: -50px; /* 調整 info 上移距離 */
-    }
-    .profile-title {
-        font-weight: 600;
-        color: white;
-        background-color: var(--accent-color);
-        padding: 4px 12px; /* 調整 padding */
-        border-radius: 20px; /* 調整圓角 */
-        font-size: 0.8rem; /* 調整字體大小 */
-    }
-    .profile-bio {
-        color: #6c757d;
-        line-height: 1.4; /* 調整行高 */
-        padding: 0 1rem; /* 調整 padding */
-        font-size: 0.9rem; /* 調整字體大小 */
-    }
-    .info-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .info-list li {
-        padding: 0.5rem 0; /* 減少 padding */
-        border-bottom: 1px solid var(--bg-light);
-        display: flex;
-        align-items: center;
-    }
-    .info-list li:last-child {
-        border-bottom: none;
-    }
-    .info-list strong {
-        color: var(--accent-color);
-        margin-right: 0.5rem;
-        min-width: 70px; /* 調整最小寬度 */
-    }
-    .info-list i {
-        color: var(--primary-color);
-        margin-right: 0.5rem; /* 減少間距 */
-        font-size: 1rem; /* 調整圖示大小 */
-    }
-
-    /* 中間聊天室卡片 */
-    .chat-card {
-        background-color: #ffffff;
-        border-radius: var(--border-radius-lg);
-        box-shadow: var(--box-shadow);
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        border: none;
-    }
-    .chat-header {
-        background: linear-gradient(90deg, #6a5acd, #9370db);
-        color: white;
-        border-top-left-radius: var(--border-radius-lg);
-        border-top-right-radius: var(--border-radius-lg);
-        padding: 0.75rem; /* 縮小 header padding */
-        font-size: 1rem; /* 縮小字體大小 */
-    }
-    .chat-box {
-        flex-grow: 1;
-        overflow-y: auto;
-        padding: 1rem; /* 縮小 chat box padding */
-        background-color: #f0f4f8; /* 淺灰藍色背景 */
-    }
-    .chat-bubble {
-        max-width: 150%; /* 增加聊天氣泡的最大寬度 */
-        padding: 10px 14px; /* 縮小 bubble padding */
-        border-radius: 20px; /* 縮小圓角 */
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        word-wrap: break-word;
-        margin-bottom: 8px; /* 縮小間距 */
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .chat-bubble.sent {
-        background: linear-gradient(135deg, #74b9ff, #007bff);
-        color: white;
-        align-self: flex-end;
-        border-bottom-right-radius: 5px;
-    }
-    .chat-bubble.received {
-        background: #e9ecef;
-        color: #333;
-        align-self: flex-start;
-        border-bottom-left-radius: 5px;
-    }
-    .chat-bubble.sent .chat-text, .chat-bubble.sent a { color: white; }
-    .chat-bubble.received a { color: #333; }
-
-    .chat-input-form {
-        padding: 1rem; /* 縮小 padding */
-        border-top: 1px solid #e9ecef;
-        background-color: #ffffff;
-        border-bottom-left-radius: var(--border-radius-lg);
-        border-bottom-right-radius: var(--border-radius-lg);
-    }
-    .quick-reply-btn {
-        transition: background-color 0.2s ease;
-        border-radius: 20px;
-    }
-    .quick-reply-btn:hover {
-        background-color: #e9ecef;
-    }
-    .chat-bubble {
-        max-width: 75%;
-        padding: 10px 15px;
-        border-radius: 20px;
-        position: relative;
-        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
-        word-wrap: break-word;
-        background-color: #f1f1f1;
-    }
-    .chat-bubble.sent {
-        background-color: #d1e7dd;
-        border-bottom-right-radius: 0;
-    }
-    .chat-bubble.received {
-        background-color: #f8f9fa;
-        border-bottom-left-radius: 0;
-    }
-    .chat-meta {
-        font-size: 0.75rem;
-    }
-
-    .chat-text {
-        font-size: 1rem;
-    }
-    
-    .chat-sticker img {
-        max-width: 120px; /* 縮小貼圖大小 */
-        border-radius: 10px;
-    }
-    .chat-file {
-        background-color: #e9ecef;
-        padding: 6px 10px; /* 縮小 padding */
-        border-radius: 8px; /* 縮小圓角 */
-        display: inline-block;
-    }
-    
-    .d-flex.align-items-end {
-        align-items: flex-end !important;
-    }
-
-    .chat-bubble.sent + img.rounded-circle {
-        margin-right: 0 !important;
-    }
-    .chat-bubble.received + img.rounded-circle {
-        margin-left: 0 !important;
-    }
-    #file-upload {
-        display: none;
-    }
-    .right-sidebar .card-custom {
-        margin-bottom: 1rem; /* 縮小間距 */
-    }
-    #private-notes-container {
-        display: flex;
-        flex-direction: column;
-    }
-    #private-notes {
-        flex-grow: 1;
-        resize: none;
-        border: 1px solid #e9ecef;
-        border-radius: var(--border-radius-md);
-        padding: 0.5rem; /* 縮小 padding */
-        min-height: 120px; /* 縮小高度 */
-        font-size: 0.9rem; /* 縮小字體大小 */
-    }
-    .card-header-custom {
-        background: var(--accent-color);
-        color: white;
-        padding: 0.75rem 1rem; /* 縮小 padding */
-        border-bottom: none;
-        border-top-left-radius: var(--border-radius-md);
-        border-top-right-radius: var(--border-radius-md);
-        font-size: 0.9rem; /* 縮小字體大小 */
-        font-weight: 500;
-    }
-    .card-header-custom h6 {
-        margin: 0;
-        font-size: 0.9rem; /* 縮小字體大小 */
-    }
-    .badge-light {
-        color: var(--primary-color);
-        background-color: var(--light-color);
-        font-weight: bold;
-    }
-    .fc-dayGridMonth-button, .fc-timeGridWeek-button, .fc-timeGridDay-button {
-        display: none !important;
-    }
-    .fc-toolbar-chunk:nth-child(3) {
-        display: none;
-    }
-
-    /* 調整整體版面 */
-    .col-md-3 {
-        width: 28%; /* 稍微拉寬左側欄位 */
-    }
-    .col-md-6 {
-        width: 44%; /* 縮小中間聊天室寬度 */
-    }
-    .right-sidebar {
-        width: 28%; /* 稍微拉寬右側欄位 */
-    }
-    
-    /* 簡化月曆樣式 */
-    #calendar {
-        font-size: 0.8rem;
-    }
-    .fc-daygrid-day {
-        min-height: 60px; /* 縮小每個日期方塊的最小高度 */
-        padding: 0.1rem; /* 減少日期方塊內的內邊距 */
-    }
-    .fc-daygrid-day-frame {
-        padding: 0; /* 移除日期框架的內邊距 */
-    }
-    .fc-daygrid-day-top {
-        flex-direction: column;
-        padding: 0.1rem; /* 減少日期數字上方的內邊距 */
-    }
-    .fc-daygrid-day-number {
-        font-size: 0.9rem; /* 縮小日期數字的字體大小 */
-        font-weight: normal;
-        padding: 0.1rem; /* 減少日期數字的內邊距 */
-        line-height: 1.2; /* 減少行高 */
-    }
-    .fc-header-toolbar {
-        margin-bottom: 0.2em; /* 縮小與月曆主體的間距 */
-        padding: 0.1rem;
-    }
-    .fc-toolbar-title {
-        font-size: 1.2rem; /* 縮小標題字體 */
-        padding: 0 0.5rem;
-    }
-    .fc-button-group .fc-button {
-        font-size: 0.75rem; /* 縮小按鈕字體 */
-        padding: 0.25rem 0.5rem; /* 縮小按鈕內邊距 */
-    }
-    .fc-view-harness {
-        margin-bottom: 0.2em; /* 縮小月曆主體下方的間距 */
-    }
-</style>
-
-<div class="container-fluid chat-container">
-    <div class="row g-3">
-        <div class="col-md-3">
-            <div class="card-custom shadow rounded-4">
-                <div class="profile-header text-center">
-                    {% if chat_user_profile.avatar %}
-                        <img src="{{ chat_user_profile.avatar.url }}" alt="{{ chat_user.username }}" class="profile-avatar rounded-circle">
-                    {% else %}
-                        <img src="https://ui-avatars.com/api/?name={{ chat_user.username }}&background=0D8ABC&color=fff&size=100" alt="{{ chat_user.username }}" class="profile-avatar rounded-circle">
-                    {% endif %}
-                </div>
-                <div class="card-body text-center profile-info">
-                    <h5 class="mb-1">{{ chat_user.username }}</h5>
-                    {% if chat_user_profile.display_title %}
-                        <span class="profile-title badge bg-info">{{ chat_user_profile.display_title.name }}</span>
-                    {% endif %}
-                    
-                    <hr class="my-2">
-
-                    <p class="profile-bio mb-3">{{ chat_user_profile.bio|default:"目前沒有個人簡介。" }}</p>
-
-                    <div class="text-start">
-                        <h6 class="mb-2 text-muted"><i class="fas fa-info-circle me-2"></i>詳細資訊</h6>
-                        <ul class="info-list small">
-                            <li>
-                                <i class="fas fa-user-tag"></i>
-                                <strong>身分：</strong>
-                                {% if chat_user_profile.is_verified_therapist %}
-                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>認證心理師</span>
-                                {% else %}
-                                    <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>一般用戶</span>
-                                {% endif %}
-                            </li>
-                            {% if chat_user_profile.specialties %}
-                                <li>
-                                    <i class="fas fa-brain"></i>
-                                    <strong>專長領域：</strong>
-                                    {% for specialty in chat_user_profile.get_specialties_list %}
-                                        <span class="badge bg-info text-dark">{{ specialty }}</span>
-                                    {% endfor %}
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </div>
-
-                    <hr class="my-2">
-                    <div class="text-start">
-                        <h6 class="mb-2 text-muted"><i class="fas fa-cloud-moon me-2"></i>夢境與諮詢資訊</h6>
-                        <ul class="info-list small">
-                            <li>
-                                <i class="fas fa-key"></i>
-                                <strong>夢境關鍵字：</strong>
-                                {% for keyword, count in top_keywords.items %}
-                                    <span class="badge bg-primary">{{ keyword }} ({{ count }})</span>
-                                {% empty %}
-                                    <span class="text-muted">目前沒有關鍵字。</span>
-                                {% endfor %}
-                            </li>
-                            <li>
-                                <i class="fas fa-history"></i>
-                                <strong>諮詢歷史：</strong>
-                                {% for appointment in consultation_history %}
-                                    <span class="d-block">
-                                        <i class="fas fa-check-circle text-success me-1"></i>{{ appointment.scheduled_time|date:"Y-m-d H:i" }}
-                                    </span>
-                                {% empty %}
-                                    <span class="text-muted d-block">目前沒有諮詢歷史。</span>
-                                {% endfor %}
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            {% if is_therapist %}
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h6 class="mb-0"><i class="fas fa-tools me-2"></i>諮詢工具</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="你好，我們開始吧。">開始諮詢</button>
-                        <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="好的，感謝你的分享。">感謝分享</button>
-                        <button class="btn btn-outline-secondary btn-sm quick-reply" data-message="這是一個很重要的線索，請繼續說。">重要線索</button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        
-        <div class="col-md-6">
-            <div class="chat-card card-custom h-100">
-                <div class="card-header chat-header">
-                    <h5 class="mb-0"><i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話</h5>
-                </div>
-                <div class="card-body d-flex flex-column" style="height: 500px;">
-                    <div id="chat-box" class="chat-box flex-grow-1 p-2 mb-2">
-                        {% if messages %}
-                          {% for msg in messages %}
-                            <div class="d-flex mb-2 {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
-                              <div class="d-flex align-items-end {% if msg.sender == request.user %}flex-row-reverse{% endif %}">
-                                {% if msg.sender.userprofile.avatar %}
-                                  <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle {% if msg.sender == request.user %}ms-2{% else %}me-2{% endif %}" width="32" height="32" style="object-fit: cover;">
-                                {% else %}
-                                  <img src="https://ui-avatars.com/api/?name={{ msg.sender.username }}&background=0D8ABC&color=fff&size=32" class="rounded-circle {% if msg.sender == request.user %}ms-2{% else %}me-2{% endif %}" width="32" height="32">
-                                {% endif %}
-                                <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
-                                  {% if msg.sticker %}
-                                    <div class="chat-sticker">
-                                      <img src="{% static 'sticker/' %}{{ msg.sticker }}" alt="貼圖" class="img-fluid">
-                                    </div>
-                                  {% elif msg.file %}
-                                    <div class="chat-file mt-2">
-                                      <i class="fas fa-file-alt me-2"></i>
-                                      <a href="{{ msg.file.url }}" download class="text-decoration-none text-dark">
-                                        {{ msg.file.name|truncatewords:25 }}
-                                      </a>
-                                    </div>
-                                  {% endif %}
-
-                                  {% if msg.message %}
-                                    <div class="chat-text mt-1">{{ msg.message }}</div>
-                                  {% endif %}
-                                </div>
-                              </div>
-                            </div>
-                          {% endfor %}
-                        {% else %}
-                          <p class="text-muted text-center">目前沒有聊天訊息</p>
-                        {% endif %}
-                    </div>
-                    <form method="post" action="{% url 'chat_with_user' user_id=chat_user.id %}" class="chat-input-form mt-auto" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="傳送貼圖">
-                                <i class="fas fa-smile"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end p-2" style="max-height: 200px; overflow-y: auto;">
-                                <div class="d-flex flex-wrap" style="width: 200px;">
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865945.png"><img src="{% static 'sticker/745865945.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865946.png"><img src="{% static 'sticker/745865946.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865947.png"><img src="{% static 'sticker/745865947.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865948.png"><img src="{% static 'sticker/745865948.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865949.png"><img src="{% static 'sticker/745865949.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865950.png"><img src="{% static 'sticker/745865950.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865951.png"><img src="{% static 'sticker/745865951.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865952.png"><img src="{% static 'sticker/745865952.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865953.png"><img src="{% static 'sticker/745865953.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865954.png"><img src="{% static 'sticker/745865954.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865955.png"><img src="{% static 'sticker/745865955.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865956.png"><img src="{% static 'sticker/745865956.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865957.png"><img src="{% static 'sticker/745865957.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865958.png"><img src="{% static 'sticker/745865958.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865959.png"><img src="{% static 'sticker/745865959.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865960.png"><img src="{% static 'sticker/745865960.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865961.png"><img src="{% static 'sticker/745865961.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865962.png"><img src="{% static 'sticker/745865962.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865963.png"><img src="{% static 'sticker/745865963.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865964.png"><img src="{% static 'sticker/745865964.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865965.png"><img src="{% static 'sticker/745865965.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865966.png"><img src="{% static 'sticker/745865966.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865967.png"><img src="{% static 'sticker/745865967.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                    <a class="p-1 sticker-btn" href="#" data-sticker="745865968.png"><img src="{% static 'sticker/745865968.png' %}" alt="貼圖" style="width: 50px;"></a>
-                                </div>
-                            </ul>
-                            
-                            <input type="file" name="file" class="form-control d-none" id="file-upload">
-                            <label for="file-upload" class="btn btn-outline-secondary input-group-text" role="button" title="上傳檔案">
-                                <i class="fas fa-paperclip"></i>
-                            </label>
-                            <input type="text" name="message" id="message-input" class="form-control" placeholder="輸入訊息…" />
-                            <button class="btn btn-primary" type="submit" id="send-button">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                        <input type="hidden" name="sticker" id="sticker-input">
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 right-sidebar">
-            {% if is_therapist %}
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>預約月曆</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div id="calendar"></div>
-                </div>
-            </div>
-            
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h6 class="mb-0"><i class="fas fa-sticky-note me-2"></i>私密筆記</h6>
-                </div>
-                <div class="card-body d-flex flex-column" id="private-notes-container">
-                    <textarea id="private-notes" class="form-control" placeholder="在這裡記錄諮詢筆記... (只有你看得到)">{{ private_notes }}</textarea>
-                    <button id="save-notes-btn" class="btn btn-sm btn-primary mt-2">儲存筆記</button>
-                    <div id="notes-status" class="mt-2 small text-muted"></div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
+<div class="container-fluid py-5">
+  <div class="card shadow rounded-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話
+      </h4>
     </div>
+
+    <div class="card-body d-flex flex-column" style="height: 600px;">
+      <!-- 聊天內容 -->
+      <div id="chat-box" class="flex-grow-1 overflow-auto p-3 mb-3 bg-light rounded" style="border: 1px solid #e0e0e0;">
+        {% if messages %}
+          {% for msg in messages %}
+            <div class="d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
+              <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+                <div class="d-flex align-items-center mb-1">
+                  <img src="https://ui-avatars.com/api/?name={{ msg.sender.username }}&background=0D8ABC&color=fff&size=32" class="rounded-circle me-2" width="32" height="32">
+                  <div class="chat-meta {% if msg.sender == request.user %}text-end{% else %}text-start{% endif %}">
+                    <strong>{{ msg.sender.username }}</strong>
+                    <br><small class="text-muted">{{ msg.timestamp|date:"Y-m-d H:i" }}</small>
+                  </div>
+                </div>
+                <div class="chat-text">{{ msg.message }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-center">目前沒有聊天訊息</p>
+        {% endif %}
+      </div>
+
+      <!-- 訊息輸入 -->
+      <form method="post" action="{% url 'chat_room' chat_user_id=chat_user.id %}" class="mt-auto">
+        {% csrf_token %}
+        <div class="input-group">
+          <input type="text" name="message" required class="form-control" placeholder="輸入訊息…" />
+          <button class="btn btn-primary" type="submit">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+<!-- 自動滾動到底部 -->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const chatBox = document.getElementById("chat-box");
-        chatBox.scrollTop = chatBox.scrollHeight;
-        
-        // 處理筆記儲存
-        const saveNotesBtn = document.getElementById('save-notes-btn');
-        const privateNotesTextarea = document.getElementById('private-notes');
-        const notesStatusDiv = document.getElementById('notes-status');
-
-        if (saveNotesBtn) {
-            saveNotesBtn.addEventListener('click', function() {
-                const notes = privateNotesTextarea.value;
-                const url = "{% url 'save_private_notes' %}";
-                const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-                
-                const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', csrfToken);
-                formData.append('notes', notes);
-
-                notesStatusDiv.textContent = '儲存中...';
-                notesStatusDiv.style.color = '#17a2b8';
-
-                fetch(url, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        notesStatusDiv.textContent = '筆記已成功儲存！';
-                        notesStatusDiv.style.color = '#28a745';
-                    } else {
-                        notesStatusDiv.textContent = '儲存失敗: ' + data.error;
-                        notesStatusDiv.style.color = '#dc3545';
-                    }
-                    setTimeout(() => notesStatusDiv.textContent = '', 3000);
-                })
-                .catch(error => {
-                    notesStatusDiv.textContent = '發生錯誤: ' + error;
-                    notesStatusDiv.style.color = '#dc3545';
-                    console.error('Error:', error);
-                });
-            });
-        }
-
-        // 統一的訊息發送邏輯
-        document.querySelector('form').addEventListener('submit', function(e) {
-            e.preventDefault(); 
-            const form = this;
-            const url = form.action;
-            const formData = new FormData(form);
-            const messageInput = document.getElementById('message-input');
-            const messageText = messageInput.value.trim();
-            const stickerFilename = formData.get('sticker');
-            const file = formData.get('file');
-
-            if (!messageText && !stickerFilename && (!file || file.name === '')) {
-                return;
-            }
-            
-            fetch(url, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('伺服器回應錯誤');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    const chatBox = document.getElementById('chat-box');
-                    const newChatBubble = document.createElement('div');
-                    newChatBubble.classList.add('d-flex', 'mb-2', 'justify-content-end');
-                    let chatContent = '';
-                    if (data.type === 'message') {
-                        chatContent = `<div class="chat-text mt-1">${data.message}</div>`;
-                    } else if (data.type === 'file') {
-                        chatContent = `
-                            <div class="chat-file mt-2">
-                                <i class="fas fa-file-alt me-2"></i>
-                                <a href="${data.file_url}" download class="text-decoration-none text-dark">${data.file_name}</a>
-                            </div>
-                        `;
-                    } else if (data.type === 'sticker') {
-                        chatContent = `<div class="chat-sticker"><img src="{% static 'sticker/' %}${data.sticker}" alt="貼圖" class="img-fluid"></div>`;
-                    }
-                    newChatBubble.innerHTML = `
-                        <div class="d-flex align-items-end flex-row-reverse">
-                            <img src="https://ui-avatars.com/api/?name={{ request.user.username }}&background=0D8ABC&color=fff&size=32" class="rounded-circle ms-2" width="32" height="32">
-                            <div class="chat-bubble sent">${chatContent}</div>
-                        </div>
-                    `;
-                    chatBox.appendChild(newChatBubble);
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                    messageInput.value = '';
-                    document.getElementById('sticker-input').value = ''; // 清除貼圖隱藏欄位
-                    form.reset(); // 重置表單，包括檔案輸入
-                } else {
-                    alert('訊息發送失敗：' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('訊息發送時發生錯誤。');
-            });
-        });
-
-        // 貼圖選擇的 JavaScript 邏輯 (只負責設定值，不發送)
-        document.querySelectorAll('.sticker-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const stickerFilename = this.dataset.sticker;
-                document.getElementById('sticker-input').value = stickerFilename;
-                // 觸發表單提交
-                document.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true }));
-            });
-        });
-
-        // 快速回覆按鈕點擊事件
-        document.querySelectorAll('.quick-reply').forEach(button => {
-            button.addEventListener('click', function() {
-                const messageInput = document.getElementById('message-input');
-                messageInput.value = this.dataset.message;
-                messageInput.focus();
-            });
-        });
-        
-        // FullCalendar 初始化
-        var calendarEl = document.getElementById('calendar');
-        if (calendarEl) {
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'zh-tw',
-                height: 'auto',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                },
-                events: [
-                    // 這裡可以動態加載預約事件
-                    // { title: '預約', start: '2025-08-19T10:00:00' }
-                ],
-                eventClick: function(info) {
-                    alert('事件: ' + info.event.title);
-                },
-            });
-            calendar.render();
-        }
-    });
+  document.addEventListener("DOMContentLoaded", function () {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
 </script>
+
+<style>
+  .chat-bubble {
+    max-width: 75%;
+    padding: 10px 15px;
+    border-radius: 20px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    word-wrap: break-word;
+    background-color: #f1f1f1;
+  }
+
+  .chat-bubble.sent {
+    background-color: #d1e7dd;
+    border-bottom-right-radius: 0;
+  }
+
+  .chat-bubble.received {
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 0;
+  }
+
+  .chat-meta {
+    font-size: 0.75rem;
+  }
+
+  .chat-text {
+    font-size: 1rem;
+  }
+</style>
 {% endblock %}
+
+

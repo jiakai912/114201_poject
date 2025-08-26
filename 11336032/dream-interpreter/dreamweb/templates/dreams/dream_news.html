@@ -1,3 +1,6 @@
+<!-- 使用者夢境與新聞 -->
+<!-- 使用者夢境與新聞 -->
+<!-- 使用者夢境與新聞 -->
 {% extends 'dreams/base.html' %}
 {% load static %}
 {% load custom_filters %}
@@ -168,33 +171,45 @@
 
                     <div class="placeholder-card mb-4 fade-in-up" style="animation-delay: 0.2s;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="section-header mb-0">{{ weather_data.location|default:"板橋區" }}</span>
-                            <h3 class="display-6 fw-bold text-neon mb-0">{{ weather_data.temp }}<small class="fs-6">°C</small></h3>
+                            <span class="section-header mb-0">板橋區</span>
+                            <h3 class="display-6 fw-bold text-neon mb-0">30<small class="fs-6">°C</small></h3>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <i class="{{ weather_data.icon }} text-warning fa-2x"></i>
-                            <small class="text-muted">{{ weather_data.description }}</small>
+                            <i class="fas fa-sun text-warning fa-2x"></i>
+                            <small class="text-muted">高溫警告</small>
                         </div>
                         <div class="d-grid">
-                            <a href="{% url 'weather_forecast' %}" class="btn btn-outline-primary btn-sm">查看完整預報</a>
+                            <a href="#" class="btn btn-outline-primary btn-sm">查看完整預報</a>
                         </div>
                     </div>
 
                     <div class="placeholder-card mb-4 fade-in-up" style="animation-delay: 0.3s;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="section-header mb-0">關注清單建議</span>
-                            <a href="{% url 'manage_watchlist' %}" class="text-muted"><i class="fas fa-ellipsis-h"></i></a>
+                            <i class="fas fa-ellipsis-h text-muted"></i>
                         </div>
                         <ul class="list-unstyled">
-                            {% for stock in stock_data %}
                             <li class="d-flex justify-content-between align-items-center py-2">
                                 <div>
-                                    <h6 class="mb-0 text-dark">{{ stock.name }}</h6>
-                                    <small class="text-muted">{{ stock.symbol }}</small>
+                                    <h6 class="mb-0 text-dark">CBOE恐慌指數</h6>
+                                    <small class="text-muted">快速下跌</small>
                                 </div>
-                                <span class="{% if stock.change|slice:'0:1' == '+' %}text-success{% else %}text-danger{% endif %} fw-bold">{{ stock.change }}%</span>
+                                <span class="text-danger fw-bold">-1.19%</span>
                             </li>
-                            {% endfor %}
+                            <li class="d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <h6 class="mb-0 text-dark">台灣50指數</h6>
+                                    <small class="text-muted">TWS0</small>
+                                </div>
+                                <span class="text-danger fw-bold">-0.10%</span>
+                            </li>
+                            <li class="d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <h6 class="mb-0 text-dark">台積電</h6>
+                                    <small class="text-muted">TSM</small>
+                                </div>
+                                <span class="text-success fw-bold">+0.29%</span>
+                            </li>
                         </ul>
                     </div>
 
@@ -207,7 +222,7 @@
                             <i class="fas fa-dollar-sign me-2 text-neon"></i>
                             <h5>HKD HK$ → TWD NT$</h5>
                         </div>
-                        <h3 class="display-6 fw-bold text-neon">{{ currency_data.rate }} <small class="text-success fs-6">{{ currency_data.change }}</small></h3>
+                        <h3 class="display-6 fw-bold text-neon">3.80 <small class="text-success fs-6">+0.20%</small></h3>
                         <img src="{% static 'images/currency_chart.png' %}" alt="Currency Chart" class="img-fluid my-2">
                     </div>
                     

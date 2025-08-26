@@ -341,6 +341,95 @@
             border: 1px solid #ccc;
             padding: 15px;
         }
+
+        /* 科幻背景與動畫 */
+        .space-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .planet {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            bottom: -125px;
+            left: 50%;
+            transform: translateX(-50%) rotateY(0deg);
+            background-image: url("https://i.imgur.com/8Qp49Xg.png");
+            background-size: cover;
+            background-position: center;
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(72, 61, 139, 0.5);
+            transition: transform 1.5s ease;
+            animation: pulse 4s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 40px rgba(72, 61, 139, 0.5); }
+            to { box-shadow: 0 0 60px rgba(72, 61, 139, 0.8); }
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: white;
+            box-shadow: 0 0 10px white, 0 0 20px white;
+            animation: shoot 8s linear infinite;
+        }
+
+        @keyframes shoot {
+            0% { transform: translateX(100vw) translateY(0vh); opacity: 0; }
+            50% { transform: translateX(-50vw) translateY(50vh); opacity: 1; }
+            100% { transform: translateX(-100vw) translateY(100vh); opacity: 0; }
+        }
+
+        /* 圖表容器與切換效果 */
+        .chart-container-wrapper {
+            min-height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 15px;
+        }
+
+        .chart-card {
+            position: absolute;
+            width: 100%;
+            max-width: 800px;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.9);
+            transition: all 0.6s ease-in-out;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .chart-card.active-chart {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .controls .btn-outline-light {
+            color: white !important;
+            border-color: white !important;
+        }
+
+        .controls .btn-outline-light:hover {
+            background-color: white !important;
+            color: var(--primary-color) !important;
+        }
+
+        .controls h2 {
+            color: white;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -473,7 +562,7 @@
             </div>
         </div>
     </nav>
-
+    
     <div class="container mt-5 animation-fade-in">
         {% block content %}{% endblock %}
     </div>
