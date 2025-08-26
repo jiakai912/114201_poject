@@ -1896,6 +1896,7 @@ def update_dream_trends():
 
 
 # 夢境與相關新聞
+# 夢境與相關新聞
 def dream_news(request):
     news_results = []
     dream_input = ""
@@ -2954,3 +2955,121 @@ def ecpay_result(request):
         # 付款成功後導回點券商店
         return redirect('pointshop')
     return HttpResponse("這是綠界付款完成後導回的頁面")
+
+
+
+
+# 天氣預報視圖
+@login_required
+def weather_forecast(request):
+    forecast_locations = []
+    # 預設不傳入任何地點參數，以獲取所有縣市的資料
+    search_query = request.GET.get('q', '') 
+
+    try:
+        cwa_api_key = "CWA-8651080D-A7CB-45BF-A520-901BCD852AAC"
+        # 移除 locationName 參數，以獲取所有縣市的預報資料
+        forecast_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization={cwa_api_key}"
+        response = requests.get(forecast_url, timeout=5)
+        response.raise_for_status()
+        forecast_json = response.json()
+        
+        if forecast_json.get('success') == 'true' and forecast_json.get('records', {}).get('locations', []):
+            all_locations = forecast_json['records']['locations'][0]['location']
+            
+            # 如果有搜尋關鍵字，則進行過濾
+            if search_query:
+                # 模糊搜尋功能：如果地名中包含搜尋關鍵字，就顯示
+                forecast_locations = [loc for loc in all_locations if search_query in loc['locationName']]
+                if not forecast_locations:
+                    messages.warning(request, f"找不到符合「{search_query}」的天氣預報，已顯示所有縣市。")
+                    forecast_locations = all_locations
+            else:
+                forecast_locations = all_locations
+        else:
+            messages.error(request, "無法取得天氣預報數據，請稍後再試。")
+
+    except Exception as e:
+        messages.error(request, f"天氣 API 請求失敗：{e}")
+
+    return render(request, 'dreams/weather_forecast.html', {
+        'forecast_locations': forecast_locations,
+        'search_query': search_query
+    })
+
+# ✅ 新增：關注清單管理視圖
+@login_required
+def manage_watchlist(request):
+    watchlist, created = Watchlist.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        symbol = request.POST.get('symbol', '').strip().upper()
+        name = request.POST.get('name', '').strip()
+        
+        if symbol and name:
+            WatchlistItem.objects.get_or_create(watchlist=watchlist, symbol=symbol, defaults={'name': name})
+            messages.success(request, f"已將 {name} 加入您的關注清單！")
+        
+        return redirect('manage_watchlist')
+
+    items = watchlist.items.all().order_by('name')
+    return render(request, 'dreams/community/manage_watchlist.html', {'watchlist_items': items})
+
+# ✅ 新增：獲取關注清單即時數據的 API 視圖
+@login_required
+def get_watchlist_data(request):
+    watchlist, created = Watchlist.objects.get_or_create(user=request.user)
+    items = watchlist.items.all()
+    
+    # 這裡您需要呼叫真實的股票 API 來獲取即時數據
+    # 這段程式碼僅為示意，需要替換為實際的 API 請求
+    data = []
+    for item in items:
+        # 這裡應該呼叫一個能返回即時數據的 API
+        # 例如：requests.get(f'https://stockapi.com/v1/{item.symbol}')
+        live_price = "N/A"
+        change_percent = "N/A"
+        
+        data.append({
+            'name': item.name,
+            'symbol': item.symbol,
+            'price': live_price,
+            'change': change_percent,
+        })
+    
+    return JsonResponse({'watchlist_data': data})
+
+
+
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+@login_required
+@require_POST
+@csrf_exempt 
+def save_private_notes(request):
+    try:
+        user_profile = request.user.userprofile
+        notes = request.POST.get('notes')
+        user_profile.private_notes = notes
+        user_profile.save()
+        return JsonResponse({'success': True, 'message': '筆記已儲存'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+
+@login_required
+@require_POST
+def set_preferred_location(request):
+    location_name = request.POST.get('locationName')
+    if location_name:
+        user_profile = request.user.userprofile
+        user_profile.preferred_location = location_name
+        user_profile.save()
+        messages.success(request, f"已將 {location_name} 設定為您的主要地點。")
+        return redirect('dream_news')
+    messages.error(request, "設定地點失敗。")
+    return redirect('weather_forecast')
