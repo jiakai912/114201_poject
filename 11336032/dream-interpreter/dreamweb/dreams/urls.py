@@ -63,7 +63,7 @@ urlpatterns = [
     path('api/emotion-data/', views.get_emotion_data, name='emotion_data'),
     path('dream/<int:dream_id>/', views.dream_detail, name='dream_detail'),
     path('dashboard/', views.dream_dashboard, name='dream_dashboard'),
-    path('api/global-trends/', views.get_global_trends_data, name='global-trends'), # ✅ 熱門夢境
+    
     path('api/user-keywords/', views.get_user_keywords, name='get_user_keywords'),# ✅ 個人關鍵字
     path('mental_health_dashboard/', views.mental_health_dashboard, name='mental_health_dashboard'),  # ✅ 修正
     path('api/mental-health-suggestions/<int:dream_id>/', views.get_mental_health_suggestions, name='mental_health_suggestions'),
@@ -153,6 +153,11 @@ urlpatterns = [
     path('api/watchlist-data/', views.get_watchlist_data, name='get_watchlist_data'),# ✅ 新增：API 接口，供前端獲取關注清單的即時數據
     path('api/save_notes/', views.save_private_notes, name='save_private_notes'),
 
+    
+    # 夢境分析 API
+    path('api/emotion-data/', views.get_emotion_data, name='api_emotion_data'),
+    path('api/global-trends/', views.get_global_trends_data, name='api_global_trends'),
+    path('api/user-keywords/', views.get_user_keywords, name='api_user_keywords'),
 
 
 ]

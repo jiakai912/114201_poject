@@ -30,7 +30,7 @@
     <div class="dream-icon">
         <i class="fas fa-history"></i>
     </div>
-    <h1>夢境歷史記錄</h1>
+    <h1 class="fw-bold">夢境歷史記錄</h1>
     <p class="text-muted">回顧您過去的夢境解析</p>
 </div>
 
@@ -88,41 +88,55 @@
     </div>
 
     <!-- 分頁控制 -->
+    {% if page_obj.has_other_pages %}
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
+
+            <!-- 上一頁符號 -->
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一頁</a>
+                    <a class="page-link page-gradient" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
                 </li>
             {% else %}
                 <li class="page-item disabled">
-                    <span class="page-link">上一頁</span>
+                    <span class="page-link">&laquo;</span>
                 </li>
             {% endif %}
 
+            <!-- 頁碼範圍 -->
             {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
+                {% if num == page_obj.number %}
                     <li class="page-item active">
                         <span class="page-link">{{ num }}</span>
                     </li>
-                {% else %}
+                {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        <a class="page-link page-gradient" href="?page={{ num }}">{{ num }}</a>
                     </li>
+                {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                    <li class="page-item">
+                        <a class="page-link page-gradient" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
                 {% endif %}
             {% endfor %}
 
+            <!-- 下一頁符號 -->
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一頁</a>
+                    <a class="page-link page-gradient" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
                 </li>
             {% else %}
                 <li class="page-item disabled">
-                    <span class="page-link">下一頁</span>
+                    <span class="page-link">&raquo;</span>
                 </li>
             {% endif %}
+
         </ul>
     </nav>
+    {% endif %}
+    
 {% else %}
     <div class="card text-center py-5">
         <div class="card-body">
