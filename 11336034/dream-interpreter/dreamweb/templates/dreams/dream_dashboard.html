@@ -1,143 +1,285 @@
-<!-- 使用者夢境儀表板 -->
 {% extends 'dreams/base.html' %}
+{% load static %}
 
-{% block title %} - 夢境歷史{% endblock %}
+{% block title %} - 夢境分析數據{% endblock %}
 
 {% block content %}
-
 <div class="page-header">
     <div class="dream-icon">
         <i class="fas fa-chart-line"></i>
     </div>
-    <h1 class="fw-bold">夢境分析數據</h1>
+    <h1>夢境分析數據</h1>
     <p class="text-muted">回顧您過去的夢境分析數據</p>
 </div>
 
-<!-- 夢境情緒趨勢圖 -->
-<div class="row">
+<div class="space-background">
+    <div class="planet"></div>
+    <div class="shooting-star"></div>
+    <div class="shooting-star" style="animation-delay: 5s; transform: rotate(180deg);"></div>
+</div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">個人關鍵字紀錄</h5>
-                <canvas id="keywordBarChart" style="max-height: 400px;"></canvas>
-            </div>
-        </div>
+<div class="map-container text-center">
+    
+    <div class="map-item planet-lg" style="left: 10%; top: 30%;" data-chart-id="keywordBarChart" data-title="我的關鍵字">
+        <img src="{% static 'images/map-keyword.png' %}" alt="個人關鍵字" class="map-icon">
+        <span class="map-label">我的關鍵字</span>
     </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">快樂情緒趨勢圖</h5>
-                <canvas id="happyChart" style="max-height: 400px;"></canvas>
-            </div>
-        </div>
+    <div class="map-item planet-lg" style="right: 10%; top: 30%;" data-chart-id="globalTrendsChart" data-title="社群趨勢">
+        <img src="{% static 'images/map-trend.png' %}" alt="社群趨勢" class="map-icon">
+        <span class="map-label">社群趨勢</span>
+    </div>
+    
+    <div class="map-item planet-md" style="left: 5%; top: 5%;" data-chart-id="happyChart" data-title="快樂情緒趨勢圖">
+        <img src="{% static 'images/map-happy.png' %}" alt="快樂" class="map-icon">
+        <span class="map-label">快樂</span>
     </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">焦慮情緒趨勢圖</h5>
-                <canvas id="anxietyChart" style="max-height: 400px;"></canvas>
-            </div>
-        </div>
+    <div class="map-item planet-md" style="right: 5%; top: 5%;" data-chart-id="anxietyChart" data-title="焦慮情緒趨勢圖">
+        <img src="{% static 'images/map-anxiety.png' %}" alt="焦慮" class="map-icon">
+        <span class="map-label">焦慮</span>
+    </div>
+    
+    <div class="map-item planet-md" style="left: 25%; bottom: 5%;" data-chart-id="fearChart" data-title="恐懼情緒趨勢圖">
+        <img src="{% static 'images/map-fear.png' %}" alt="恐懼" class="map-icon">
+        <span class="map-label">恐懼</span>
+    </div>
+    
+    <div class="map-item planet-md" style="right: 25%; bottom: 5%;" data-chart-id="excitedChart" data-title="興奮情緒趨勢圖">
+        <img src="{% static 'images/map-excited.png' %}" alt="興奮" class="map-icon">
+        <span class="map-label">興奮</span>
     </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">恐懼情緒趨勢圖</h5>
-                <canvas id="fearChart" style="max-height: 400px;"></canvas>
-            </div>
-        </div>
+    <div class="map-item planet-sm" style="left: 50%; top: 60%; transform: translateX(-50%);" data-chart-id="sadChart" data-title="悲傷情緒趨勢圖">
+        <img src="{% static 'images/map-sad.png' %}" alt="悲傷" class="map-icon">
+        <span class="map-label">悲傷</span>
     </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">興奮情緒趨勢圖</h5>
-                <canvas id="excitedChart" style="max-height: 400px;"></canvas>
-            </div>
-        </div>
-    </div>
+</div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">悲傷情緒趨勢圖</h5>
-                <canvas id="sadChart" style="max-height: 400px;"></canvas>
+<div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chartModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="chartContainer">
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<div class="chart-cards-hidden" style="display: none;">
+    <div class="chart-card card" id="keywordBarChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">個人關鍵字紀錄</h5>
+            <canvas id="keywordBarChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    <div class="chart-card card" id="globalTrendsChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">熱門夢境關鍵字</h5>
+            <canvas id="globalTrendsChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    <div class="chart-card card" id="happyChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">快樂情緒趨勢圖</h5>
+            <canvas id="happyChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    <div class="chart-card card" id="anxietyChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">焦慮情緒趨勢圖</h5>
+            <canvas id="anxietyChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    <div class="chart-card card" id="fearChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">恐懼情緒趨勢圖</h5>
+            <canvas id="fearChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    <div class="chart-card card" id="excitedChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">興奮情緒趨勢圖</h5>
+            <canvas id="excitedChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+    <div class="chart-card card" id="sadChart-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">悲傷情緒趨勢圖</h5>
+            <canvas id="sadChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // 夢境情緒趨勢圖
-        fetch("/api/emotion-data/")
-            .then(response => response.json())
-            .then(data => {
-                const chartOptions = {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true, max: 100 } }
-                };
-                const createChart = (ctxId, datasetIndex, bgColor, borderColor) => {
-                    const ctx = document.getElementById(ctxId).getContext("2d");
-                    new Chart(ctx, {
-                        type: "line",
-                        data: {
-                            labels: data.labels,
-                            datasets: [{
-                                ...data.datasets[datasetIndex],
-                                backgroundColor: bgColor,  // 設定背景顏色
-                                borderColor: borderColor,  // 設定邊框顏色
-                                borderWidth: 2
-                            }]
-                        },
-                        options: chartOptions
-                    });
-                };
-
-                createChart("happyChart", 0, "rgba(255, 99, 132, 0.2)", "rgba(255, 99, 132, 1)");  // 快樂
-                createChart("anxietyChart", 1, "rgba(255, 165, 0, 0.2)", "rgba(255, 165, 0, 1)");  // 焦慮
-                createChart("fearChart", 2, "rgba(153, 102, 255, 0.2)", "rgba(153, 102, 255, 1)");  // 恐懼
-                createChart("excitedChart", 3, "rgba(75, 192, 192, 0.2)", "rgba(75, 192, 192, 1)");  // 興奮
-                createChart("sadChart", 4, "rgba(94, 204, 238, 0.35)", "rgba(54, 162, 235, 1)");  // 悲傷
-            });
+        const chartInstances = {};
+        const chartConfigs = {};
+        const chartsData = {};
         
+        const loadAllChartsData = async () => {
+            const [
+                emotionData,
+                globalTrendsData,
+                keywordData
+            ] = await Promise.all([
+                fetch("{% url 'api_emotion_data' %}").then(res => res.json()),
+                fetch("{% url 'api_global_trends' %}").then(res => res.json()),
+                fetch("{% url 'api_user_keywords' %}").then(res => res.json())
+            ]);
+            
+            chartsData.emotion = emotionData;
+            chartsData.globalTrends = globalTrendsData;
+            chartsData.keyword = keywordData;
 
-        // 個人關鍵字紀錄
-        fetch("/api/user-keywords/")
-            .then(response => response.json())
-            .then(keywordData => {
-                const ctx = document.getElementById("keywordBarChart").getContext("2d");
-    
-                new Chart(ctx, {
+            createChartConfigs();
+        };
+
+        const createChartConfigs = () => {
+            // 全局選項，調整字體和顏色以適應深色背景
+            Chart.defaults.font.family = 'Noto Sans TC';
+            Chart.defaults.font.size = 14;
+            Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
+            
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: 'rgba(255, 255, 255, 0.9)' }
+                    }
+                }
+            };
+
+            const createLineConfig = (datasetIndex, bgColor, borderColor) => {
+                return {
+                    type: "line",
+                    data: {
+                        labels: chartsData.emotion.labels,
+                        datasets: [{
+                            ...chartsData.emotion.datasets[datasetIndex],
+                            backgroundColor: bgColor,
+                            borderColor: borderColor,
+                            borderWidth: 2,
+                            fill: true, // 填充曲線下方的區域
+                            backgroundColor: 'rgba(72, 61, 139, 0.3)' // 填充顏色
+                        }]
+                    },
+                    options: { 
+                        ...chartOptions, 
+                        scales: {
+                            ...chartOptions.scales,
+                            y: { beginAtZero: true, max: 100 }
+                        }
+                    }
+                };
+            };
+
+            const createBarConfig = (labels, data, bgColor, borderColor, labelText, yMax = null) => {
+                const options = {
+                    ...chartOptions,
+                    scales: {
+                        x: {
+                            ...chartOptions.scales.x,
+                        },
+                        y: {
+                            ...chartOptions.scales.y,
+                            beginAtZero: true
+                        }
+                    }
+                };
+                if (yMax) {
+                    options.scales.y.max = yMax;
+                }
+                return {
                     type: "bar",
                     data: {
-                        labels: keywordData.map(item => item.keyword),  // 顯示關鍵字
+                        labels: labels,
                         datasets: [{
-                            label: "關鍵字頻率",
-                            data: keywordData.map(item => item.count),  // 顯示頻率
-                            backgroundColor: "rgba(106, 90, 205, 0.2)",
-                            borderColor: "rgba(106, 90, 205, 1)",
+                            label: labelText,
+                            data: data,
+                            backgroundColor: 'rgba(136, 37, 235, 0.5)',
+                            borderColor: 'rgb(136, 37, 235)',
                             borderWidth: 1
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            })
-            .catch(error => console.error("載入個人關鍵字資料失敗:", error));
+                    options: options
+                };
+            };
+            
+            chartConfigs['keywordBarChart'] = createBarConfig(chartsData.keyword.map(item => item.keyword), chartsData.keyword.map(item => item.count), "rgba(106, 90, 205, 0.2)", "rgba(106, 90, 205, 1)", "關鍵字頻率");
+            chartConfigs['globalTrendsChart'] = createBarConfig(chartsData.globalTrends.map(item => item.text), chartsData.globalTrends.map(item => item.percentage), "rgba(146, 9, 232, 0.2)", "rgb(136, 37, 235)", "夢境關鍵字比例", 10);
+            chartConfigs['happyChart'] = createLineConfig(0, "rgba(255, 99, 132, 0.2)", "rgba(255, 99, 132, 1)");
+            chartConfigs['anxietyChart'] = createLineConfig(1, "rgba(255, 165, 0, 0.2)", "rgba(255, 165, 0, 1)");
+            chartConfigs['fearChart'] = createLineConfig(2, "rgba(153, 102, 255, 0.2)", "rgba(153, 102, 255, 1)");
+            chartConfigs['excitedChart'] = createLineConfig(3, "rgba(75, 192, 192, 0.2)", "rgba(75, 192, 192, 1)");
+            chartConfigs['sadChart'] = createLineConfig(4, "rgba(94, 204, 238, 0.35)", "rgba(54, 162, 235, 1)");
+
+            for (const chartId in chartConfigs) {
+                const canvas = document.getElementById(chartId);
+                if (canvas) {
+                    chartInstances[chartId] = new Chart(canvas.getContext('2d'), chartConfigs[chartId]);
+                    canvas.style.display = 'none';
+                }
+            }
+        };
+
+        const chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
+        const chartModalTitle = document.getElementById('chartModalLabel');
+        const chartContainer = document.getElementById('chartContainer');
+        const mapItems = document.querySelectorAll('.map-item');
+        
+        const showChartInModal = (chartId, title) => {
+            chartContainer.innerHTML = '';
+            
+            const newCanvas = document.createElement('canvas');
+            newCanvas.id = `modal-${chartId}`;
+            chartContainer.appendChild(newCanvas);
+            
+            const chartConfig = chartConfigs[chartId];
+            if (chartConfig) {
+                new Chart(newCanvas.getContext('2d'), chartConfig);
+                chartModalTitle.textContent = title;
+            } else {
+                chartModalTitle.textContent = "圖表載入失敗";
+            }
+            
+            chartModal.show();
+        };
+
+        mapItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const chartId = item.dataset.chartId;
+                const title = item.dataset.title;
+                showChartInModal(chartId, title);
+            });
+        });
+
+        document.getElementById('chartModal').addEventListener('hidden.bs.modal', function () {
+            chartContainer.innerHTML = '';
+        });
+        
+        loadAllChartsData();
     });
 </script>
-
 {% endblock %}

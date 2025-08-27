@@ -57,29 +57,38 @@
       <div class="card-footer bg-white border-top-0 py-3">
         <nav aria-label="分頁導航">
           <ul class="pagination justify-content-center mb-0">
+
+            <!-- 上一頁符號 -->
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}" aria-label="上一頁">上一頁</a>
+                <a class="page-link page-gradient" href="?q={{ query }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">&laquo;</a>
               </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
             {% endif %}
+
+            <!-- 頁碼範圍 -->
             {% for num in page_obj.paginator.page_range %}
-              {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
-                <li class="page-item {% if page_obj.number == num %}active{% endif %}" aria-current="{% if page_obj.number == num %}page{% endif %}">
-                  <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
-                </li>
+              {% if num == page_obj.number %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+              {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <li class="page-item"><a class="page-link page-gradient" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
               {% elif num == 1 or num == page_obj.paginator.num_pages %}
-                <li class="page-item">
-                  <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
-                </li>
+                <li class="page-item"><a class="page-link page-gradient" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
               {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
                 <li class="page-item disabled"><span class="page-link">…</span></li>
               {% endif %}
             {% endfor %}
+
+            <!-- 下一頁符號 -->
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}" aria-label="下一頁">下一頁</a>
+                <a class="page-link page-gradient" href="?q={{ query }}&page={{ page_obj.next_page_number }}" aria-label="Next">&raquo;</a>
               </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
             {% endif %}
+
           </ul>
         </nav>
       </div>

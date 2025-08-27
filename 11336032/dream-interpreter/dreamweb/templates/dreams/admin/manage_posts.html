@@ -101,19 +101,48 @@
       {% if posts.has_other_pages %}
       <nav>
         <ul class="pagination justify-content-center mb-0">
+
+          <!-- 上一頁符號 -->
           {% if posts.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ posts.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">上一頁</a>
+              <a class="page-link page-gradient" href="?page={{ posts.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&laquo;</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">&laquo;</span>
             </li>
           {% endif %}
-          <li class="page-item disabled">
-            <span class="page-link">第 {{ posts.number }} / 共 {{ posts.paginator.num_pages }} 頁</span>
-          </li>
+
+          <!-- 頁碼範圍 -->
+          {% for num in posts.paginator.page_range %}
+            {% if num == posts.number %}
+              <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+              </li>
+            {% elif num >= posts.number|add:'-2' and num <= posts.number|add:'2' %}
+              <li class="page-item">
+                <a class="page-link page-gradient" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+              </li>
+            {% elif num == 1 or num == posts.paginator.num_pages %}
+              <li class="page-item">
+                <a class="page-link page-gradient" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+              </li>
+            {% elif num == posts.number|add:'-3' or num == posts.number|add:'3' %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endfor %}
+
+          <!-- 下一頁符號 -->
           {% if posts.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ posts.next_page_number }}{% if query %}&q={{ query }}{% endif %}">下一頁</a>
+              <a class="page-link page-gradient" href="?page={{ posts.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&raquo;</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">&raquo;</span>
             </li>
           {% endif %}
+
         </ul>
       </nav>
       {% endif %}

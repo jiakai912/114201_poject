@@ -5,27 +5,46 @@
 
 {% block content %}
 <style>
+    /* 卡片容器 */
     .dream-card {
-        background: linear-gradient(135deg, rgba(131, 96, 195, 0.1), rgba(46, 191, 145, 0.05));
+        background: linear-gradient(135deg, rgba(183, 144, 245, 0.1), rgba(85, 177, 252, 0.05));
         border-radius: 1rem;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         padding: 1.5rem;
     }
+
+    /* 表格樣式 */
     .dream-table thead {
-        background: linear-gradient(90deg, #a18cd1, #fbc2eb);
+        background: linear-gradient(90deg, #b790f5ff, #55b1fcff);
         color: white;
     }
     .dream-table tbody tr:hover {
-        background-color: rgba(161, 140, 209, 0.08);
+        background-color: rgba(183, 144, 245, 0.08);
+        transition: 0.3s;
     }
     .badge {
         font-size: 0.85rem;
+    }
+
+    /* 按鈕圓角與間距 */
+    .btn-rounded {
+        border-radius: 50px;
+        padding: 0.25rem 1rem;
+    }
+
+    /* 標題漸層文字 */
+    h2.dream-title {
+        font-weight: 700;
+        font-size: 1.8rem;
+        background: linear-gradient(90deg, #29251fff);
+        -webkit-background-clip: text;
+        color: transparent;
     }
 </style>
 
 <div class="container mt-5">
     <div class="dream-card">
-        <h2 class="mb-3"><i class="fas fa-calendar-check me-2 text-purple"></i>📋 使用者預約總覽</h2>
+        <h2 class="dream-title mb-3"><i class="fas fa-calendar-check me-2 text-purple"></i>使用者預約總覽</h2>
         <p class="text-muted mb-4">以下是使用者與您的所有預約資料，包含點券異動與操作選項。</p>
 
         {% if appointments %}
@@ -57,44 +76,33 @@
                             {% endif %}
                         </td>
                         <td>
-                        <div class="d-flex justify-content-center gap-2">
-                            {% if not appt.is_confirmed and not appt.is_cancelled %}
-                            <form method="post" action="{% url 'confirm_appointment' appointment_id=appt.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">確認</button>
-                            </form>
-                            {% endif %}
-
-                            {% if appt.is_cancelled %}
-                            <!-- 已取消的都可刪除 -->
-                            <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" 
-                                    onsubmit="return confirm('確定要刪除這筆預約嗎？');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">刪除</button>
-                            </form>
-                            {% elif appt.is_confirmed %}
-                            {% if appt.scheduled_time >= now %}
-                                <!-- 確認且預約時間未過，顯示刪除 -->
-                                <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" 
-                                    onsubmit="return confirm('確定要刪除這筆預約嗎？');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">刪除</button>
-                                </form>
-                            {% else %}
-                                <!-- 確認且已過期，顯示無法刪除提示 -->
-                                <span class="text-muted">已過期無法刪除</span>
-                            {% endif %}
-                            {% else %}
-                            <!-- 其他狀況 (未確認且未取消) -->
-                            <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" 
-                                    onsubmit="return confirm('確定要刪除這筆預約嗎？');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">刪除</button>
-                            </form>
-                            {% endif %}
-                        </div>
+                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                {% if not appt.is_confirmed and not appt.is_cancelled %}
+                                    <form method="post" action="{% url 'confirm_appointment' appointment_id=appt.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success btn-rounded">確認</button>
+                                    </form>
+                                    <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆預約嗎？');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-rounded">刪除</button>
+                                    </form>
+                                {% elif appt.is_confirmed %}
+                                    {% if appt.scheduled_time >= now %}
+                                        <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆預約嗎？');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger btn-rounded">刪除</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-muted">已過期無法刪除</span>
+                                    {% endif %}
+                                {% elif appt.is_cancelled %}
+                                    <form method="post" action="{% url 'therapist_delete_appointment' appointment_id=appt.id %}" onsubmit="return confirm('確定要刪除這筆預約嗎？');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-rounded">刪除</button>
+                                    </form>
+                                {% endif %}
+                            </div>
                         </td>
-                        
                         <td>
                             {% if appt.is_cancelled %}
                                 <span class="text-success fw-bold">+{{ coin_price }}（退回）</span>
@@ -104,14 +112,13 @@
                                 <span class="text-muted">待確認</span>
                             {% endif %}
                         </td>
-
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <div class="alert alert-info mt-4 shadow-sm rounded-3">
+        <div class="alert alert-info mt-4 shadow-sm rounded-4 text-center">
             目前沒有任何預約資料。
         </div>
         {% endif %}

@@ -75,34 +75,47 @@
       </table>
     </div>
 
-    <!-- 分頁區塊 -->
+    <!-- 評論分頁 -->
     <div class="card-footer text-center py-3">
       {% if comments.has_other_pages %}
         <nav>
           <ul class="pagination justify-content-center mb-0">
+
+            <!-- 上一頁符號 -->
             {% if comments.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ comments.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&laquo;</a>
+                <a class="page-link page-gradient" href="?page={{ comments.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&laquo;</a>
               </li>
             {% else %}
               <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
             {% endif %}
 
+            <!-- 頁碼範圍 -->
             {% for num in comments.paginator.page_range %}
-              {% if comments.number == num %}
+              {% if num == comments.number %}
                 <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-              {% elif num > comments.number|add:'-3' and num < comments.number|add:'3' %}
-                <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+              {% elif num >= comments.number|add:'-2' and num <= comments.number|add:'2' %}
+                <li class="page-item">
+                  <a class="page-link page-gradient" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                </li>
+              {% elif num == 1 or num == comments.paginator.num_pages %}
+                <li class="page-item">
+                  <a class="page-link page-gradient" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                </li>
+              {% elif num == comments.number|add:'-3' or num == comments.number|add:'3' %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
               {% endif %}
             {% endfor %}
 
+            <!-- 下一頁符號 -->
             {% if comments.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ comments.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&raquo;</a>
+                <a class="page-link page-gradient" href="?page={{ comments.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&raquo;</a>
               </li>
             {% else %}
               <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
             {% endif %}
+
           </ul>
         </nav>
       {% endif %}

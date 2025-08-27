@@ -69,29 +69,42 @@
       <div class="card-footer bg-white border-top-0 py-3">
         <nav>
           <ul class="pagination justify-content-center mb-0">
+
+            <!-- 上一頁符號 -->
             {% if messages.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?q={{ request.GET.q }}&page={{ messages.previous_page_number }}">上一頁</a>
+                <a class="page-link page-gradient" href="?q={{ request.GET.q }}&page={{ messages.previous_page_number }}">&laquo;</a>
               </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
             {% endif %}
+
+            <!-- 頁碼範圍 -->
             {% for num in messages.paginator.page_range %}
-              {% if num >= messages.number|add:'-2' and num <= messages.number|add:'2' %}
-                <li class="page-item {% if messages.number == num %}active{% endif %}">
-                  <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+              {% if num == messages.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+              {% elif num >= messages.number|add:'-2' and num <= messages.number|add:'2' %}
+                <li class="page-item">
+                  <a class="page-link page-gradient" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
                 </li>
               {% elif num == 1 or num == messages.paginator.num_pages %}
                 <li class="page-item">
-                  <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+                  <a class="page-link page-gradient" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
                 </li>
               {% elif num == messages.number|add:'-3' or num == messages.number|add:'3' %}
-                <li class="page-item disabled"><span class="page-link">...</span></li>
+                <li class="page-item disabled"><span class="page-link">…</span></li>
               {% endif %}
             {% endfor %}
+
+            <!-- 下一頁符號 -->
             {% if messages.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?q={{ request.GET.q }}&page={{ messages.next_page_number }}">下一頁</a>
+                <a class="page-link page-gradient" href="?q={{ request.GET.q }}&page={{ messages.next_page_number }}">&raquo;</a>
               </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
             {% endif %}
+
           </ul>
         </nav>
       </div>
