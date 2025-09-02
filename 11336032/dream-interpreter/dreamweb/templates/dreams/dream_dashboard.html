@@ -5,44 +5,25 @@
 
 {% block extra_css %}
 <style>
+    /*
+        儀表板頁面專屬的 CSS 樣式
+        這些樣式不會影響到繼承 base.html 的其他頁面
+    */
     .page-header {
         text-align: center;
-        margin-top: 50px;
-        color: #f0f8ff;
+        margin-bottom: 40px;
         position: relative;
+        color: white;
         z-index: 10;
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+        padding-top: 50px;
     }
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-    .page-header .text-muted {
-        font-size: 1.1rem;
-        font-weight: 300;
-    }
-    .dream-icon {
-        background: rgba(147, 112, 219, 0.5);
-        border-radius: 50%;
-        width: 80px;
-        height: 80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 15px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 0 20px rgba(147, 112, 219, 0.7);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-    }
-    .dream-icon i {
-        font-size: 3rem;
-        color: #f0f8ff;
-        animation: rotateIcon 10s linear infinite;
-    }
-    @keyframes rotateIcon {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+    .page-header:after {
+        content: '';
+        display: block;
+        width: 100px;
+        height: 3px;
+        background: var(--primary-color);
+        margin: 15px auto 0;
     }
     .space-background {
         position: fixed;
@@ -50,192 +31,128 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at center, rgba(14, 14, 26, 0) 0%, rgba(14, 14, 26, 0.9) 80%);
-        pointer-events: none;
+        background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
         z-index: -1;
+        overflow: hidden;
     }
     .planet {
         position: absolute;
         width: 250px;
         height: 250px;
-        background: radial-gradient(circle, #a855f7 0%, #6d28d9 70%);
+        bottom: -125px;
+        left: 50%;
+        transform: translateX(-50%) rotateY(0deg);
+        background-image: url("https://i.imgur.com/8Qp49Xg.png");
+        background-size: cover;
+        background-position: center;
         border-radius: 50%;
-        left: 5%;
-        top: 80%;
-        transform: translate(-50%, -50%);
-        opacity: 0.3;
-        filter: blur(50px);
-        animation: glow 10s ease-in-out infinite alternate;
+        box-shadow: 0 0 50px rgba(72, 61, 139, 0.5);
+        transition: transform 1.5s ease;
+        animation: pulse 4s infinite alternate;
+    }
+    @keyframes pulse {
+        from { box-shadow: 0 0 40px rgba(72, 61, 139, 0.5); }
+        to { box-shadow: 0 0 60px rgba(72, 61, 139, 0.8); }
     }
     .shooting-star {
         position: absolute;
-        width: 3px;
-        height: 3px;
-        background-color: #f0f8ff;
-        border-radius: 50%;
-        box-shadow: 0 0 10px #f0f8ff;
-        animation: shoot 5s linear infinite;
-        left: 20%;
-        top: -10%;
-        transform-origin: center;
-    }
-    .shooting-star::after {
-        content: '';
-        position: absolute;
-        width: 100px;
-        height: 1px;
-        background: linear-gradient(to right, #f0f8ff, transparent);
-        transform: rotate(-45deg);
-        top: 50%;
-        left: 50%;
-    }
-    @keyframes glow {
-        from { transform: scale(1.0); }
-        to { transform: scale(1.2); }
+        width: 2px;
+        height: 2px;
+        background-color: white;
+        box-shadow: 0 0 10px white, 0 0 20px white;
+        animation: shoot 8s linear infinite;
     }
     @keyframes shoot {
-        from { transform: translateY(0) translateX(0) rotate(100deg); opacity: 1; }
-        to { transform: translateY(150vh) translateX(50vw) rotate(100deg); opacity: 0; }
-    }
-    .map-container {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        flex-wrap: wrap;
-        padding: 40px 20px;
-        position: relative;
-    }
-    .map-item {
-        width: 200px;
-        height: 200px;
-        background: rgba(46, 59, 102, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin: 20px;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        backdrop-filter: blur(5px);
-        position: relative;
-        overflow: hidden;
-        animation: floating 5s ease-in-out infinite alternate;
-    }
-    .map-item:hover {
-        transform: scale(1.05) translateY(-10px);
-        box-shadow: 0 10px 30px rgba(147, 112, 219, 0.5);
-    }
-    .map-icon {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 10px;
-        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
-    }
-    .map-label {
-        font-size: 1.2rem;
-        color: #f0f8ff;
-        font-weight: 500;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-    }
-    .map-item::before {
-        content: "";
-        position: absolute;
-        top: -50px;
-        left: -50px;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-        animation: sparkle 3s infinite linear;
-    }
-    @keyframes floating {
-        from { transform: translateY(0px); }
-        to { transform: translateY(-10px); }
-    }
-    @keyframes sparkle {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    @media (max-width: 768px) {
-        .map-item {
-            width: 150px;
-            height: 150px;
-        }
-        .map-icon {
-            width: 60px;
-            height: 60px;
-        }
-    }
-    .modal-content {
-        background: rgba(30, 30, 47, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(15px);
-        color: #e0e0e0;
-    }
-    .modal-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .btn-close {
-        filter: invert(1);
-    }
-    .modal-body {
-        padding: 2rem;
+        0% { transform: translateX(100vw) translateY(0vh); opacity: 0; }
+        50% { transform: translateX(-50vw) translateY(50vh); opacity: 1; }
+        100% { transform: translateX(-100vw) translateY(100vh); opacity: 0; }
     }
     .chart-container {
         position: relative;
-        height: 50vh;
         width: 100%;
+        max-width: 1200px;
+        margin: auto;
+        color: white;
+        z-index: 10;
+    }
+    .chart-card {
+        background-color: #1a1a2e;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 0 30px rgba(72, 61, 139, 0.7);
+        padding: 20px;
+        margin-bottom: 30px;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="page-header">
-    <div class="dream-icon">
-        <i class="fas fa-chart-line"></i>
-    </div>
-    <h1>夢境分析數據</h1>
-    <p class="text-muted">回顧您過去的夢境分析數據</p>
-</div>
+{% block full_width_content %}
 <div class="space-background">
     <div class="planet"></div>
     <div class="shooting-star"></div>
     <div class="shooting-star" style="animation-delay: 5s; transform: rotate(180deg);"></div>
 </div>
-<div class="map-container text-center">
-    <div class="map-item planet-lg" style="left: 10%; top: 30%;" data-chart-id="keywordBarChart" data-title="我的關鍵字">
-        <img src="{% static 'images/map-keyword.png' %}" alt="個人關鍵字" class="map-icon">
-        <span class="map-label">我的關鍵字</span>
-    </div>
-    <div class="map-item planet-lg" style="right: 10%; top: 30%;" data-chart-id="globalTrendsChart" data-title="社群趨勢">
-        <img src="{% static 'images/map-trend.png' %}" alt="社群趨勢" class="map-icon">
-        <span class="map-label">社群趨勢</span>
-    </div>
-    <div class="map-item planet-lg" style="left: 45%; top: 15%;" data-chart-id="stressRadarChart" data-title="壓力指數">
-        <img src="{% static 'images/map-stress.png' %}" alt="壓力指數" class="map-icon">
-        <span class="map-label">壓力指數</span>
-    </div>
-    <div class="map-item planet-sm" style="left: 20%; top: 60%;" data-chart-id="emotionLineChart" data-title="情緒趨勢">
-        <img src="{% static 'images/map-emotion.png' %}" alt="情緒趨勢" class="map-icon">
-        <span class="map-label">情緒趨勢</span>
-    </div>
-    <div class="map-item planet-sm" style="right: 20%; top: 60%;" data-chart-id="emotionPieChart" data-title="夢境情緒分佈">
-        <img src="{% static 'images/map-pie.png' %}" alt="情緒分佈" class="map-icon">
-        <span class="map-label">夢境情緒分佈</span>
-    </div>
-</div>
 
-<div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="chartModalLabel">圖表</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="container mt-5 animation-fade-in">
+    <div class="page-header">
+        <div class="dream-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h1>夢境分析數據</h1>
+        <p class="text-muted">回顧您過去的夢境分析數據</p>
+    </div>
+
+    <div class="chart-container text-center">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">我的關鍵字</h5>
+                    <canvas id="keywordBarChart" style="max-height: 400px;"></canvas>
+                </div>
             </div>
-            <div class="modal-body">
-                <div class="chart-container">
-                    <canvas id="modal-chart"></canvas>
+            <div class="col-lg-6">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">社群趨勢</h5>
+                    <canvas id="globalTrendsChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">快樂情緒</h5>
+                    <canvas id="happyChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">焦慮情緒</h5>
+                    <canvas id="anxietyChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">恐懼情緒</h5>
+                    <canvas id="fearChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">興奮情緒</h5>
+                    <canvas id="excitedChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <h5 class="card-title text-center">悲傷情緒</h5>
+                    <canvas id="sadChart" style="max-height: 300px;"></canvas>
                 </div>
             </div>
         </div>
@@ -246,128 +163,163 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loadAllChartsData = () => {
-            fetch('/api/dashboard_data/')
-                .then(response => response.json())
-                .then(data => {
-                    chartConfigs.keywordBarChart.data.labels = data.user_keywords.labels;
-                    chartConfigs.keywordBarChart.data.datasets[0].data = data.user_keywords.data;
-                    chartConfigs.globalTrendsChart.data.labels = data.global_trends.labels;
-                    chartConfigs.globalTrendsChart.data.datasets[0].data = data.global_trends.data;
-                    chartConfigs.stressRadarChart.data.labels = data.stress_levels.labels;
-                    chartConfigs.stressRadarChart.data.datasets[0].data = data.stress_levels.data;
-                    chartConfigs.emotionLineChart.data.labels = data.emotion_trends.labels;
-                    chartConfigs.emotionLineChart.data.datasets[0].data = data.emotion_trends.data;
-                    chartConfigs.emotionPieChart.data.labels = data.emotion_distribution.labels;
-                    chartConfigs.emotionPieChart.data.datasets[0].data = data.emotion_distribution.data;
-                })
-                .catch(error => console.error('Error fetching dashboard data:', error));
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartInstances = {};
+        const chartsData = {};
+        
+        const loadAllChartsData = async () => {
+            let emotionData = null;
+            let globalTrendsData = null;
+            let keywordData = null;
+            
+            try {
+                const response = await fetch("{% url 'api_emotion_data' %}");
+                if (!response.ok) throw new Error('Emotion data fetch failed');
+                emotionData = await response.json();
+            } catch (error) {
+                console.error("Error fetching emotion data:", error);
+            }
+            
+            try {
+                const response = await fetch("{% url 'api_global_trends' %}");
+                if (!response.ok) throw new Error('Global trends fetch failed');
+                globalTrendsData = await response.json();
+            } catch (error) {
+                console.error("Error fetching global trends data:", error);
+            }
+
+            try {
+                const response = await fetch("{% url 'api_user_keywords' %}");
+                if (!response.ok) throw new Error('Keyword data fetch failed');
+                keywordData = await response.json();
+            } catch (error) {
+                console.error("Error fetching keyword data:", error);
+            }
+
+            chartsData.emotion = emotionData;
+            chartsData.globalTrends = globalTrendsData;
+            chartsData.keyword = keywordData;
+
+            renderAllCharts();
         };
-        const chartConfigs = {
-            keywordBarChart: {
-                type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: '關鍵字頻率',
-                        data: [],
-                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            },
-            globalTrendsChart: {
-                type: 'doughnut',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: '全球夢境趨勢',
-                        data: [],
-                        backgroundColor: ['#A0522D', '#CD5C5C', '#F4A460', '#D2B48C', '#BC8F8F', '#DEB887', '#B8860B', '#F0E68C'],
-                        hoverOffset: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            },
-            stressRadarChart: {
-                type: 'radar',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: '壓力指數',
-                        data: [],
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            },
-            emotionLineChart: {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: '情緒趨勢',
-                        data: [],
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        fill: false
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            },
-            emotionPieChart: {
-                type: 'pie',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: '夢境情緒分佈',
-                        data: [],
-                        backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#FF6384', '#9966FF'],
-                        hoverOffset: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            }
+
+        const createGradient = (ctx, chartArea, colorStart, colorEnd) => {
+            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+            gradient.addColorStop(0, colorStart);
+            gradient.addColorStop(1, colorEnd);
+            return gradient;
         };
-        const chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
-        const chartModalTitle = document.getElementById('chartModalLabel');
-        const chartContainer = document.querySelector('#chartModal .modal-body .chart-container');
-        const mapItems = document.querySelectorAll('.map-item');
-        let activeChart = null;
-        const showChartInModal = (chartId, title) => {
-            if (activeChart) {
-                activeChart.destroy();
-            }
-            chartContainer.innerHTML = '<canvas id="modal-chart"></canvas>';
-            const newCanvas = document.getElementById('modal-chart');
-            const chartConfig = chartConfigs[chartId];
-            if (chartConfig) {
-                activeChart = new Chart(newCanvas.getContext('2d'), chartConfig);
-                chartModalTitle.textContent = title;
-            } else {
-                chartModalTitle.textContent = "圖表載入失敗";
-            }
-            chartModal.show();
+
+        const renderAllCharts = () => {
+            Chart.defaults.font.family = 'Noto Sans TC';
+            Chart.defaults.font.size = 14;
+            Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
+            
+            const commonChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: 'rgba(255, 255, 255, 0.9)' }
+                    }
+                }
+            };
+
+            const renderLineChart = (canvasId, datasetIndex) => {
+                const chartData = chartsData.emotion;
+                if (!chartData || !chartData.labels || chartData.labels.length === 0 || !chartData.datasets || chartData.datasets.length <= datasetIndex) {
+                    displayNoDataMessage(canvasId, chartData?.datasets[datasetIndex]?.label || "情緒趨勢圖");
+                    return;
+                }
+                const dataset = chartData.datasets[datasetIndex];
+                const ctx = document.getElementById(canvasId).getContext("2d");
+                const config = {
+                    type: "line",
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: dataset.label,
+                            data: dataset.data,
+                            borderColor: dataset.borderColor,
+                            borderWidth: 2,
+                            fill: false,
+                            pointBackgroundColor: dataset.borderColor,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: dataset.borderColor
+                        }]
+                    },
+                    options: {
+                        ...commonChartOptions,
+                        scales: {
+                            ...commonChartOptions.scales,
+                            y: { ...commonChartOptions.scales.y, max: 100 }
+                        }
+                    }
+                };
+                new Chart(ctx, config);
+            };
+
+            const renderBarChart = (canvasId, dataKey, labelText, barColorStart, barColorEnd) => {
+                const chartData = chartsData[dataKey];
+                if (!chartData || !chartData.labels || chartData.labels.length === 0) {
+                    displayNoDataMessage(canvasId, labelText);
+                    return;
+                }
+                const ctx = document.getElementById(canvasId).getContext("2d");
+                const config = {
+                    type: "bar",
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: labelText,
+                            data: chartData.data,
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return null;
+                                return createGradient(ctx, chartArea, barColorStart, barColorEnd);
+                            },
+                            borderColor: barColorEnd,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: commonChartOptions
+                };
+                new Chart(ctx, config);
+            };
+
+            const displayNoDataMessage = (canvasId, chartTitle) => {
+                const parent = document.getElementById(canvasId).parentElement;
+                parent.innerHTML = `
+                    <h5 class="card-title text-center">${chartTitle}</h5>
+                    <div style="text-align: center; font-size: 1.2em; color: #ccc; padding: 50px;">
+                        抱歉，目前沒有數據可顯示。
+                    </div>
+                `;
+            };
+
+            // 繪製圖表
+            renderBarChart('keywordBarChart', 'keyword', "我的關鍵字", "rgba(106, 90, 205, 0.4)", "rgba(106, 90, 205, 0.8)");
+            renderBarChart('globalTrendsChart', 'globalTrends', "社群趨勢", "rgba(146, 9, 232, 0.4)", "rgb(136, 37, 235, 0.8)");
+            renderLineChart('happyChart', 0);
+            renderLineChart('anxietyChart', 1);
+            renderLineChart('fearChart', 2);
+            renderLineChart('excitedChart', 3);
+            renderLineChart('sadChart', 4);
         };
-        mapItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const chartId = item.dataset.chartId;
-                const title = item.dataset.title;
-                showChartInModal(chartId, title);
-            });
-        });
-        document.getElementById('chartModal').addEventListener('hidden.bs.modal', function () {
-            if (activeChart) {
-                activeChart.destroy();
-                activeChart = null;
-            }
-        });
+        
         loadAllChartsData();
     });
 </script>

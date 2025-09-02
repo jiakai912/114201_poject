@@ -2,6 +2,9 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 from django.contrib.auth.decorators import login_required
+from django.conf import settings # <-- 新增
+from django.conf.urls.static import static # <-- 新增
+import os # <-- 新增這行
 
 urlpatterns = [
     # ✅ 管理員
@@ -60,11 +63,8 @@ urlpatterns = [
     path('logout/',  views.logout_view, name='logout'),  # ✅ 修正
     path('history/', views.dream_history, name='dream_history'),# 夢境歷史
     path('my-dreams/<int:dream_id>/delete/', views.user_delete_dream, name='user_delete_dream'), # 刪除夢境
-    path('api/emotion-data/', views.get_emotion_data, name='emotion_data'),
     path('dream/<int:dream_id>/', views.dream_detail, name='dream_detail'),
     path('dashboard/', views.dream_dashboard, name='dream_dashboard'),
-    
-    path('api/user-keywords/', views.get_user_keywords, name='get_user_keywords'),# ✅ 個人關鍵字
     path('mental_health_dashboard/', views.mental_health_dashboard, name='mental_health_dashboard'),  # ✅ 修正
     path('api/mental-health-suggestions/<int:dream_id>/', views.get_mental_health_suggestions, name='mental_health_suggestions'),
     path('get_dream_detail/<int:dream_id>/', views.get_dream_detail, name='get_dream_detail'),
@@ -147,18 +147,13 @@ urlpatterns = [
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
 
-    
-    path('weather/forecast/', views.weather_forecast, name='weather_forecast'),     # ✅ 新增：天氣預報頁面
-    path('watchlist/', views.manage_watchlist, name='manage_watchlist'),    # ✅ 新增：關注清單管理
-    path('api/watchlist-data/', views.get_watchlist_data, name='get_watchlist_data'),# ✅ 新增：API 接口，供前端獲取關注清單的即時數據
-    path('api/save_notes/', views.save_private_notes, name='save_private_notes'),
-
-    
-    # 夢境分析 API
     path('api/emotion-data/', views.get_emotion_data, name='api_emotion_data'),
     path('api/global-trends/', views.get_global_trends_data, name='api_global_trends'),
     path('api/user-keywords/', views.get_user_keywords, name='api_user_keywords'),
-
-
+    path('update_trends/', views.trigger_trends_update, name='update_trends'),
 ]
-    
+
+# 只有在 DEBUG 模式下提供靜態文件
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=os.path.join(settings.BASE_DIR, 'static'))
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
