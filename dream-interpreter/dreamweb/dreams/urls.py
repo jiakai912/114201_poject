@@ -146,5 +146,8 @@ urlpatterns = [
     path('pointshop/', views.pointshop, name='pointshop'),
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
+
+    path("api/user-keywords/", views.get_user_keywords, name="user_keywords_self"),
+    path("api/user-keywords/<int:user_id>/", views.get_user_keywords, name="user_keywords_other"),
 ]
     

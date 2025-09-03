@@ -1,91 +1,211 @@
-<!-- 這是聊天室 -->
 {% extends 'dreams/base.html' %}
 
 {% block title %}與 {{ chat_user.username }} 聊天{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-5">
-  <div class="card shadow rounded-4">
-    <div class="card-header bg-primary text-white">
-      <h4 class="mb-0">
-        <i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話
-      </h4>
-    </div>
+  <div class="row g-4">
 
-    <div class="card-body d-flex flex-column" style="height: 600px;">
-      <!-- 聊天內容 -->
-      <div id="chat-box" class="flex-grow-1 overflow-auto p-3 mb-3 bg-light rounded" style="border: 1px solid #e0e0e0;">
-        {% if messages %}
-          {% for msg in messages %}
-            <div class="d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
-              <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
-                <div class="d-flex align-items-center mb-1">
-                  <img src="https://ui-avatars.com/api/?name={{ msg.sender.username }}&background=0D8ABC&color=fff&size=32" class="rounded-circle me-2" width="32" height="32">
-                  <div class="chat-meta {% if msg.sender == request.user %}text-end{% else %}text-start{% endif %}">
-                    <strong>{{ msg.sender.username }}</strong>
-                    <br><small class="text-muted">{{ msg.timestamp|date:"Y-m-d H:i" }}</small>
-                  </div>
+    {% if request.user.userprofile.is_therapist %}
+      <!-- 心理師端：左側使用者資訊 + 關鍵字 -->
+      <div class="col-md-4 order-md-1">
+        <!-- 使用者資訊卡 -->
+        <div class="card shadow-lg rounded-4 mb-3 border-0" style="background: linear-gradient(135deg, #6a5acd); color: white;">
+          <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-3">
+              <!-- 左側：頭像 -->
+              {% if chat_user.userprofile.avatar %}
+                <img src="{{ chat_user.userprofile.avatar.url }}" 
+                     class="rounded-circle shadow me-3" width="60" height="60" 
+                     style="object-fit: cover; border: 2px solid rgba(255,255,255,0.5);">
+              {% else %}
+                <div class="rounded-circle shadow me-3 d-flex justify-content-center align-items-center"
+                    style="width: 60px; height: 60px; background: linear-gradient(135deg, #b790f5, #55b1fc); 
+                           color: white; font-weight: 700; font-size: 22px; border: 2px solid rgba(255,255,255,0.5);">
+                  {{ chat_user.username|slice:":1"|upper }}
                 </div>
-                <div class="chat-text">{{ msg.message }}</div>
+              {% endif %}
+
+              <!-- 中間：名稱 + 徽章 + 頭銜 -->
+              <div>
+                <div class="d-flex align-items-center mb-1">
+                  <strong class="me-1">{{ chat_user.username }}</strong>
+                  {% if chat_user.userprofile.display_badge_icon %}
+                    <i class="{{ chat_user.userprofile.display_badge_icon }}" title="徽章" style="color:#f1c40f;"></i>
+                  {% endif %}
+                </div>
+                {% if chat_user.userprofile.display_title %}
+                  <div class="small" style="opacity:0.8;"> {{ chat_user.userprofile.display_title }}</div>
+                {% endif %}
               </div>
             </div>
-          {% endfor %}
-        {% else %}
-          <p class="text-muted text-center">目前沒有聊天訊息</p>
-        {% endif %}
+
+            <!-- 下方：簡介 -->
+            <div class="p-3 mt-2 rounded-3 shadow-sm text-dark" 
+                 style="background: linear-gradient(135deg, #f5f3f8ff); text-align:start;">
+              <div class="mb-1">
+                <strong>個人簡介：</strong> 
+                {% if chat_user.userprofile.bio %}
+                  {{ chat_user.userprofile.bio }}
+                {% else %}
+                {% endif %}
+              </div>
+              {% if chat_user.userprofile.specialties %}
+                <div class="small"><strong>專長：</strong> {{ chat_user.userprofile.specialties }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- 關鍵字圖表卡 -->
+        <div class="card shadow rounded-4 border-0">
+          <div class="card-header bg-gradient-to-r from-purple-400 to-pink-500 text-white">
+            <h5 class="mb-0">夢境關鍵字分析</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="keywordBarChart" height="200"></canvas>
+          </div>
+        </div>
       </div>
 
-      <!-- 訊息輸入 -->
-      <form method="post" action="{% url 'chat_room' chat_user_id=chat_user.id %}" class="mt-auto">
-        {% csrf_token %}
-        <div class="input-group">
-          <input type="text" name="message" required class="form-control" placeholder="輸入訊息…" />
-          <button class="btn btn-primary" type="submit">
-            <i class="fas fa-paper-plane"></i>
-          </button>
+      <!-- 心理師端：右側聊天 -->
+        <div class="col-md-8 order-md-2">
+      {% else %}
+        <!-- 一般使用者端：聊天室全寬 -->
+        <div class="col-md-12">
+      {% endif %}
+
+        <!-- 聊天室卡片 -->
+        <div class="card shadow-lg rounded-4 border-0">
+          <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
+            <h4 class="mb-0">
+              <i class="fas fa-comments me-2"></i>與 {{ chat_user.username }} 的對話
+            </h4>
+          </div>
+
+          <!-- 不同使用者高度 -->
+          <div class="card-body d-flex flex-column" 
+              style="height: {% if request.user.userprofile.is_therapist %}500px{% else %}600px{% endif %};">
+            
+            <!-- 聊天內容 -->
+            <div id="chat-box" class="flex-grow-1 overflow-auto p-3 mb-3 bg-white rounded-4 shadow-sm" 
+                style="border: 1px solid #e0e0e0;">
+              {% if messages %}
+                {% for msg in messages %}
+                  <div class="d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
+                    <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+                      <div class="d-flex align-items-center mb-1">
+                        <img src="https://ui-avatars.com/api/?name={{ msg.sender.username }}&background=0D8ABC&color=fff&size=32" 
+                            class="rounded-circle me-2" width="32" height="32">
+                        <div class="chat-meta {% if msg.sender == request.user %}text-end{% else %}text-start{% endif %}">
+                          <strong>{{ msg.sender.username }}</strong><br>
+                          <small class="text-muted">{{ msg.timestamp|date:"Y-m-d H:i" }}</small>
+                        </div>
+                      </div>
+                      <div class="chat-text">{{ msg.message }}</div>
+                    </div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <p class="text-muted text-center mt-5">目前沒有聊天訊息</p>
+              {% endif %}
+            </div>
+
+            <!-- 訊息輸入 -->
+            <form method="post" action="{% url 'chat_room' chat_user_id=chat_user.id %}" class="mt-auto">
+              {% csrf_token %}
+              <div class="input-group shadow-sm rounded-4 overflow-hidden">
+                <input type="text" name="message" required class="form-control border-0" placeholder="輸入訊息…" />
+                <button class="btn btn-gradient-primary" type="submit">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </form>
-    </div>
+      </div> <!-- col 結束 -->
   </div>
 </div>
 
-<!-- 自動滾動到底部 -->
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     const chatBox = document.getElementById("chat-box");
     chatBox.scrollTop = chatBox.scrollHeight;
-  });
+
+    fetch(`/api/user-keywords/{{ chat_user.id }}/`)
+      .then(response => response.json())
+      .then(keywordData => {
+        const container = document.getElementById("keywordBarChart").parentElement;
+        if (!keywordData.length) {
+          container.innerHTML =
+            "<p class='text-muted text-center mt-5'>暫無夢境關鍵字資料</p>";
+          return;
+        }
+
+        const ctx = document.getElementById("keywordBarChart").getContext("2d");
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: keywordData.map(item => item.keyword),
+            datasets: [{
+              label: "關鍵字頻率",
+              data: keywordData.map(item => item.count),
+              backgroundColor: keywordData.map(() => "rgba(106, 90, 205, 0.4)"),
+              borderColor: keywordData.map(() => "rgba(106, 90, 205, 1)"),
+              borderWidth: 2,
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+              y: { beginAtZero: true, grid: { color: '#eee' } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      })
+      .catch(error => console.error("載入使用者關鍵字失敗:", error));
+});
 </script>
 
 <style>
-  .chat-bubble {
-    max-width: 75%;
-    padding: 10px 15px;
-    border-radius: 20px;
-    position: relative;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    word-wrap: break-word;
-    background-color: #f1f1f1;
-  }
+.chat-bubble {
+  max-width: 75%;
+  padding: 12px 18px;
+  border-radius: 20px;
+  word-wrap: break-word;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+  font-size: 0.95rem;
+}
 
-  .chat-bubble.sent {
-    background-color: #d1e7dd;
-    border-bottom-right-radius: 0;
-  }
+.chat-bubble.sent {
+  background: linear-gradient(120deg, #a8edea, #fed6e3);
+  border-bottom-right-radius: 0;
+  color: #333;
+}
 
-  .chat-bubble.received {
-    background-color: #f8f9fa;
-    border-bottom-left-radius: 0;
-  }
+.chat-bubble.received {
+  background: linear-gradient(120deg, #a2dafaff, #e8d3f7ff);
+  border-bottom-left-radius: 0;
+  color: #333;
+}
 
-  .chat-meta {
-    font-size: 0.75rem;
-  }
+.chat-meta { font-size: 0.75rem; color: #555; }
 
-  .chat-text {
-    font-size: 1rem;
-  }
+.input-group .btn-gradient-primary {
+  background: linear-gradient(120deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+}
+
+.input-group .form-control:focus { box-shadow: none; border-color: #764ba2; }
 </style>
 {% endblock %}
-
-

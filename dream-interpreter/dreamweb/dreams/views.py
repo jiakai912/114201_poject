@@ -674,6 +674,7 @@ def mark_notification_as_read(request, notification_id):
 @login_required
 def user_achievements(request):
     user = request.user
+    
     unlocked_achievements = UserAchievement.objects.filter(user=user).select_related('achievement').order_by('-unlocked_at')
     
     # 獲取用戶在各種條件鍵上的當前數值
@@ -1059,28 +1060,36 @@ def dream_dashboard(request):
     })
 
 # 個人關鍵字
-def get_user_keywords(request):
-    user = request.user  # 獲取當前登錄的用戶
-    dreams = Dream.objects.filter(user=user)  # 獲取該用戶的所有夢境
+@login_required
+def get_user_keywords(request, user_id=None):
+    """
+    - 沒有 user_id → 取當前登入者的夢境關鍵字
+    - 有 user_id → 取指定使用者的夢境關鍵字（心理師端用）
+    """
+    target_user = request.user if user_id is None else get_object_or_404(User, id=user_id)
+    dreams = Dream.objects.filter(user=target_user)
+
     all_words = []
-
-    # 中文分詞處理夢境內容
     for dream in dreams:
-        content = dream.dream_content
-        words = jieba.cut(content)  # 用 jieba 分詞
-        all_words.extend(list(words))  # 收集所有分詞
+        words = jieba.cut(dream.dream_content)
+        all_words.extend(words)
 
-    # 過濾停用詞
-    stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
-    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]  # 過濾停用詞及過短的字
+    # 停用詞（可再擴充）
+    stopwords = ['的', '是', '了', '在', '和', '我']
+    filtered_words = [w for w in all_words if w not in stopwords and len(w) > 1]
 
     # 統計詞頻
-    word_counts = Counter(filtered_words)  # 計算每個詞出現的頻率
-    top_keywords = dict(word_counts.most_common(8))  # 取前8個最常出現的詞
+    word_counts = Counter(filtered_words)
+    top_keywords = dict(word_counts.most_common(8))
 
-    # 返回JSON數據，包含關鍵字及其頻率
-    result = [{"keyword": key, "count": value} for key, value in top_keywords.items()]
-    return JsonResponse(result, safe=False)  # 返回 JSON 格式的結果
+    # fallback → 沒有關鍵字時，給前端一個提示
+    if not top_keywords:
+        result = [{"keyword": "暫無資料", "count": 0}]
+    else:
+        result = [{"keyword": key, "count": value} for key, value in top_keywords.items()]
+
+    return JsonResponse(result, safe=False)
+
 
 
 # 最近 7 筆夢境數據
@@ -2954,3 +2963,6 @@ def ecpay_result(request):
         # 付款成功後導回點券商店
         return redirect('pointshop')
     return HttpResponse("這是綠界付款完成後導回的頁面")
+
+
+
