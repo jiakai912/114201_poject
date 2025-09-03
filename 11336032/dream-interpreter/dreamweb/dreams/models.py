@@ -144,7 +144,7 @@ class DreamPost(models.Model):
     tags = models.ManyToManyField('DreamTag', blank=True, verbose_name="標籤")
     emotion_data = models.JSONField(default=dict, blank=True, verbose_name="情緒數據")  # 儲存情緒 JSON
     advice = models.TextField(verbose_name="心理診斷個人化建議", blank=True, null=True)  # 心理建議
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # <-- 新增這行
     is_flagged = models.BooleanField(default=False, verbose_name="是否含有危險字詞")
 
     class Meta:

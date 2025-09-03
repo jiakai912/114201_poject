@@ -63,6 +63,7 @@ from django.utils.timezone import localdate
 import bleach
 from django.urls import reverse
 
+
 # 管理員頁面
 def is_admin(user):
     return user.is_authenticated and user.is_superuser  # ✅ 只允許超級使用者進入
@@ -1060,27 +1061,26 @@ def dream_dashboard(request):
 
 # 個人關鍵字
 def get_user_keywords(request):
-    user = request.user  # 獲取當前登錄的用戶
-    dreams = Dream.objects.filter(user=user)  # 獲取該用戶的所有夢境
+    user = request.user
+    dreams = Dream.objects.filter(user=user)
     all_words = []
-
-    # 中文分詞處理夢境內容
+    
     for dream in dreams:
         content = dream.dream_content
-        words = jieba.cut(content)  # 用 jieba 分詞
-        all_words.extend(list(words))  # 收集所有分詞
+        words = jieba.cut(content)
+        all_words.extend(list(words))
+    
+    stopwords = ['的', '是', '了', '在', '和', '我']
+    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
+    
+    word_counts = Counter(filtered_words)
+    top_keywords = word_counts.most_common(8)
 
-    # 過濾停用詞
-    stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
-    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]  # 過濾停用詞及過短的字
+    # 修正這裡的回傳格式
+    labels = [item[0] for item in top_keywords]
+    data = [item[1] for item in top_keywords]
 
-    # 統計詞頻
-    word_counts = Counter(filtered_words)  # 計算每個詞出現的頻率
-    top_keywords = dict(word_counts.most_common(8))  # 取前8個最常出現的詞
-
-    # 返回JSON數據，包含關鍵字及其頻率
-    result = [{"keyword": key, "count": value} for key, value in top_keywords.items()]
-    return JsonResponse(result, safe=False)  # 返回 JSON 格式的結果
+    return JsonResponse({'labels': labels, 'data': data})
 
 
 # 最近 7 筆夢境數據
@@ -1862,37 +1862,42 @@ def get_similar_dreams(dream_post, limit=5):
 
 # 6. 生成並更新全球夢境趨勢
 def update_dream_trends():
-    """更新夢境趨勢數據 (建議通過定時任務每天運行)"""    
+    print("正在執行 update_dream_trends...") # 新增這行   
     today = timezone.now().date()
     
-    # 獲取過去24小時的夢境
-    time_threshold = timezone.now() - timezone.timedelta(hours=24)
-    recent_dreams = DreamPost.objects.filter(created_at__gte=time_threshold)
+    try:
+        # 獲取過去24小時的夢境
+        time_threshold = timezone.now() - timezone.timedelta(hours=24)
+        recent_dreams = DreamPost.objects.filter(created_at__gte=time_threshold)
+
+        print(f"找到 {len(recent_dreams)} 篇過去24小時內的夢境貼文。") # 新增這行
+        
+        all_words = []
+        for dream in recent_dreams:
+            # 中文分詞
+            words = jieba.cut(dream.content)
+            all_words.extend(list(words))
     
-    # 提取關鍵詞 (這裡使用簡單的分詞和計數，可以替換為更複雜的關鍵詞提取算法)
-    all_words = []
-    for dream in recent_dreams:
-        # 中文分詞
-        words = jieba.cut(dream.content)
-        all_words.extend(list(words))
-    
-    # 過濾停用詞 (需要自定義停用詞表)
-    stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
-    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
-    
-    # 統計詞頻
-    word_counts = Counter(filtered_words)
-    top_keywords = dict(word_counts.most_common(20))
-    
-    # 保存趨勢數據
-    trend, created = DreamTrend.objects.get_or_create(
-        date=today,
-        defaults={'trend_data': top_keywords}
-    )
-    
-    if not created:
-        trend.trend_data = top_keywords
-        trend.save()
+        # 過濾停用詞 (需要自定義停用詞表)
+        stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
+        filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
+        
+        # 統計詞頻
+        word_counts = Counter(filtered_words)
+        top_keywords = dict(word_counts.most_common(20))
+        
+        # 保存趨勢數據
+        trend, created = DreamTrend.objects.get_or_create(
+            date=today,
+            defaults={'trend_data': top_keywords}
+        )
+        
+        if not created:
+            trend.trend_data = top_keywords
+            trend.save()
+            
+    except Exception as e:
+        print(f"更新夢境趨勢時發生錯誤：{e}") # 新增這行
 
 
 # 夢境與相關新聞
@@ -3079,10 +3084,22 @@ def get_global_trends_data(request):
     """
     處理 API 請求，返回全球夢境趨勢資料。
     """
-    # 在這裡編寫你的程式碼來處理邏輯並取得資料
-    # 例如，這是一個簡單的範例：
-    data = {
-        'labels': ['關鍵詞1', '關鍵詞2', '關鍵詞3'],
-        'data': [100, 200, 150]
-    }
-    return JsonResponse(data)
+    try:
+        latest_trend = DreamTrend.objects.latest('date')
+        if latest_trend and latest_trend.trend_data:
+            # trend_data 是字典格式，例如 {'關鍵字A': 15, '關鍵字B': 25}
+            sorted_trends = sorted(latest_trend.trend_data.items(), key=lambda item: item[1], reverse=True)
+            labels = [item[0] for item in sorted_trends[:10]] # 取前10個關鍵字
+            data = [item[1] for item in sorted_trends[:10]]
+            
+            return JsonResponse({'labels': labels, 'data': data})
+    except DreamTrend.DoesNotExist:
+        pass
+        
+    return JsonResponse({'labels': [], 'data': []})
+
+
+from django.http import HttpResponse
+def trigger_trends_update(request):
+    update_dream_trends()
+    return HttpResponse("夢境趨勢已更新！")
