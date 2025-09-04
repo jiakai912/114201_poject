@@ -152,3 +152,11 @@ class TherapistFullProfileForm(UserProfileForm):
 
     class Meta(UserProfileForm.Meta):
         fields = UserProfileForm.Meta.fields + ['coin_price', 'specialties']
+
+
+from .models import Achievement
+
+class AchievementForm(forms.ModelForm):
+    class Meta:
+        model = Achievement
+        fields = ['name', 'category', 'title', 'badge_icon', 'condition_key', 'condition_value']

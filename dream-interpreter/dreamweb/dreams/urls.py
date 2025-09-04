@@ -39,10 +39,6 @@ urlpatterns = [
     # 核准/拒絕心理師申請
     path('manage/therapists/approve/<int:user_id>/', views.approve_therapist, name='approve_therapist'),
     path('manage/therapists/reject/<int:user_id>/', views.reject_therapist, name='reject_therapist'),
-    # 預約管理
-    path('admin_dashboard/appointments/', views.manage_appointments, name='manage_appointments'),
-
-
 
     # 通知系統
     path('notifications/', views.notification_list, name='notification_list'),
@@ -149,5 +145,10 @@ urlpatterns = [
 
     path("api/user-keywords/", views.get_user_keywords, name="user_keywords_self"),
     path("api/user-keywords/<int:user_id>/", views.get_user_keywords, name="user_keywords_other"),
+    path("manage/achievements/", views.manage_achievements, name="manage_achievements"),
+    path("manage/achievements/delete/<int:pk>/", views.delete_achievement, name="delete_achievement"),
+    path('achievements/edit/<int:pk>/', views.edit_achievement, name='edit_achievement'),
+
+
 ]
     

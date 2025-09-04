@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
-from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm
+from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm,AchievementForm
 import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
@@ -85,8 +85,10 @@ def admin_dashboard(request):
         'total_chat_messages': ChatMessage.objects.count(),
         'total_points': UserProfile.objects.aggregate(total=models.Sum('points'))['total'] or 0,
         'all_users': User.objects.all(),# 新增這一行來傳遞所有使用者列表給模板
+        'achievements_count': Achievement.objects.count(),  # ✅ 加上成就總數
     }
     return render(request, 'dreams/admin/admin_dashboard.html', context)
+
 # 管理使用者
 @user_passes_test(lambda u: u.is_superuser)
 def manage_users(request):
@@ -336,33 +338,66 @@ def reject_therapist(request, user_id):
     messages.warning(request, f"{profile.user.username} 的心理師申請已拒絕。")
     return redirect('manage_therapists')
 
-# ✅ 預約管理
-@user_passes_test(lambda u: u.is_superuser)
+
+# 管理成就
 @login_required
-def manage_appointments(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden("只有管理員可以查看此頁面")
+def manage_achievements(request):
+    query = request.GET.get("q", "")
+    achievements = Achievement.objects.all()
 
-    query = request.GET.get('q', '')
-
-    appointments = TherapyAppointment.objects.select_related('user', 'therapist').order_by('-scheduled_time')
-
+    # 搜尋過濾
     if query:
-        appointments = appointments.filter(
-            Q(user__username__icontains=query) |
-            Q(user__email__icontains=query) |
-            Q(therapist__username__icontains=query) |
-            Q(therapist__email__icontains=query)
+        achievements = achievements.filter(
+            Q(name__icontains=query) |
+            Q(title__icontains=query) |
+            Q(category__icontains=query) |
+            Q(condition_key__icontains=query) |
+            Q(condition_value__icontains=query)
         )
 
-    # 分頁設定：每頁 10 筆
-    paginator = Paginator(appointments, 10)
-    page_number = request.GET.get('page')
+    # 分頁處理（每頁 10 筆）
+    paginator = Paginator(achievements, 10)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'dreams/admin/manage_appointments.html', {
-        'all_appointments': page_obj
+    # 表單處理
+    if request.method == "POST":
+        form = AchievementForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("manage_achievements")
+    else:
+        form = AchievementForm()
+
+    return render(request, "dreams/admin/manage_achievements.html", {
+        "page_obj": page_obj,   # 改用 page_obj 取代 achievements
+        "form": form,
+        "query": query,
     })
+
+# 編輯成就
+def edit_achievement(request, pk):
+    achievement = get_object_or_404(Achievement, pk=pk)
+
+    if request.method == "POST":
+        form = AchievementForm(request.POST, instance=achievement)
+        if form.is_valid():
+            form.save()
+            return redirect('manage_achievements')
+    else:
+        form = AchievementForm(instance=achievement)
+
+    return render(request, 'dreams/admin/edit_achievement.html', {
+        'form': form,
+        'achievement': achievement,
+    })
+
+# 刪除成就
+def delete_achievement(request, pk):
+    achievement = get_object_or_404(Achievement, pk=pk)
+    achievement.delete()
+    return redirect("manage_achievements")
+
 
 # ✅ 聊天訊息管理
 @user_passes_test(lambda u: u.is_superuser)
@@ -2963,6 +2998,5 @@ def ecpay_result(request):
         # 付款成功後導回點券商店
         return redirect('pointshop')
     return HttpResponse("這是綠界付款完成後導回的頁面")
-
 
 
