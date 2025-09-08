@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
-from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm
+from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm,AchievementForm
 import logging
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
 import random  # 模擬 AI 建議，可替換為 NLP 分析
@@ -63,7 +63,6 @@ from django.utils.timezone import localdate
 import bleach
 from django.urls import reverse
 
-
 # 管理員頁面
 def is_admin(user):
     return user.is_authenticated and user.is_superuser  # ✅ 只允許超級使用者進入
@@ -86,8 +85,10 @@ def admin_dashboard(request):
         'total_chat_messages': ChatMessage.objects.count(),
         'total_points': UserProfile.objects.aggregate(total=models.Sum('points'))['total'] or 0,
         'all_users': User.objects.all(),# 新增這一行來傳遞所有使用者列表給模板
+        'achievements_count': Achievement.objects.count(),  # ✅ 加上成就總數
     }
     return render(request, 'dreams/admin/admin_dashboard.html', context)
+
 # 管理使用者
 @user_passes_test(lambda u: u.is_superuser)
 def manage_users(request):
@@ -337,33 +338,66 @@ def reject_therapist(request, user_id):
     messages.warning(request, f"{profile.user.username} 的心理師申請已拒絕。")
     return redirect('manage_therapists')
 
-# ✅ 預約管理
-@user_passes_test(lambda u: u.is_superuser)
+
+# 管理成就
 @login_required
-def manage_appointments(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden("只有管理員可以查看此頁面")
+def manage_achievements(request):
+    query = request.GET.get("q", "")
+    achievements = Achievement.objects.all()
 
-    query = request.GET.get('q', '')
-
-    appointments = TherapyAppointment.objects.select_related('user', 'therapist').order_by('-scheduled_time')
-
+    # 搜尋過濾
     if query:
-        appointments = appointments.filter(
-            Q(user__username__icontains=query) |
-            Q(user__email__icontains=query) |
-            Q(therapist__username__icontains=query) |
-            Q(therapist__email__icontains=query)
+        achievements = achievements.filter(
+            Q(name__icontains=query) |
+            Q(title__icontains=query) |
+            Q(category__icontains=query) |
+            Q(condition_key__icontains=query) |
+            Q(condition_value__icontains=query)
         )
 
-    # 分頁設定：每頁 10 筆
-    paginator = Paginator(appointments, 10)
-    page_number = request.GET.get('page')
+    # 分頁處理（每頁 10 筆）
+    paginator = Paginator(achievements, 10)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'dreams/admin/manage_appointments.html', {
-        'all_appointments': page_obj
+    # 表單處理
+    if request.method == "POST":
+        form = AchievementForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("manage_achievements")
+    else:
+        form = AchievementForm()
+
+    return render(request, "dreams/admin/manage_achievements.html", {
+        "page_obj": page_obj,   # 改用 page_obj 取代 achievements
+        "form": form,
+        "query": query,
     })
+
+# 編輯成就
+def edit_achievement(request, pk):
+    achievement = get_object_or_404(Achievement, pk=pk)
+
+    if request.method == "POST":
+        form = AchievementForm(request.POST, instance=achievement)
+        if form.is_valid():
+            form.save()
+            return redirect('manage_achievements')
+    else:
+        form = AchievementForm(instance=achievement)
+
+    return render(request, 'dreams/admin/edit_achievement.html', {
+        'form': form,
+        'achievement': achievement,
+    })
+
+# 刪除成就
+def delete_achievement(request, pk):
+    achievement = get_object_or_404(Achievement, pk=pk)
+    achievement.delete()
+    return redirect("manage_achievements")
+
 
 # ✅ 聊天訊息管理
 @user_passes_test(lambda u: u.is_superuser)
@@ -424,14 +458,21 @@ class CustomLoginView(LoginView):
 # 註冊
 def register(request):
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
+        # ⚠️ 記得加上 request.FILES 才能接到檔案
+        form = UserRegisterForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             is_therapist = form.cleaned_data.get('is_therapist')
+            proof_file = form.cleaned_data.get('proof_file')
 
             # 這裡設定 UserProfile
             profile = UserProfile.objects.get(user=user)
             profile.is_therapist = is_therapist
+
+            # 如果有上傳證明檔案就存起來
+            if is_therapist and proof_file:
+                profile.proof_file = proof_file
+
             profile.save()
 
             login(request, user)
@@ -440,7 +481,9 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, 'dreams/register.html', {'form': form})
+
     
+
 # 心理諮商登入
 def custom_login(request):
     if request.method == 'POST':
@@ -675,6 +718,7 @@ def mark_notification_as_read(request, notification_id):
 @login_required
 def user_achievements(request):
     user = request.user
+    
     unlocked_achievements = UserAchievement.objects.filter(user=user).select_related('achievement').order_by('-unlocked_at')
     
     # 獲取用戶在各種條件鍵上的當前數值
@@ -1060,27 +1104,36 @@ def dream_dashboard(request):
     })
 
 # 個人關鍵字
-def get_user_keywords(request):
-    user = request.user
-    dreams = Dream.objects.filter(user=user)
+@login_required
+def get_user_keywords(request, user_id=None):
+    """
+    - 沒有 user_id → 取當前登入者的夢境關鍵字
+    - 有 user_id → 取指定使用者的夢境關鍵字（心理師端用）
+    """
+    target_user = request.user if user_id is None else get_object_or_404(User, id=user_id)
+    dreams = Dream.objects.filter(user=target_user)
+
     all_words = []
-    
     for dream in dreams:
-        content = dream.dream_content
-        words = jieba.cut(content)
-        all_words.extend(list(words))
-    
+        words = jieba.cut(dream.dream_content)
+        all_words.extend(words)
+
+    # 停用詞（可再擴充）
     stopwords = ['的', '是', '了', '在', '和', '我']
-    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
-    
+    filtered_words = [w for w in all_words if w not in stopwords and len(w) > 1]
+
+    # 統計詞頻
     word_counts = Counter(filtered_words)
-    top_keywords = word_counts.most_common(8)
+    top_keywords = dict(word_counts.most_common(8))
 
-    # 修正這裡的回傳格式
-    labels = [item[0] for item in top_keywords]
-    data = [item[1] for item in top_keywords]
+    # fallback → 沒有關鍵字時，給前端一個提示
+    if not top_keywords:
+        result = [{"keyword": "暫無資料", "count": 0}]
+    else:
+        result = [{"keyword": key, "count": value} for key, value in top_keywords.items()]
 
-    return JsonResponse({'labels': labels, 'data': data})
+    return JsonResponse(result, safe=False)
+
 
 
 # 最近 7 筆夢境數據
@@ -1862,45 +1915,39 @@ def get_similar_dreams(dream_post, limit=5):
 
 # 6. 生成並更新全球夢境趨勢
 def update_dream_trends():
-    print("正在執行 update_dream_trends...") # 新增這行   
+    """更新夢境趨勢數據 (建議通過定時任務每天運行)"""    
     today = timezone.now().date()
     
-    try:
-        # 獲取過去24小時的夢境
-        time_threshold = timezone.now() - timezone.timedelta(hours=24)
-        recent_dreams = DreamPost.objects.filter(created_at__gte=time_threshold)
-
-        print(f"找到 {len(recent_dreams)} 篇過去24小時內的夢境貼文。") # 新增這行
-        
-        all_words = []
-        for dream in recent_dreams:
-            # 中文分詞
-            words = jieba.cut(dream.content)
-            all_words.extend(list(words))
+    # 獲取過去24小時的夢境
+    time_threshold = timezone.now() - timezone.timedelta(hours=24)
+    recent_dreams = DreamPost.objects.filter(created_at__gte=time_threshold)
     
-        # 過濾停用詞 (需要自定義停用詞表)
-        stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
-        filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
-        
-        # 統計詞頻
-        word_counts = Counter(filtered_words)
-        top_keywords = dict(word_counts.most_common(20))
-        
-        # 保存趨勢數據
-        trend, created = DreamTrend.objects.get_or_create(
-            date=today,
-            defaults={'trend_data': top_keywords}
-        )
-        
-        if not created:
-            trend.trend_data = top_keywords
-            trend.save()
-            
-    except Exception as e:
-        print(f"更新夢境趨勢時發生錯誤：{e}") # 新增這行
+    # 提取關鍵詞 (這裡使用簡單的分詞和計數，可以替換為更複雜的關鍵詞提取算法)
+    all_words = []
+    for dream in recent_dreams:
+        # 中文分詞
+        words = jieba.cut(dream.content)
+        all_words.extend(list(words))
+    
+    # 過濾停用詞 (需要自定義停用詞表)
+    stopwords = ['的', '是', '了', '在', '和', '我']  # 示例停用詞
+    filtered_words = [word for word in all_words if word not in stopwords and len(word) > 1]
+    
+    # 統計詞頻
+    word_counts = Counter(filtered_words)
+    top_keywords = dict(word_counts.most_common(20))
+    
+    # 保存趨勢數據
+    trend, created = DreamTrend.objects.get_or_create(
+        date=today,
+        defaults={'trend_data': top_keywords}
+    )
+    
+    if not created:
+        trend.trend_data = top_keywords
+        trend.save()
 
 
-# 夢境與相關新聞
 # 夢境與相關新聞
 def dream_news(request):
     news_results = []
@@ -2962,144 +3009,3 @@ def ecpay_result(request):
     return HttpResponse("這是綠界付款完成後導回的頁面")
 
 
-
-
-# 天氣預報視圖
-@login_required
-def weather_forecast(request):
-    forecast_locations = []
-    # 預設不傳入任何地點參數，以獲取所有縣市的資料
-    search_query = request.GET.get('q', '') 
-
-    try:
-        cwa_api_key = "CWA-8651080D-A7CB-45BF-A520-901BCD852AAC"
-        # 移除 locationName 參數，以獲取所有縣市的預報資料
-        forecast_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization={cwa_api_key}"
-        response = requests.get(forecast_url, timeout=5)
-        response.raise_for_status()
-        forecast_json = response.json()
-        
-        if forecast_json.get('success') == 'true' and forecast_json.get('records', {}).get('locations', []):
-            all_locations = forecast_json['records']['locations'][0]['location']
-            
-            # 如果有搜尋關鍵字，則進行過濾
-            if search_query:
-                # 模糊搜尋功能：如果地名中包含搜尋關鍵字，就顯示
-                forecast_locations = [loc for loc in all_locations if search_query in loc['locationName']]
-                if not forecast_locations:
-                    messages.warning(request, f"找不到符合「{search_query}」的天氣預報，已顯示所有縣市。")
-                    forecast_locations = all_locations
-            else:
-                forecast_locations = all_locations
-        else:
-            messages.error(request, "無法取得天氣預報數據，請稍後再試。")
-
-    except Exception as e:
-        messages.error(request, f"天氣 API 請求失敗：{e}")
-
-    return render(request, 'dreams/weather_forecast.html', {
-        'forecast_locations': forecast_locations,
-        'search_query': search_query
-    })
-
-# ✅ 新增：關注清單管理視圖
-@login_required
-def manage_watchlist(request):
-    watchlist, created = Watchlist.objects.get_or_create(user=request.user)
-    
-    if request.method == 'POST':
-        symbol = request.POST.get('symbol', '').strip().upper()
-        name = request.POST.get('name', '').strip()
-        
-        if symbol and name:
-            WatchlistItem.objects.get_or_create(watchlist=watchlist, symbol=symbol, defaults={'name': name})
-            messages.success(request, f"已將 {name} 加入您的關注清單！")
-        
-        return redirect('manage_watchlist')
-
-    items = watchlist.items.all().order_by('name')
-    return render(request, 'dreams/community/manage_watchlist.html', {'watchlist_items': items})
-
-# ✅ 新增：獲取關注清單即時數據的 API 視圖
-@login_required
-def get_watchlist_data(request):
-    watchlist, created = Watchlist.objects.get_or_create(user=request.user)
-    items = watchlist.items.all()
-    
-    # 這裡您需要呼叫真實的股票 API 來獲取即時數據
-    # 這段程式碼僅為示意，需要替換為實際的 API 請求
-    data = []
-    for item in items:
-        # 這裡應該呼叫一個能返回即時數據的 API
-        # 例如：requests.get(f'https://stockapi.com/v1/{item.symbol}')
-        live_price = "N/A"
-        change_percent = "N/A"
-        
-        data.append({
-            'name': item.name,
-            'symbol': item.symbol,
-            'price': live_price,
-            'change': change_percent,
-        })
-    
-    return JsonResponse({'watchlist_data': data})
-
-
-
-
-
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-
-@login_required
-@require_POST
-@csrf_exempt 
-def save_private_notes(request):
-    try:
-        user_profile = request.user.userprofile
-        notes = request.POST.get('notes')
-        user_profile.private_notes = notes
-        user_profile.save()
-        return JsonResponse({'success': True, 'message': '筆記已儲存'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-    
-
-
-@login_required
-@require_POST
-def set_preferred_location(request):
-    location_name = request.POST.get('locationName')
-    if location_name:
-        user_profile = request.user.userprofile
-        user_profile.preferred_location = location_name
-        user_profile.save()
-        messages.success(request, f"已將 {location_name} 設定為您的主要地點。")
-        return redirect('dream_news')
-    messages.error(request, "設定地點失敗。")
-    return redirect('weather_forecast')
-
-
-def get_global_trends_data(request):
-    """
-    處理 API 請求，返回全球夢境趨勢資料。
-    """
-    try:
-        latest_trend = DreamTrend.objects.latest('date')
-        if latest_trend and latest_trend.trend_data:
-            # trend_data 是字典格式，例如 {'關鍵字A': 15, '關鍵字B': 25}
-            sorted_trends = sorted(latest_trend.trend_data.items(), key=lambda item: item[1], reverse=True)
-            labels = [item[0] for item in sorted_trends[:10]] # 取前10個關鍵字
-            data = [item[1] for item in sorted_trends[:10]]
-            
-            return JsonResponse({'labels': labels, 'data': data})
-    except DreamTrend.DoesNotExist:
-        pass
-        
-    return JsonResponse({'labels': [], 'data': []})
-
-
-from django.http import HttpResponse
-def trigger_trends_update(request):
-    update_dream_trends()
-    return HttpResponse("夢境趨勢已更新！")

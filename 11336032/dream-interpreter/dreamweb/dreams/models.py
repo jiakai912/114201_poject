@@ -9,6 +9,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     points = models.IntegerField(default=0)  # 點券餘額
     is_therapist = models.BooleanField(default=False)
+    proof_file = models.FileField(upload_to='therapist_proofs/', blank=True, null=True)  # 證明檔案
     is_verified_therapist = models.BooleanField(default=False)  # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
@@ -54,7 +55,6 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
-
     
 
 @receiver(post_save, sender=User)
@@ -144,7 +144,7 @@ class DreamPost(models.Model):
     tags = models.ManyToManyField('DreamTag', blank=True, verbose_name="標籤")
     emotion_data = models.JSONField(default=dict, blank=True, verbose_name="情緒數據")  # 儲存情緒 JSON
     advice = models.TextField(verbose_name="心理診斷個人化建議", blank=True, null=True)  # 心理建議
-    created_at = models.DateTimeField(auto_now_add=True)  # <-- 新增這行
+    created_at = models.DateTimeField(auto_now_add=True)
     is_flagged = models.BooleanField(default=False, verbose_name="是否含有危險字詞")
 
     class Meta:

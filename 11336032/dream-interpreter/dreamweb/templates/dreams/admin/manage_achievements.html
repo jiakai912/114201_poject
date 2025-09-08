@@ -1,0 +1,184 @@
+{% extends 'dreams/base.html' %}
+{% block title %}成就管理{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- 成就列表 -->
+  <div class="card shadow rounded-4 mb-4">
+    <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white d-flex justify-content-between align-items-center px-4 py-3">
+      <h4 class="mb-0">
+        <i class="fas fa-trophy me-2"></i> 成就管理
+      </h4>
+      <form method="get" class="mb-0" style="max-width: 400px; width: 100%;">
+        <div class="input-group">
+          <input type="text" name="q" class="form-control" placeholder="搜尋成就名稱或類別" value="{{ query }}">
+          <button type="submit" class="btn btn-light btn-sm">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card-body table-responsive p-0">
+      <table class="table table-hover align-middle mb-0 text-center">
+        <thead class="table-light small text-nowrap">
+          <tr>
+            <th>成就名稱</th>
+            <th>類別</th>
+            <th>稱號</th>
+            <th>徽章圖標</th>
+            <th>條件 Key</th>
+            <th>條件值</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody class="small">
+          {% for achievement in page_obj %}
+          <tr>
+            <td>{{ achievement.name }}</td>
+            <td><span class="badge bg-primary text-light">{{ achievement.category }}</span></td>
+            <td>{{ achievement.title }}</td>
+            <td>
+              {% if achievement.badge_icon %}
+                <i class="{{ achievement.badge_icon }} fa-lg text-warning"></i>
+              {% else %}
+                <span class="text-muted">無</span>
+              {% endif %}
+            </td>
+            <td>{{ achievement.condition_key }}</td>
+            <td>{{ achievement.condition_value }}</td>
+            <td>
+              <div class="btn-group" role="group">
+                <a href="{% url 'edit_achievement' achievement.id %}" class="btn btn-sm btn-outline-primary">編輯</a>
+                <a href="{% url 'delete_achievement' achievement.id %}" 
+                  class="btn btn-sm btn-outline-danger" 
+                  onclick="return confirm('確定要刪除這個成就？');">
+                  刪除
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">目前尚無成就資料</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 分頁 -->
+  <div class="justify-content-between align-items-center mb-3">
+    <nav>
+      <ul class="pagination justify-content-center mb-0">
+
+        <!-- 上一頁 -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link page-gradient"
+              href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&laquo;</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        <!-- 頁碼範圍 -->
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+            <li class="page-item">
+              <a class="page-link page-gradient"
+                href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+            </li>
+          {% elif num == 1 or num == page_obj.paginator.num_pages %}
+            <li class="page-item">
+              <a class="page-link page-gradient"
+                href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+            </li>
+          {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        <!-- 下一頁 -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link page-gradient"
+              href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&raquo;</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+
+  <!-- 新增成就表單卡片 -->
+  <div class="card shadow rounded-4">
+    <div class="card-header bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-top-4 px-4 py-3">
+      <h5 class="mb-0"><i class="fas fa-plus me-2"></i> 新增成就</h5>
+    </div>
+    <form method="post" action="{% url 'manage_achievements' %}">
+      {% csrf_token %}
+      <div class="card-body p-4">
+        <!-- 第一排 -->
+        <div class="row g-4 mb-3">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">成就名稱</label>
+            <div class="form-control p-0 border-0">
+              {{ form.name }}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">類別</label>
+            <div class="form-control p-0 border-0">
+              {{ form.category }}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">稱號</label>
+            <div class="form-control p-0 border-0">
+              {{ form.title }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 第二排 -->
+        <div class="row g-4">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">徽章圖標</label>
+            <div class="form-control p-0 border-0">
+              {{ form.badge_icon }}
+            </div>
+            <div class="form-text text-muted small mt-1">
+              例如：<code>fas fa-star</code> 或 <code>fas fa-heart</code>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">條件 Key</label>
+            <div class="form-control p-0 border-0">
+              {{ form.condition_key }}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">條件值</label>
+            <div class="form-control p-0 border-0">
+              {{ form.condition_value }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer text-end bg-light rounded-bottom-4 py-3">
+        <button type="submit" class="btn btn-primary rounded-3 shadow-sm px-4">
+          <i class="fas fa-check me-1"></i> 確認新增
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

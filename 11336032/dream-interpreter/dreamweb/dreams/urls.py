@@ -2,9 +2,6 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 from django.contrib.auth.decorators import login_required
-from django.conf import settings # <-- 新增
-from django.conf.urls.static import static # <-- 新增
-import os # <-- 新增這行
 
 urlpatterns = [
     # ✅ 管理員
@@ -42,10 +39,6 @@ urlpatterns = [
     # 核准/拒絕心理師申請
     path('manage/therapists/approve/<int:user_id>/', views.approve_therapist, name='approve_therapist'),
     path('manage/therapists/reject/<int:user_id>/', views.reject_therapist, name='reject_therapist'),
-    # 預約管理
-    path('admin_dashboard/appointments/', views.manage_appointments, name='manage_appointments'),
-
-
 
     # 通知系統
     path('notifications/', views.notification_list, name='notification_list'),
@@ -63,8 +56,11 @@ urlpatterns = [
     path('logout/',  views.logout_view, name='logout'),  # ✅ 修正
     path('history/', views.dream_history, name='dream_history'),# 夢境歷史
     path('my-dreams/<int:dream_id>/delete/', views.user_delete_dream, name='user_delete_dream'), # 刪除夢境
+    path('api/emotion-data/', views.get_emotion_data, name='emotion_data'),
     path('dream/<int:dream_id>/', views.dream_detail, name='dream_detail'),
     path('dashboard/', views.dream_dashboard, name='dream_dashboard'),
+
+    path('api/user-keywords/', views.get_user_keywords, name='get_user_keywords'),# ✅ 個人關鍵字
     path('mental_health_dashboard/', views.mental_health_dashboard, name='mental_health_dashboard'),  # ✅ 修正
     path('api/mental-health-suggestions/<int:dream_id>/', views.get_mental_health_suggestions, name='mental_health_suggestions'),
     path('get_dream_detail/<int:dream_id>/', views.get_dream_detail, name='get_dream_detail'),
@@ -147,13 +143,12 @@ urlpatterns = [
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
 
-    path('api/emotion-data/', views.get_emotion_data, name='api_emotion_data'),
-    path('api/global-trends/', views.get_global_trends_data, name='api_global_trends'),
-    path('api/user-keywords/', views.get_user_keywords, name='api_user_keywords'),
-    path('update_trends/', views.trigger_trends_update, name='update_trends'),
-]
+    path("api/user-keywords/", views.get_user_keywords, name="user_keywords_self"),
+    path("api/user-keywords/<int:user_id>/", views.get_user_keywords, name="user_keywords_other"),
+    path("manage/achievements/", views.manage_achievements, name="manage_achievements"),
+    path("manage/achievements/delete/<int:pk>/", views.delete_achievement, name="delete_achievement"),
+    path('achievements/edit/<int:pk>/', views.edit_achievement, name='edit_achievement'),
 
-# 只有在 DEBUG 模式下提供靜態文件
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=os.path.join(settings.BASE_DIR, 'static'))
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+]
+    
