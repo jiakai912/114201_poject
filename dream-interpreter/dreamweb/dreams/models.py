@@ -9,6 +9,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     points = models.IntegerField(default=0)  # 點券餘額
     is_therapist = models.BooleanField(default=False)
+    proof_file = models.FileField(upload_to='therapist_proofs/', blank=True, null=True)  # 證明檔案
     is_verified_therapist = models.BooleanField(default=False)  # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")

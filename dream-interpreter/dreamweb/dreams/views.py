@@ -458,14 +458,21 @@ class CustomLoginView(LoginView):
 # 註冊
 def register(request):
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
+        # ⚠️ 記得加上 request.FILES 才能接到檔案
+        form = UserRegisterForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             is_therapist = form.cleaned_data.get('is_therapist')
+            proof_file = form.cleaned_data.get('proof_file')
 
             # 這裡設定 UserProfile
             profile = UserProfile.objects.get(user=user)
             profile.is_therapist = is_therapist
+
+            # 如果有上傳證明檔案就存起來
+            if is_therapist and proof_file:
+                profile.proof_file = proof_file
+
             profile.save()
 
             login(request, user)
@@ -474,7 +481,9 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, 'dreams/register.html', {'form': form})
+
     
+
 # 心理諮商登入
 def custom_login(request):
     if request.method == 'POST':
