@@ -21,10 +21,11 @@ class UserEditForm(forms.ModelForm):
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
     is_therapist = forms.BooleanField(required=False, label="我是心理師")
+    proof_file = forms.FileField(required=False, label="心理師證明文件")
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password1', 'password2', 'is_therapist']
+        fields = ['username', 'email', 'password1', 'password2', 'is_therapist', 'proof_file']
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
@@ -152,3 +153,11 @@ class TherapistFullProfileForm(UserProfileForm):
 
     class Meta(UserProfileForm.Meta):
         fields = UserProfileForm.Meta.fields + ['coin_price', 'specialties']
+
+
+from .models import Achievement
+
+class AchievementForm(forms.ModelForm):
+    class Meta:
+        model = Achievement
+        fields = ['name', 'category', 'title', 'badge_icon', 'condition_key', 'condition_value']
