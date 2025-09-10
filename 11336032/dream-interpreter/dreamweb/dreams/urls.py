@@ -149,6 +149,9 @@ urlpatterns = [
     path("manage/achievements/delete/<int:pk>/", views.delete_achievement, name="delete_achievement"),
     path('achievements/edit/<int:pk>/', views.edit_achievement, name='edit_achievement'),
 
-
+    # 夢境情緒圖表頁面
+    path('dashboard/emotion_chart/', views.emotion_chart, name='emotion_chart'),
+    # 夢境關鍵詞雲頁面
+    path('dashboard/keyword_cloud/', views.keyword_cloud, name='keyword_cloud'),
 ]
     
