@@ -134,22 +134,19 @@ def view_user_detail(request, user_id):
 
         user.is_active = is_active
 
-        if role == 'admin':
-            user.is_superuser = True
-            profile.is_therapist = False
-            profile.is_verified_therapist = False
-        elif role == 'therapist':
-            user.is_superuser = False
+         # 移除 admin 選項，禁止變成管理員
+        if role == 'therapist':
             profile.is_therapist = True
             profile.is_verified_therapist = False
         elif role == 'verified':
-            user.is_superuser = False
             profile.is_therapist = True
             profile.is_verified_therapist = True
-        else:
-            user.is_superuser = False
+        else:  # 一般使用者
             profile.is_therapist = False
             profile.is_verified_therapist = False
+
+        # 永遠不要讓這個表單改動 superuser 權限
+        user.is_superuser = user.is_superuser  
 
         try:
             profile.points = int(points)
@@ -161,6 +158,7 @@ def view_user_detail(request, user_id):
 
         return redirect('manage_users')
 
+    # GET 載入表單
     user_form = UserEditForm(instance=user)
     profile_form = UserProfileForm(instance=profile)
 
@@ -169,7 +167,6 @@ def view_user_detail(request, user_id):
         'user_form': user_form,
         'profile_form': profile_form,
     })
-
 # 管理夢境
 @staff_member_required
 def manage_dreams(request):
@@ -1979,111 +1976,6 @@ def dream_news(request):
         print("偵錯：接收到 GET 請求，但無熱門關鍵字。使用預設關鍵字。")
         query = "台灣 新聞"
 
-    # === 動態資料獲取區塊 ===
-    # 1. 天氣 API (不指定區域，抓取第一筆可用資料)
-    weather_data = {}
-    weather_data = {}
-    try:
-        user_profile = request.user.userprofile
-        # 取得偏好地點，如果沒有則預設為 '臺北市'
-        preferred_location = user_profile.preferred_location or '臺北市'
-
-        cwa_api_key = "CWA-8651080D-A7CB-45BF-A520-901BCD852AAC"
-        weather_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization={cwa_api_key}&locationName={preferred_location}"
-        response = requests.get(weather_url, timeout=5)
-        response.raise_for_status()
-        cwa_data = response.json()
-        
-        # 確保資料結構存在且不為空
-        if cwa_data.get('success') == 'true' and cwa_data.get('records', {}).get('location', []):
-            location_data = cwa_data['records']['location'][0]
-            weather_elements = {item['elementName']: item for item in location_data.get('weatherElement', [])}
-            
-            temp_data = weather_elements.get('MinT', {}).get('time', [{}])[0].get('parameter', {}).get('parameterName', 'N/A')
-            weather_desc = weather_elements.get('Wx', {}).get('time', [{}])[0].get('parameter', {}).get('parameterName', 'N/A')
-            
-            weather_data = {
-                'location': location_data.get('locationName', 'N/A'),
-                'temp': temp_data,
-                'description': weather_desc,
-                'icon': "fas fa-sun" if "晴" in weather_desc else "fas fa-cloud" if "陰" in weather_desc else "fas fa-cloud-showers-heavy",
-            }
-        else:
-            print("偵錯：天氣 API 回傳資料不完整。")
-
-    except Exception as e:
-        print(f"無法獲取天氣數據：{e}")
-
-    # 2. 匯率 API (顯示主要貨幣對)
-    currency_data = {}
-    try:
-        r = requests.get('https://tw.rter.info/capi.php', timeout=5)
-        r.raise_for_status()
-        currency_json = r.json()
-
-        # 安全地獲取匯率，並檢查鍵是否存在
-        usd_rate = currency_json.get('USD', {}).get('Exrate')
-        jpy_rate = currency_json.get('JPY', {}).get('Exrate')
-        hkd_rate = currency_json.get('HKD', {}).get('Exrate')
-
-        if usd_rate and jpy_rate and hkd_rate:
-            # 這裡我們只顯示港幣兌台幣的匯率，因為 HTML 模板中是固定的
-            hkd_to_twd = (1 / hkd_rate) * usd_rate
-            currency_data = {
-                'rate': f"{hkd_to_twd:.2f}",
-                'change': "+0.20%" # 此API未提供，使用預設值
-            }
-        else:
-            print("偵錯：匯率 API 回傳資料缺少必要的貨幣資訊。")
-
-    except Exception as e:
-        print(f"無法獲取匯率數據：{e}")
-
-    # 3. 股票 API (獲取多個通用指數)
-    stock_data = []
-    try:
-        twse_url = "https://openapi.twse.com.tw/v1/exchangereport/MI_INDEX"
-        response = requests.get(twse_url, timeout=5)
-        response.raise_for_status()
-        stock_json = response.json()
-
-        if isinstance(stock_json, list) and stock_json:
-            # 獲取第一筆數據作為主要指數
-            main_index = stock_json[0]
-            stock_data.append({
-                'name': main_index.get('指數名稱', '大盤指數'),
-                'symbol': main_index.get('指數代號', 'N/A'),
-                'change': main_index.get('漲跌百分比', '0.00'),
-            })
-
-            # 嘗試獲取臺灣50指數
-            taiwan50_data = next((item for item in stock_json if item.get('指數名稱') == '臺灣50指數'), None)
-            if taiwan50_data:
-                stock_data.append({
-                    'name': '台灣50指數',
-                    'symbol': 'TWS0',
-                    'change': taiwan50_data.get('漲跌百分比', '0.00'),
-                })
-        else:
-            print("偵錯：TWSE API 回傳資料不是列表或為空。")
-        
-        # 硬編碼其他市場的資訊，因為TWSE API不包含這些
-        stock_data.append({
-            'name': 'CBOE恐慌指數',
-            'symbol': 'VIX',
-            'change': '-1.19' # 硬編碼值
-        })
-        stock_data.append({
-            'name': '台積電',
-            'symbol': 'TSM',
-            'change': '+0.29' # 硬編碼值
-        })
-
-    except Exception as e:
-        print(f"無法獲取股票數據：{e}")
-    # === 動態資料獲取區塊結束 ===
-
-
     if query:
         print(f"偵錯：夢境輸入或預設關鍵字為: {query}")
         try:
@@ -2145,9 +2037,6 @@ def dream_news(request):
         'other_news': other_news,
         'dream_input': dream_input,
         'popular_tags': popular_tags,
-        'weather_data': weather_data,
-        'currency_data': currency_data,
-        'stock_data': stock_data,
     }
     print("--- 渲染模板並回傳 ---")
     return render(request, 'dreams/dream_news.html', context)

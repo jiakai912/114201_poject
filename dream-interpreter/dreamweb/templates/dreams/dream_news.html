@@ -1,6 +1,5 @@
 <!-- 使用者夢境與新聞 -->
 <!-- 使用者夢境與新聞 -->
-<!-- 使用者夢境與新聞 -->
 {% extends 'dreams/base.html' %}
 {% load static %}
 {% load custom_filters %}
@@ -164,70 +163,38 @@
             <div class="row g-4">
                 
                 <div class="col-lg-3">
-                    <div class="d-flex justify-content-between align-items-center mb-4 fade-in-up">
-                        <h5 class="mb-0 text-neon"><i class="fas fa-tools me-2"></i>小工具</h5>
-                        <i class="fas fa-plus text-muted"></i>
-                    </div>
+                    <div class="card p-3 mb-4 rounded-3 text-center border-0 shadow-sm fade-in-up" style="animation-delay: 0.1s;">
+                        <h5 class="card-title text-muted mb-3"><i class="fas fa-bullhorn me-2"></i>贊助廣告</h5>
+                        
+                        <a href="https://example.com/ad1" target="_blank" class="d-block mb-4">
+                            <img src="https://via.placeholder.com/250x250.png?text=Ad+Space+1" class="img-fluid rounded-3" alt="廣告 1">
+                        </a>
+                        
+                        <div class="card p-3 mb-4 border-0 bg-light">
+                            <h6 class="card-subtitle text-primary fw-bold mb-2">尋求專業心理師？</h6>
+                            <p class="card-text small">我們的心理諮商服務提供一對一專業協助，讓您重新找回內心平靜。點擊這裡了解更多！</p>
+                            <a href="https://example.com/ad2" target="_blank" class="btn btn-primary btn-sm mt-2">了解詳情</a>
+                        </div>
+                        
+                        <a href="https://example.com/ad3" target="_blank" class="d-block mb-4">
+                            <img src="https://via.placeholder.com/250x150.png?text=Ad+Space+2" class="img-fluid rounded-3" alt="廣告 2">
+                        </a>
 
-                    <div class="placeholder-card mb-4 fade-in-up" style="animation-delay: 0.2s;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="section-header mb-0">板橋區</span>
-                            <h3 class="display-6 fw-bold text-neon mb-0">30<small class="fs-6">°C</small></h3>
+                        <div class="card p-3 mb-2 border-0">
+                            <h6 class="card-subtitle fw-bold mb-2">掌握夢境，掌握未來</h6>
+                            <p class="card-text small text-muted">每日星座運勢，與您的夢境深度結合，免費查詢！</p>
+                            <a href="https://example.com/ad4" target="_blank" class="text-decoration-none small">立即前往 &rarr;</a>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <i class="fas fa-sun text-warning fa-2x"></i>
-                            <small class="text-muted">高溫警告</small>
-                        </div>
-                        <div class="d-grid">
-                            <a href="#" class="btn btn-outline-primary btn-sm">查看完整預報</a>
-                        </div>
-                    </div>
-
-                    <div class="placeholder-card mb-4 fade-in-up" style="animation-delay: 0.3s;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="section-header mb-0">關注清單建議</span>
-                            <i class="fas fa-ellipsis-h text-muted"></i>
-                        </div>
-                        <ul class="list-unstyled">
-                            <li class="d-flex justify-content-between align-items-center py-2">
-                                <div>
-                                    <h6 class="mb-0 text-dark">CBOE恐慌指數</h6>
-                                    <small class="text-muted">快速下跌</small>
-                                </div>
-                                <span class="text-danger fw-bold">-1.19%</span>
-                            </li>
-                            <li class="d-flex justify-content-between align-items-center py-2">
-                                <div>
-                                    <h6 class="mb-0 text-dark">台灣50指數</h6>
-                                    <small class="text-muted">TWS0</small>
-                                </div>
-                                <span class="text-danger fw-bold">-0.10%</span>
-                            </li>
-                            <li class="d-flex justify-content-between align-items-center py-2">
-                                <div>
-                                    <h6 class="mb-0 text-dark">台積電</h6>
-                                    <small class="text-muted">TSM</small>
-                                </div>
-                                <span class="text-success fw-bold">+0.29%</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="placeholder-card mb-4 fade-in-up" style="animation-delay: 0.4s;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="section-header mb-0">熱門貨幣</span>
-                            <i class="fas fa-ellipsis-h text-muted"></i>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="fas fa-dollar-sign me-2 text-neon"></i>
-                            <h5>HKD HK$ → TWD NT$</h5>
-                        </div>
-                        <h3 class="display-6 fw-bold text-neon">3.80 <small class="text-success fs-6">+0.20%</small></h3>
-                        <img src="{% static 'images/currency_chart.png' %}" alt="Currency Chart" class="img-fluid my-2">
                     </div>
                     
+                    <div class="card p-3 rounded-3 text-center border-0 shadow-sm fade-in-up" style="animation-delay: 0.3s;">
+                        <h5 class="card-title text-muted mb-3"><i class="fas fa-gem me-2"></i>合作夥伴</h5>
+                        <a href="https://example.com/ad5" target="_blank" class="d-block">
+                            <img src="https://via.placeholder.com/250x100.png?text=Your+Logo+Here" class="img-fluid rounded-3" alt="合作夥伴廣告">
+                        </a>
+                    </div>
                 </div>
-                
+
                 <div class="col-lg-9">
                     <div class="row justify-content-center text-center">
                         <div class="col-12">
