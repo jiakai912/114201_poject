@@ -1,0 +1,79 @@
+{% extends 'dreams/base.html' %}
+{% load static %}
+{% load custom_filters %} 
+
+{% block title %} - 關鍵詞雲{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #1a1a2e;
+        color: #e0e0e0;
+    }
+    .keyword-cloud-container {
+        background-color: #0f0f1c;
+        border-radius: 1.5rem;
+        padding: 3rem;
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        margin-top: 5rem;
+    }
+    h1 {
+        color: #00bcd4;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .keyword-cloud-box {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.5rem;
+        min-height: 400px;
+        align-items: center;
+    }
+    .keyword-item {
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 0 0 5px #e91e63;
+        transition: all 0.3s ease-in-out;
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        background-color: rgba(233, 30, 99, 0.1);
+    }
+    .keyword-item:hover {
+        transform: scale(1.1) translateY(-3px);
+        background-color: rgba(233, 30, 99, 0.3);
+        box-shadow: 0 0 15px #e91e63;
+    }
+    /* 根據詞頻調整字體大小 */
+    .keyword-item.size-1 { font-size: 1.2rem; }
+    .keyword-item.size-2 { font-size: 1.5rem; }
+    .keyword-item.size-3 { font-size: 1.8rem; }
+    .keyword-item.size-4 { font-size: 2.2rem; }
+    .keyword-item.size-5 { font-size: 2.8rem; }
+</style>
+
+<div class="container keyword-cloud-container fade-in">
+    <h1><i class="fas fa-cloud me-2"></i>夢境關鍵詞雲</h1>
+    <p class="text-muted text-center">詞彙大小代表其在您夢境中的出現頻率。</p>
+    
+    <div class="keyword-cloud-box">
+        {% if top_keywords %}
+            {% for keyword, count in top_keywords.items %}
+                <span class="keyword-item size-{{ count|keyword_size_map }}">{{ keyword }}</span>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">暫無足夠的夢境記錄來生成關鍵詞雲。</p>
+        {% endif %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'dream_dashboard' %}" class="btn btn-outline-info-glow">
+            <i class="fas fa-arrow-left me-2"></i>返回儀表板
+        </a>
+    </div>
+</div>
+
+{% endblock %}

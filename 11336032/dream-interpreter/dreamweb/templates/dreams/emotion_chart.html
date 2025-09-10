@@ -1,0 +1,99 @@
+{% extends 'dreams/base.html' %}
+{% load static %}
+
+{% block title %} - 情緒圖表分析{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #1a1a2e;
+        color: #e0e0e0;
+    }
+    .chart-container {
+        background-color: #0f0f1c;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        margin-top: 5rem;
+    }
+    h1 {
+        color: #00bcd4;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    /* 這裡可以放置您圖表相關的 CSS 樣式 */
+    .chart-canvas {
+        width: 100%;
+        height: 500px;
+    }
+</style>
+
+<div class="container chart-container fade-in">
+    <h1><i class="fas fa-chart-line me-2"></i>情緒頻譜分析圖</h1>
+    <p class="text-muted text-center">此圖表呈現您過去七次夢境中，各情緒指數的變化趨勢。</p>
+    <canvas id="emotionChart" class="chart-canvas"></canvas>
+    <div class="text-center mt-4">
+        <a href="{% url 'dream_dashboard' %}" class="btn btn-outline-info-glow">
+            <i class="fas fa-arrow-left me-2"></i>返回儀表板
+        </a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/emotion-data/')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('emotionChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: data.datasets.map(dataset => ({
+                            label: dataset.label,
+                            data: dataset.data,
+                            borderColor: dataset.borderColor,
+                            fill: dataset.fill,
+                            tension: 0.3
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e0e0e0'
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#c0c0c0'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 255, 255, 0.1)'
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    color: '#c0c0c0',
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching emotion data:', error));
+    });
+</script>
+{% endblock %}
