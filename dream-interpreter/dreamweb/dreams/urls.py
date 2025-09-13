@@ -28,7 +28,10 @@ urlpatterns = [
     path('admin_manage-comments/', views.manage_comments, name='manage_comments'),
     path('admin_manage-comments/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
 
-
+    #管理系統
+    path("manage/achievements/", views.manage_achievements, name="manage_achievements"),
+    path("manage/achievements/delete/<int:pk>/", views.delete_achievement, name="delete_achievement"),
+    path('achievements/edit/<int:pk>/', views.edit_achievement, name='edit_achievement'),
 
     # 管理夢境
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
@@ -143,12 +146,11 @@ urlpatterns = [
     path('pointshop/buy/<int:pkg_id>/', views.pointshop_buy, name='pointshop_buy'),
     path('points/history/', views.point_history, name='point_history'),#點券使用記錄
 
+    #取得「目前登入使用者」自己的關鍵字
     path("api/user-keywords/", views.get_user_keywords, name="user_keywords_self"),
+    #心理師看別的使用者的夢境關鍵字
     path("api/user-keywords/<int:user_id>/", views.get_user_keywords, name="user_keywords_other"),
-    path("manage/achievements/", views.manage_achievements, name="manage_achievements"),
-    path("manage/achievements/delete/<int:pk>/", views.delete_achievement, name="delete_achievement"),
-    path('achievements/edit/<int:pk>/', views.edit_achievement, name='edit_achievement'),
-
-
+    #查看心理師證明文件
+    path("proof/<int:user_id>/", views.view_proof, name="view_proof"),
 ]
     

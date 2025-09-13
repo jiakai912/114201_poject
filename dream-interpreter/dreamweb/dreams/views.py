@@ -8,7 +8,7 @@ from django.contrib.auth import login,logout,authenticate
 from openai import OpenAI  # 導入 OpenAI SDK
 from .forms import DreamForm, UserRegisterForm,UserProfileForm,TherapistProfileForm,TherapistFullProfileForm,UserEditForm,AchievementForm
 import logging
-from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden
+from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,HttpResponseForbidden,FileResponse, Http404
 import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
 from .models import User,ChatInvitation,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike,DreamShare,Notification
@@ -62,6 +62,9 @@ from django.utils.timezone import localdate
 # 夢境新聞
 import bleach
 from django.urls import reverse
+
+
+
 
 # 管理員頁面
 def is_admin(user):
@@ -335,6 +338,14 @@ def reject_therapist(request, user_id):
     messages.warning(request, f"{profile.user.username} 的心理師申請已拒絕。")
     return redirect('manage_therapists')
 
+# 心理師證明
+@staff_member_required
+def view_proof(request, user_id):
+    from .models import UserProfile
+    profile = UserProfile.objects.get(user__id=user_id)
+    if not profile.proof_file:
+        raise Http404("沒有上傳證明")
+    return FileResponse(profile.proof_file.open(), as_attachment=False)
 
 # 管理成就
 @login_required
@@ -1117,8 +1128,19 @@ def get_user_keywords(request, user_id=None):
 
     # 停用詞（可再擴充）
     stopwords = ['的', '是', '了', '在', '和', '我']
-    filtered_words = [w for w in all_words if w not in stopwords and len(w) > 1]
 
+    filtered_words = []
+    for w in all_words:
+        w = w.strip()
+        # 過濾空白、停用詞、單字、數字、標點符號
+        if (
+            w 
+            and w not in stopwords 
+            and len(w) > 1 
+            and not re.match(r'^[\d\W_]+$', w)  # 移除純數字、符號
+        ):
+            filtered_words.append(w)
+    
     # 統計詞頻
     word_counts = Counter(filtered_words)
     top_keywords = dict(word_counts.most_common(8))
@@ -1954,6 +1976,7 @@ def dream_news(request):
     main_news = None
     other_news = []
     
+    # 🔍 取得熱門關鍵字
     try:
         latest_trend = DreamTrend.objects.latest('date')
         if latest_trend:
@@ -1964,6 +1987,7 @@ def dream_news(request):
 
     print("--- 請求開始 ---")
     
+    # 🔍 取得查詢關鍵字
     query = ""
     if request.method == 'POST':
         print("偵錯：接收到 POST 請求。")
@@ -1976,6 +2000,7 @@ def dream_news(request):
         print("偵錯：接收到 GET 請求，但無熱門關鍵字。使用預設關鍵字。")
         query = "台灣 新聞"
 
+    # 🔍 呼叫新聞 API
     if query:
         print(f"偵錯：夢境輸入或預設關鍵字為: {query}")
         try:
@@ -2004,18 +2029,26 @@ def dream_news(request):
                         documents = [query, document_text]
                         vectorizer = TfidfVectorizer()
                         tfidf_matrix = vectorizer.fit_transform(documents)
-                        similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0] * 100
 
-                        news_results.append({
-                            'title': title,
-                            'description': description,
-                            'url': url,
-                            'urlToImage': urlToImage,
-                            'similarity_score': round(similarity_score, 2)
-                        })
+                        similarity_score = cosine_similarity(
+                            tfidf_matrix[0:1],
+                            tfidf_matrix[1:2]
+                        )[0][0] * 100
 
+                        # ✅ 只保留相似度 > 0 的新聞
+                        if similarity_score > 0:
+                            news_results.append({
+                                'title': title,
+                                'description': description,
+                                'url': url,
+                                'urlToImage': urlToImage,
+                                'similarity_score': round(similarity_score, 2)
+                            })
+
+                # 🔍 按相似度排序
                 news_results.sort(key=lambda x: x['similarity_score'], reverse=True)
                 
+                # 拿第一筆當主要新聞，其餘最多 10 筆
                 if news_results:
                     main_news = news_results.pop(0)
                     other_news = news_results[:10]
@@ -2032,6 +2065,7 @@ def dream_news(request):
     else:
         print("偵錯：接收到 GET 請求。")
 
+    # 🔍 傳到模板
     context = {
         'main_news': main_news,
         'other_news': other_news,
@@ -2040,6 +2074,7 @@ def dream_news(request):
     }
     print("--- 渲染模板並回傳 ---")
     return render(request, 'dreams/dream_news.html', context)
+
 
 
 # 使用者查看已預約時段

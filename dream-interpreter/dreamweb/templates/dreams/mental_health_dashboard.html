@@ -374,7 +374,7 @@
             form.addEventListener('submit', function(e) {
                 const selectedOption = select.options[select.selectedIndex];
                 const price = selectedOption.getAttribute('data-coin_price') || '1500';
-                if (!confirm(`預約將扣除 ${price} 點券，並與心理師分享您的夢境，是否確定預約？`)) {
+                if (!confirm(`預約將扣除 ${price} 點券，並與心理師分享您的夢境內容與個人關鍵字記錄，是否確定分享並進行預約？`)) {
                     e.preventDefault();  // 使用者取消就阻止送出
                 }
             });

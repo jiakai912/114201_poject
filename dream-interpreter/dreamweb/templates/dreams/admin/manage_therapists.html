@@ -46,13 +46,15 @@
             <!-- 新增：心理師證明 -->
             <td>
               {% if profile.proof_file %}
-                <a href="{{ profile.proof_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                  查看
+                <a href="{% url 'view_proof' profile.user.id %}" target="_blank" 
+                  class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                  查看證明
                 </a>
               {% else %}
                 <span class="text-muted">未上傳</span>
               {% endif %}
             </td>
+
 
             <td>
               {% if profile.is_verified_therapist %}
