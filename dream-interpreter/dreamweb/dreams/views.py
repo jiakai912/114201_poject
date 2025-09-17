@@ -1111,6 +1111,93 @@ def dream_dashboard(request):
         'recommendations': recommendations
     })
 
+from django.db.models import Avg # 確保你有 import Avg
+from django.utils import timezone # 確保你有 import timezone
+from datetime import timedelta # 確保你有 import timedelta
+# 夢境儀表板 (這是更新後的版本)
+@login_required
+def dream_dashboard(request):
+    # 獲取當前使用者的所有夢境紀錄
+    user_dreams = Dream.objects.filter(user=request.user)
+    
+    # 找到最新的一筆夢境紀錄用於「情緒感測」卡片
+    latest_dream = user_dreams.first()
+
+    # 初始化要傳遞到前端的變數
+    primary_emotion_name = "無紀錄"
+    primary_emotion_value = 0
+    primary_emotion_description = "您還沒有解析過夢境，快去體驗看看吧！"
+    stress_index = 0
+    recommendations = ["請先解析至少一筆夢境，以獲得個人化建議。"]
+    weekly_stats = None # NEW: 初始化每週統計變數
+
+    if latest_dream:
+        # 1. 分析最新夢境，找出最高情緒
+        emotions = {
+            "快樂": latest_dream.Happiness, "焦慮": latest_dream.Anxiety,
+            "恐懼": latest_dream.Fear, "興奮": latest_dream.Excitement, "悲傷": latest_dream.Sadness,
+        }
+        primary_emotion_name = max(emotions, key=emotions.get)
+        primary_emotion_value = emotions[primary_emotion_name]
+        
+        emotion_descriptions = {
+            "快樂": "您的夢境充滿正向能量，反映了內心的愉悅與滿足",
+            "焦慮": "您的夢境顯示出潛在的擔憂，潛意識可能正在處理壓力",
+            "恐懼": "您的夢境中帶有恐懼的色彩，或許正視它會是和解的開始",
+            "興奮": "您的夢境充滿了活力與期待，暗示著對未來的熱情",
+            "悲傷": "您的夢境流露出一絲悲傷，這是內心需要被溫柔對待的信號",
+        }
+        primary_emotion_description = emotion_descriptions.get(primary_emotion_name, "您的夢境情緒豐富，值得深入探索。")
+
+        # 2. 使用 EmotionAnalyzer 產生綜合建議
+        analyzer = EmotionAnalyzer(user_dreams)
+        stress_index = analyzer.calculate_stress_index()
+        recommendations = analyzer.generate_health_recommendations(stress_index)
+
+    # --- START: 新增的「最近7天情緒統計」邏輯 ---
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    recent_dreams = user_dreams.filter(created_at__gte=seven_days_ago)
+    
+    if recent_dreams.exists():
+        # 計算最近7天各情緒的平均值
+        avg_emotions = recent_dreams.aggregate(
+            avg_happiness=Avg('Happiness'), avg_anxiety=Avg('Anxiety'),
+            avg_fear=Avg('Fear'), avg_excitement=Avg('Excitement'), avg_sadness=Avg('Sadness')
+        )
+        
+        # 整理成字典方便處理
+        emotion_map = {
+            "快樂": avg_emotions.get('avg_happiness', 0), "興奮": avg_emotions.get('avg_excitement', 0),
+            "焦慮": avg_emotions.get('avg_anxiety', 0), "恐懼": avg_emotions.get('avg_fear', 0),
+            "悲傷": avg_emotions.get('avg_sadness', 0)
+        }
+
+        # 找出正面和負面情緒中的最高平均值
+        positive_emotions = {"快樂": emotion_map["快樂"], "興奮": emotion_map["興奮"]}
+        negative_emotions = {"焦慮": emotion_map["焦慮"], "恐懼": emotion_map["恐懼"], "悲傷": emotion_map["悲傷"]}
+
+        main_emotion_name = max(positive_emotions, key=positive_emotions.get)
+        concern_emotion_name = max(negative_emotions, key=negative_emotions.get)
+
+        weekly_stats = {
+            "main_emotion": {"name": main_emotion_name, "avg": positive_emotions[main_emotion_name]},
+            "concern_emotion": {"name": concern_emotion_name, "avg": negative_emotions[concern_emotion_name]}
+        }
+    # --- END: 新增的邏輯 ---
+
+    context = {
+        'latest_dream': latest_dream,
+        'primary_emotion_name': primary_emotion_name,
+        'primary_emotion_value': primary_emotion_value,
+        'primary_emotion_description': primary_emotion_description,
+        'stress_index': stress_index,
+        'recommendations': recommendations,
+        'weekly_stats': weekly_stats, # NEW: 將每週統計數據傳到前端
+    }
+    
+    return render(request, 'dreams/dream_dashboard.html', context)
+
+
 # 個人關鍵字
 @login_required
 def get_user_keywords(request, user_id=None):
@@ -1327,9 +1414,6 @@ def mental_health_dashboard(request):
         therapist = User.objects.select_related('userprofile').filter(id=share.therapist.id).first()
         if therapist and therapist.userprofile.specialties:
             therapist_specialties = therapist.userprofile.get_specialties_list()
-
-
-    
 
 
     if request.method == 'POST':

@@ -265,21 +265,54 @@
     color: white;
     }
 
+    /* 确保 Modal 在页面中央显示 */
+    .modal-dialog {
+        position: fixed;        /* 使用固定定位 */
+        top: -41.4%;               /* 设置垂直居中 */
+        left: 32%;              /* 设置水平居中 */
+    }
+
 </style>
 
+<!-- 動畫效果 -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         {% if emotion_alert %}
+        // 確保在 Modal 相關的元素完全加載後顯示
         const modalElement = document.getElementById('emotionAlertModal');
         const modal = new bootstrap.Modal(modalElement, {
-            backdrop: false,
-            keyboard: false
+            backdrop: false,  // 禁止點擊背景關閉 Modal
+            keyboard: false      // 禁止按鍵關閉 Modal
         });
         setTimeout(function () {
-            modal.show();
-        }, 500);
+            modal.show(); // 延遲顯示 Modal
+        }, 500); // 延遲 0.5 秒來保證 DOM 完全加載
         {% endif %}
+    });
+</script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        
+        // 觀察元素進入視窗
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animation-fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+        
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
         const select = document.getElementById("therapistSelect");
         const card = document.getElementById("therapistInfoCard");
         const nameEl = document.getElementById("therapistName");
