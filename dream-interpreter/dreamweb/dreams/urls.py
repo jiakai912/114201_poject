@@ -152,5 +152,5 @@ urlpatterns = [
     path("api/user-keywords/<int:user_id>/", views.get_user_keywords, name="user_keywords_other"),
     #查看心理師證明文件
     path("proof/<int:user_id>/", views.view_proof, name="view_proof"),
-   ]
+]
     
