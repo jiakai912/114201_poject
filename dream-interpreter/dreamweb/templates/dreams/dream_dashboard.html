@@ -9,7 +9,7 @@
     body { background-color: #F5F7FA; color: #2c3e50; font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
     .page-container { background-color: #FFF; border-radius: 1.5rem; padding: 3rem; box-shadow: 0 8px 30px rgba(52, 152, 219, 0.15); border: 1px solid #D9E3F0; }
     .page-header h1 { text-align: center; margin-bottom: 0.5rem; color: #000; }
-    .page-header p { text-align: center; font-style: italic; color: #7f8c8d; }
+
 
     .dashboard-card { background-color: #FFF; border: 1px solid #EAEFF5; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s; }
     .dashboard-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 25px rgba(52, 152, 219, 0.2); border-color: #A9CCE3; }
@@ -38,48 +38,6 @@
     </button>
 </div>
 
-
-<!-- 夢境歷史 -->
-<div id="history-pane">
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="dashboard-card">
-                <h5 class="card-title">個人關鍵字紀錄</h5>
-                <canvas id="keywordBarChart" style="max-height:400px;"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="dashboard-card">
-                <h5 class="card-title">快樂情緒趨勢圖</h5>
-                <canvas id="happyChart" style="max-height:400px;"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="dashboard-card">
-                <h5 class="card-title">焦慮情緒趨勢圖</h5>
-                <canvas id="anxietyChart" style="max-height:400px;"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="dashboard-card">
-                <h5 class="card-title">恐懼情緒趨勢圖</h5>
-                <canvas id="fearChart" style="max-height:400px;"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="dashboard-card">
-                <h5 class="card-title">興奮情緒趨勢圖</h5>
-                <canvas id="excitedChart" style="max-height:400px;"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="dashboard-card">
-                <h5 class="card-title">悲傷情緒趨勢圖</h5>
-                <canvas id="sadChart" style="max-height:400px;"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 情緒儀表板 -->
 <div id="emotion-pane" style="display:none;">
@@ -138,12 +96,59 @@
     </div>
 </div>
 
+<!-- 夢境歷史 -->
+<div id="history-pane">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">個人關鍵字紀錄</h5>
+                <canvas id="keywordBarChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">快樂情緒趨勢圖</h5>
+                <canvas id="happyChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">焦慮情緒趨勢圖</h5>
+                <canvas id="anxietyChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">恐懼情緒趨勢圖</h5>
+                <canvas id="fearChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">興奮情緒趨勢圖</h5>
+                <canvas id="excitedChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">悲傷情緒趨勢圖</h5>
+                <canvas id="sadChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const btn = document.getElementById("toggleDashboardBtn");
     const historyPane = document.getElementById("history-pane");
     const emotionPane = document.getElementById("emotion-pane");
+
+    // 初始狀態：顯示情緒儀表板，隱藏夢境歷史
+    historyPane.style.display = "none";
+    emotionPane.style.display = "block";
 
     btn.addEventListener("click", () => {
         const showingHistory = historyPane.style.display !== "none";
@@ -152,6 +157,7 @@ document.addEventListener("DOMContentLoaded", function () {
         
         btn.classList.toggle("rotated"); // CSS 可以定義旋轉效果
     });
+    
 
 
     // 載入情緒資料
@@ -160,15 +166,15 @@ document.addEventListener("DOMContentLoaded", function () {
             new Chart(document.getElementById(id), {
                 type: "line",
                 data: { labels, datasets:[{ ...dataset, label, borderWidth:2 }] },
-                options: { responsive:true, scales:{ y:{ beginAtZero:true, max:100 } } }
+                options: { responsive:true, animation: false,scales:{ y:{ beginAtZero:true, max:100 } } }
             });
         };
 
-        createLineChart("happyChart", data.labels, data.datasets[0], "快樂");
-        createLineChart("anxietyChart", data.labels, data.datasets[1], "焦慮");
-        createLineChart("fearChart", data.labels, data.datasets[2], "恐懼");
-        createLineChart("excitedChart", data.labels, data.datasets[3], "興奮");
-        createLineChart("sadChart", data.labels, data.datasets[4], "悲傷");
+        createLineChart("happyChart", data.labels, data.datasets[0], "快樂指數");
+        createLineChart("anxietyChart", data.labels, data.datasets[1], "焦慮指數");
+        createLineChart("fearChart", data.labels, data.datasets[2], "恐懼指數");
+        createLineChart("excitedChart", data.labels, data.datasets[3], "興奮指數");
+        createLineChart("sadChart", data.labels, data.datasets[4], "悲傷指數");
 
         new Chart(document.getElementById('emotionChart'), {
             type: 'line',
@@ -183,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
             new Chart(document.getElementById(id), {
                 type:'bar',
                 data:{ labels: keywordData.map(i=>i.keyword), datasets:[{ label:"關鍵字頻率", data:keywordData.map(i=>i.count), backgroundColor:"rgba(106,90,205,0.2)", borderColor:"rgba(106,90,205,1)", borderWidth:1 }]},
-                options:{ responsive:true, scales:{ y:{ beginAtZero:true } } }
+                options:{ responsive:true, animation: false,scales:{ y:{ beginAtZero:true } } }
             });
         };
         createBarChart("keywordBarChart");

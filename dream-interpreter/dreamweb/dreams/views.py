@@ -13,7 +13,7 @@ import random  # 模擬 AI 建議，可替換為 NLP 分析
 from django.contrib.auth.views import LoginView
 from .models import User,ChatInvitation,Dream,DreamPost,DreamComment,DreamTag,DreamTrend,DreamRecommendation,DailyTaskRecord,PointTransaction,DreamShareAuthorization, UserProfile,TherapyAppointment, TherapyMessage,ChatMessage,UserAchievement,Achievement, CommentLike,PostLike,DreamShare,Notification
 from django.db.models.functions import Greatest
-from django.db.models import Count,Q,Max
+from django.db.models import Count,Q,Max,Avg
 from django.utils import timezone
 import jieba  # 中文分詞庫
 from collections import Counter,defaultdict
@@ -38,7 +38,7 @@ import io
 from django.contrib.auth.models import User
 from django.db import models,transaction
 from django.views.decorators.http import require_POST
-from datetime import datetime,date
+from datetime import datetime,date,timedelta
 # 綠界
 import datetime
 from django.views.decorators.csrf import csrf_exempt
@@ -897,7 +897,6 @@ client = OpenAI(api_key="sk-b1e7ea9f25184324aaa973412b081f6f", base_url="https:/
 
 
 # 將音檔轉換為 WAV 格式
-# 音檔轉換函數
 def convert_to_wav(audio_file):
     audio = AudioSegment.from_file(audio_file)
     wav_audio = io.BytesIO()
@@ -1095,25 +1094,6 @@ def interpret_dream(dream_content, max_retries=3):
 
     return interpretation, emotions, mental_health_advice
 
-
-
-# 夢境儀表板
-@login_required
-def dream_dashboard(request):
-    dreams = Dream.objects.filter(user=request.user)
-    analyzer = EmotionAnalyzer(dreams)
-    stress_index = analyzer.calculate_stress_index()
-    recommendations = analyzer.generate_health_recommendations(stress_index)
-    
-    return render(request, 'dreams/dream_dashboard.html', {
-        'dreams': dreams,
-        'stress_index': stress_index,
-        'recommendations': recommendations
-    })
-
-from django.db.models import Avg # 確保你有 import Avg
-from django.utils import timezone # 確保你有 import timezone
-from datetime import timedelta # 確保你有 import timedelta
 # 夢境儀表板 (這是更新後的版本)
 @login_required
 def dream_dashboard(request):

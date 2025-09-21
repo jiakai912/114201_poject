@@ -76,7 +76,7 @@
               <i class="fas fa-user-md fa-3x text-info mb-3"></i>
               <h5 class="card-title">待審心理師</h5>
               <p class="fs-2 fw-bold">{{ unverified_therapists }}</p>
-              <a href="{% url 'manage_therapists' %}" class="btn btn-outline-primary mt-3">前往管理</a>
+              <a href="{% url 'manage_therapists' %}" class="btn btn-outline-primary mt-3">前往審核</a>
             </div>
           </div>
         </div>
@@ -103,7 +103,7 @@
               <i class="fas fa-comments fa-3x text-secondary mb-3"></i>
               <h5 class="card-title">聊天室訊息</h5>
               <p class="fs-2 fw-bold">{{ total_chat_messages }}</p>
-              <a href="{% url 'manage_chat_messages' %}" class="btn btn-outline-primary mt-3">瀏覽訊息</a>
+              <a href="{% url 'manage_chat_messages' %}" class="btn btn-outline-primary mt-3">管理訊息</a>
             </div>
           </div>
         </div>
