@@ -5,27 +5,45 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
     
+import os
+import uuid
+from django.db import models
+from django.contrib.auth.models import User
+
+def therapist_proof_upload_path(instance, filename):
+    """心理師證明檔案的上傳路徑，使用 UUID 隨機命名避免洩漏個資"""
+    ext = filename.split('.')[-1]  # 取得副檔名
+    new_filename = f"{uuid.uuid4().hex}.{ext}"  # 產生隨機檔名
+    return os.path.join("therapist_proofs", new_filename)
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     points = models.IntegerField(default=0)  # 點券餘額
     is_therapist = models.BooleanField(default=False)
-    proof_file = models.FileField(upload_to='therapist_proofs/', blank=True, null=True)  # 證明檔案
+    proof_file = models.FileField(
+        upload_to=therapist_proof_upload_path,
+        blank=True,
+        null=True,
+        verbose_name="證明檔案"
+    )  # 🔒 已改成隱藏檔名
     is_verified_therapist = models.BooleanField(default=False)  # ✅ 審核心理師註冊
     current_title = models.CharField(max_length=50, blank=True, null=True, verbose_name="當前稱號")
     current_badge_icon = models.CharField(max_length=100, blank=True, null=True, verbose_name="當前徽章圖標")
+
     # 訂價格
-    coin_price = models.PositiveIntegerField(default=10, help_text="每次預約所需點券數")  # 新增欄位
-    
-    # 新增未讀信件計數
+    coin_price = models.PositiveIntegerField(default=10, help_text="每次預約所需點券數")
+
+    # 未讀信件計數
     unread_notifications_count = models.IntegerField(default=0)
 
-    # 新增 bio 和 avatar 字段
+    # 個人資訊
     bio = models.TextField(blank=True, null=True, verbose_name="個人簡介")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="頭像")
 
     allow_contact_by_therapist = models.BooleanField(default=False)
 
-    # 新增這兩個欄位，用於用戶選擇在社群中展示的稱號和徽章
+    # 用戶展示稱號和徽章
     display_title = models.ForeignKey(
         'Achievement',
         on_delete=models.SET_NULL,
@@ -41,12 +59,16 @@ class UserProfile(models.Model):
         verbose_name="社群展示徽章"
     )
 
-    # 新增專長領域欄位 (用逗號分隔)
-    specialties = models.TextField(blank=True, null=True, verbose_name="專長領域", help_text="用逗號分隔多個專長，例如：焦慮治療, 兒童心理, 認知行為療法")
-    
+    # 專長領域
+    specialties = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="專長領域",
+        help_text="用逗號分隔多個專長，例如：焦慮治療, 兒童心理, 認知行為療法"
+    )
+
     def get_specialties_list(self):
         if self.specialties:
-            # 同時支援逗號或換行拆分
             lines = []
             for part in self.specialties.split(','):
                 lines.extend(part.splitlines())
@@ -55,7 +77,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
-    
+
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

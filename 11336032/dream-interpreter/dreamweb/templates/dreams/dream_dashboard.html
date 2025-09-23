@@ -1,328 +1,202 @@
 {% extends 'dreams/base.html' %}
 {% load static %}
 
-{% block title %} - 情緒儀表板{% endblock %}
+{% block title %} - 夢境儀表板{% endblock %}
 
 {% block content %}
+
 <style>
-    /* 整體深色科技感背景 */
-    body {
-        background-color: #1a1a2e; /* 深藍紫色 */
-        color: #e0e0e0; /* 淺灰色文字 */
-        font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 現代科技字體 */
-        animation: fadeInBackground 1s ease-out;
-    }
+    body { background-color: #F5F7FA; color: #2c3e50; font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+    .page-container { background-color: #FFF; border-radius: 1.5rem; padding: 3rem; box-shadow: 0 8px 30px rgba(52, 152, 219, 0.15); border: 1px solid #D9E3F0; }
+    .page-header h1 { text-align: center; margin-bottom: 0.5rem; color: #000; }
 
-    @keyframes fadeInBackground {
-        from { background-color: #0d0d1a; }
-        to { background-color: #1a1a2e; }
-    }
 
-    .page-container {
-        background-color: #0f0f1c; /* 更深的卡片背景，與 body 區隔 */
-        border-radius: 1.5rem; /* 圓角更大 */
-        padding: 3rem;
-        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), 0 0 15px rgba(0, 255, 255, 0.1); /* 科技感光暈效果 */
-        border: 1px solid rgba(0, 255, 255, 0.3); /* 細微邊框 */
-        position: relative;
-        overflow: hidden; /* 隱藏超出邊界的動畫效果 */
-    }
+    .dashboard-card { background-color: #FFF; border: 1px solid #EAEFF5; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s; }
+    .dashboard-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 25px rgba(52, 152, 219, 0.2); border-color: #A9CCE3; }
 
-    /* 頁面標題和副標題 */
-    .page-header h1 {
-        color: #00bcd4; /* 青藍色，科技感主色 */
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.7); /* 發光文字 */
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        animation: pulseText 2s infinite alternate;
-    }
+    .btn-outline-info-glow { color: #3498DB; border-color: #3498DB; background-color: transparent; transition: all 0.3s; box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+    .btn-outline-info-glow:hover { color: #FFF; background-color: #3498DB; border-color: #3498DB; box-shadow: 0 0 15px rgba(52, 152, 219, 0.6); transform: translateY(-2px); }
 
-    .page-header p {
-        color: #8899a6; /* 柔和的淺藍灰色 */
-        font-style: italic;
-    }
-
-    @keyframes pulseText {
-        0% { text-shadow: 0 0 10px rgba(0, 255, 255, 0.7); }
-        100% { text-shadow: 0 0 15px rgba(0, 255, 255, 0.9), 0 0 5px rgba(0, 255, 255, 0.5); }
-    }
-
-    /* 圖標顏色 */
-    .dream-icon i {
-        color: #00bcd4; /* 與標題同色 */
-        text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
-    }
-
-    /* 卡片通用樣式 */
-    .dashboard-card {
-        background-color: #16213e; /* 較深的卡片背景 */
-        border: 1px solid rgba(0, 255, 255, 0.2);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
-        transition: all 0.3s ease-in-out;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 1.5rem; /* 增加卡片間距 */
-    }
-
-    .dashboard-card:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.3), 0 0 10px rgba(0, 255, 255, 0.15);
-        border-color: rgba(0, 255, 255, 0.5);
-    }
-
-    /* 卡片標題 */
-    .dashboard-card .card-title {
-        color: #00bcd4; /* 青藍色 */
-        font-weight: 600;
-        border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-        padding-bottom: 0.75rem;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-    }
-    .dashboard-card .card-title i {
-        margin-right: 0.75rem;
-        color: #e91e63; /* 點綴色 */
-    }
-
-    /* 內容文字 */
-    .dashboard-card .card-text {
-        color: #c0c0c0;
-        line-height: 1.8;
-    }
-
-    /* 連結和按鈕 */
-    .dashboard-card a {
-        color: #00bcd4;
-        text-decoration: none;
-        transition: color 0.3s;
-    }
-    .dashboard-card a:hover {
-        color: #e91e63;
-        text-decoration: underline;
-    }
-
-    .btn-outline-info-glow {
-        color: #00bcd4;
-        border-color: #00bcd4;
-        background-color: transparent;
-        transition: all 0.3s ease-in-out;
-        box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
-    }
-    .btn-outline-info-glow:hover {
-        color: #1a1a2e;
-        background-color: #00bcd4;
-        border-color: #00bcd4;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
-        transform: translateY(-2px);
-    }
-
-    /* 特殊區塊：情緒視覺化 */
-    .emotion-display {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 200px;
-        background: linear-gradient(45deg, #2a003f, #0f0f1c); /* 漸層背景 */
-        border: 2px dashed rgba(0, 255, 255, 0.4); /* 虛線邊框 */
-        border-radius: 1rem;
-        padding: 2rem;
-        text-align: center;
-        box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.2);
-    }
-    .emotion-display .current-emotion {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #e91e63; /* 突出情緒字眼 */
-        text-shadow: 0 0 15px #e91e63;
-        margin-bottom: 1rem;
-        animation: glowingEmotion 3s infinite alternate;
-    }
-    .emotion-display .emotion-description {
-        color: #b0b0b0;
-        font-size: 1.1rem;
-    }
-
-    @keyframes glowingEmotion {
-        0% { text-shadow: 0 0 10px #e91e63; }
-        100% { text-shadow: 0 0 20px #e91e63, 0 0 10px rgba(233, 30, 99, 0.7); }
-    }
-
-    /* 圓形進度條/儀表板 */
-    .circular-progress-container {
-        position: relative;
-        width: 150px;
-        height: 150px;
-        margin: 2rem auto;
-    }
-    .circular-progress-background, .circular-progress-fill {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-    }
-    .circular-progress-background {
-        border: 10px solid rgba(0, 255, 255, 0.1);
-    }
-    .circular-progress-fill {
-        border: 10px solid transparent;
-        border-top-color: #e91e63;
-        border-right-color: #00bcd4;
-        border-bottom-color: #e91e63;
-        border-left-color: #00bcd4;
-        transform: rotate(45deg); /* 起始旋轉 */
-        animation: rotateProgress 5s infinite linear;
-    }
-    .circular-progress-value {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 2rem;
-        font-weight: bold;
-        color: #00bcd4;
-        text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
-    }
-
-    @keyframes rotateProgress {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    /* 夢境分析結果區塊 */
-    .analysis-results {
-        background-color: #1a1a2e; /* 與 body 接近，增加深邃感 */
-        border: 1px solid rgba(0, 255, 255, 0.3);
-        border-radius: 0.8rem;
-        padding: 1.5rem;
-        margin-top: 1.5rem;
-    }
-    .analysis-results h6 {
-        color: #00bcd4;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-    .analysis-item {
-        margin-bottom: 0.8rem;
-        padding-bottom: 0.8rem;
-        border-bottom: 1px dashed rgba(0, 255, 255, 0.1);
-        display: flex;
-        align-items: flex-start;
-    }
-    .analysis-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .analysis-item i {
-        color: #e91e63;
-        margin-right: 0.75rem;
-        font-size: 1.2em;
-        line-height: 1.5; /* 與文字對齊 */
-    }
-    .analysis-item span {
-        flex-grow: 1;
-        color: #c0c0c0;
-    }
-
-    /* 動畫效果 */
-    .fade-in {
-        opacity: 0;
-        animation: fadeIn 1s ease-out forwards;
-    }
-    .slide-in-left {
-        opacity: 0;
-        transform: translateX(-50px);
-        animation: slideInLeft 0.8s ease-out forwards;
-    }
-    .slide-in-right {
-        opacity: 0;
-        transform: translateX(50px);
-        animation: slideInRight 0.8s ease-out forwards;
-    }
-    .scale-in {
-        opacity: 0;
-        transform: scale(0.8);
-        animation: scaleIn 0.8s ease-out forwards;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    @keyframes slideInLeft {
-        from { transform: translateX(-50px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideInRight {
-        from { transform: translateX(50px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes scaleIn {
-        from { transform: scale(0.8); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
+    .circular-progress-container { position: relative; width: 150px; height: 150px; margin: 1rem auto; }
+    .circular-progress-background, .circular-progress-fill { position: absolute; width: 100%; height: 100%; border-radius: 50%; }
+    .circular-progress-background { border: 10px solid #EAF2F8; }
+    .circular-progress-fill { border: 10px solid transparent; border-top-color: #8E44AD; border-right-color: #3498DB; border-bottom-color: #8E44AD; border-left-color: #3498DB; transform: rotate(45deg); animation: rotateProgress 5s infinite linear; }
+    .circular-progress-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; font-weight: bold; color: #3498DB; }
+    @keyframes rotateProgress { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 
-<div class="container mt-5">
-    <div class="page-header text-center mb-5 fade-in">
-        <div class="dream-icon mb-3">
-            <i class="fas fa-head-side-brain fa-3x"></i>
-        </div>
-        <h1 class="fw-bold">情緒探測儀表板</h1>
-        <p class="text-muted">深入解析您的夢境情緒頻譜</p>
-    </div>
+<div class="page-header">
+    <div class="dream-icon"><i class="fas fa-chart-line"></i></div>
+    <h1 class="fw-bold">夢境分析數據</h1>
+    <p class="text-muted">回顧您過去的夢境分析數據</p>
+</div>
 
-    <div class="container page-container fade-in" style="animation-delay: 0.3s;">
-        <div class="row g-4">
-            
-            <div class="col-lg-6 slide-in-left" style="animation-delay: 0.5s;">
-                <div class="dashboard-card h-100">
-                    <h5 class="card-title"><i class="fas fa-satellite-dish"></i> 夢境情緒感測</h5>
-                    <div class="emotion-display">
-                        <div class="circular-progress-container mb-3">
+<!-- 單一切換按鈕 -->
+<div class="mb-4 text-end">
+    <button id="toggleDashboardBtn" class="btn btn-primary">
+        <i class="fas fa-exchange-alt"></i> <!-- 可換成任何你喜歡的 FontAwesome 圖示 -->
+    </button>
+</div>
+
+
+<!-- 情緒儀表板 -->
+<div id="emotion-pane" style="display:none;">
+    <div class="row g-4">
+        <!-- 左邊：最新夢境情緒 -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <!-- 標題 -->
+                    <h5 class="card-title text-start mb-4">
+                        <i class="fas fa-satellite-dish me-2"></i>最新夢境情緒感測
+                    </h5>
+
+                    <!-- 主體區塊：進度條 + 文字 -->
+                    <div class="d-flex align-items-center gap-4 flex-grow-1" style="height: 100%;">
+                        <!-- 左邊圓形進度條 -->
+                        <div class="circular-progress-container" style="width: 160px; height: 160px; min-width: 160px;">
                             <div class="circular-progress-background"></div>
+                            {% if latest_dream %}
                             <div class="circular-progress-fill"></div>
-                            <div class="circular-progress-value">75%</div>
+                            {% endif %}
+                            <div class="circular-progress-value" style="font-size: 2rem;">{{ primary_emotion_value|floatformat:0 }}%</div>
                         </div>
-                        <h3 class="current-emotion">寧靜</h3>
-                        <p class="emotion-description">您的夢境散發著深沉的平靜，暗示著內心的和諧與滿足。這可能是潛意識在引導您走向更深層的自我探索。</p>
-                        <button class="btn btn-outline-info-glow mt-3">深度解析</button>
+
+                        <!-- 右邊文字區 -->
+                        <div class="text-start flex-grow-1 d-flex flex-column justify-content-center">
+                            <h3 class="current-emotion mb-2" style="font-size: 1.8rem;">{{ primary_emotion_name }}</h3>
+                            <p class="emotion-description mb-3" style="font-size: 1.1rem;">{{ primary_emotion_description }}</p>
+                            {% if latest_dream %}
+                            <a href="{% url 'dream_detail' latest_dream.id %}" class="btn btn-outline-info-glow">查看該夢境詳情</a>
+                            {% else %}
+                            <a href="{% url 'dream_form' %}" class="btn btn-outline-info-glow">開始解析夢境</a>
+                            {% endif %}
+                        </div>
                     </div>
+
                 </div>
             </div>
+        </div>
 
-            <div class="col-lg-6 slide-in-right" style="animation-delay: 0.6s;">
-                <div class="dashboard-card h-100 d-flex flex-column justify-content-center align-items-center text-center">
-                    <h5 class="card-title"><i class="fas fa-chart-line"></i> 情緒頻譜分析</h5>
-                    <p class="card-text mb-4">點擊下方按鈕，查看您的情緒趨勢圖表。</p>
-                    <a href="{% url 'emotion_chart' %}" class="btn btn-outline-info-glow mt-auto">
-                        <i class="fas fa-eye me-2"></i>查看情緒圖表
-                    </a>
+        <!-- 右邊：個人關鍵字 -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">個人關鍵字紀錄</h5>
+                    <canvas id="keywordBarChart2" style="max-height: 400px;"></canvas>
                 </div>
             </div>
-
-            <div class="col-md-12 scale-in" style="animation-delay: 0.8s;">
-                <div class="dashboard-card h-100">
-                    <h5 class="card-title"><i class="fas fa-lightbulb"></i> 情緒里程碑與建議</h5>
-                    <p class="card-text mb-3">透過分析您的夢境情緒，我們為您提供以下洞察和實用建議，幫助您更好地理解和平衡內心世界。</p>
-                    <div class="analysis-results">
-                        <h6><i class="fas fa-compass me-2"></i>本週焦點：</h6>
-                        <p class="small mb-2">您的夢境顯示對「未知」的探索慾望正在增強。</p>
-                        <h6><i class="fas fa-flask me-2"></i>建議：</h6>
-                        <ul>
-                            <li class="small">嘗試紀錄更多夢境細節，特別是感覺新奇或令人困惑的部分。</li>
-                            <li class="small">白天可接觸新知識或技能，滿足潛意識的求知慾。</li>
-                            <li class="small">進行冥想或放鬆練習，平衡探索慾望可能帶來的不安。</li>
-                        </ul>
-                    </div>
-                    <button class="btn btn-outline-info-glow btn-sm mt-3">更多心靈指引</button>
-                </div>
+        </div>
+        <div class="col-12">
+            <div class="dashboard-card">
+                <h5 class="card-title">情緒總覽</h5>
+                <canvas id="emotionChart" style="max-height:400px;"></canvas>
             </div>
         </div>
     </div>
 </div>
+
+<!-- 夢境歷史 -->
+<div id="history-pane">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">個人關鍵字紀錄</h5>
+                <canvas id="keywordBarChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">快樂情緒趨勢圖</h5>
+                <canvas id="happyChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">焦慮情緒趨勢圖</h5>
+                <canvas id="anxietyChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">恐懼情緒趨勢圖</h5>
+                <canvas id="fearChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">興奮情緒趨勢圖</h5>
+                <canvas id="excitedChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h5 class="card-title">悲傷情緒趨勢圖</h5>
+                <canvas id="sadChart" style="max-height:400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("toggleDashboardBtn");
+    const historyPane = document.getElementById("history-pane");
+    const emotionPane = document.getElementById("emotion-pane");
+
+    // 初始狀態：顯示情緒儀表板，隱藏夢境歷史
+    historyPane.style.display = "none";
+    emotionPane.style.display = "block";
+
+    btn.addEventListener("click", () => {
+        const showingHistory = historyPane.style.display !== "none";
+        historyPane.style.display = showingHistory ? "none" : "block";
+        emotionPane.style.display = showingHistory ? "block" : "none";
+        
+        btn.classList.toggle("rotated"); // CSS 可以定義旋轉效果
+    });
+    
+
+
+    // 載入情緒資料
+    fetch("/api/emotion-data/").then(r=>r.json()).then(data=>{
+        const createLineChart = (id, labels, dataset, label) => {
+            new Chart(document.getElementById(id), {
+                type: "line",
+                data: { labels, datasets:[{ ...dataset, label, borderWidth:2 }] },
+                options: { responsive:true, animation: false,scales:{ y:{ beginAtZero:true, max:100 } } }
+            });
+        };
+
+        createLineChart("happyChart", data.labels, data.datasets[0], "快樂指數");
+        createLineChart("anxietyChart", data.labels, data.datasets[1], "焦慮指數");
+        createLineChart("fearChart", data.labels, data.datasets[2], "恐懼指數");
+        createLineChart("excitedChart", data.labels, data.datasets[3], "興奮指數");
+        createLineChart("sadChart", data.labels, data.datasets[4], "悲傷指數");
+
+        new Chart(document.getElementById('emotionChart'), {
+            type: 'line',
+            data: { labels: data.labels, datasets: data.datasets.map(ds=>({...ds,tension:0.3})) },
+            options: { responsive:true }
+        });
+    });
+
+    // 個人關鍵字
+    fetch("/api/user-keywords/").then(r=>r.json()).then(keywordData=>{
+        const createBarChart = id => {
+            new Chart(document.getElementById(id), {
+                type:'bar',
+                data:{ labels: keywordData.map(i=>i.keyword), datasets:[{ label:"關鍵字頻率", data:keywordData.map(i=>i.count), backgroundColor:"rgba(106,90,205,0.2)", borderColor:"rgba(106,90,205,1)", borderWidth:1 }]},
+                options:{ responsive:true, animation: false,scales:{ y:{ beginAtZero:true } } }
+            });
+        };
+        createBarChart("keywordBarChart");
+        createBarChart("keywordBarChart2");
+    });
+
+});
+</script>
+
 {% endblock %}

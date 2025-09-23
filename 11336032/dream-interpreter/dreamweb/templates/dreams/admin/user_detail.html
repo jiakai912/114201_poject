@@ -1,3 +1,4 @@
+<!-- 編輯使用者資料 -->
 {% extends 'dreams/base.html' %}
 {% block title %}使用者詳情編輯{% endblock %}
 
@@ -22,7 +23,6 @@
         <div class="mb-3">
           <label for="role" class="form-label"><strong>身分 (Role)</strong></label>
           <select name="role" id="role" class="form-select">
-            <option value="admin" {% if user.is_superuser %}selected{% endif %}>管理員</option>
             <option value="therapist" {% if user.userprofile.is_therapist and not user.userprofile.is_verified_therapist %}selected{% endif %}>未認證心理師</option>
             <option value="verified" {% if user.userprofile.is_verified_therapist %}selected{% endif %}>認證心理師</option>
             <option value="user" {% if not user.userprofile.is_therapist and not user.is_superuser %}selected{% endif %}>一般使用者</option>
