@@ -1,3 +1,4 @@
+<!-- 心理師審核資料 -->
 {% extends 'dreams/base.html' %}
 {% block title %}心理師申請審核{% endblock %}
 
@@ -45,8 +46,9 @@
             <!-- 新增：心理師證明 -->
             <td>
               {% if profile.proof_file %}
-                <a href="{{ profile.proof_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                  查看
+                <a href="{% url 'view_proof' profile.user.id %}" target="_blank" 
+                  class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                  查看證明
                 </a>
               {% else %}
                 <span class="text-muted">未上傳</span>
