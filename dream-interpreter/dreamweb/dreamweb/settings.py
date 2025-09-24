@@ -84,10 +84,10 @@ WSGI_APPLICATION = 'dreamweb.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 使用 MySQL
-        'NAME': 'DreamEcho',                    # 資料庫名稱
-        'USER': 'root',                         # MySQL 帳號
-        'PASSWORD': '123456',                   # MySQL 密碼
-        'HOST': 'localhost',                    # 伺服器名稱
+        'NAME': '114-DreamEchoAI',                    # 資料庫名稱
+        'USER': '114201',                         # MySQL 帳號
+        'PASSWORD': '@Ll336034',                   # MySQL 密碼
+        'HOST': '140.131.114.242',                    # 伺服器名稱
         'PORT': '3306',                         # MySQL Port
         'OPTIONS': {
             'charset': 'utf8mb4',

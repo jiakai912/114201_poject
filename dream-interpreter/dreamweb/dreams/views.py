@@ -17,8 +17,6 @@ from django.db.models import Count,Q,Max,Avg
 from django.utils import timezone
 import jieba  # 中文分詞庫
 from collections import Counter,defaultdict
-import nltk
-from nltk.tokenize import word_tokenize
 # 歷史分頁
 from django.core.paginator import Paginator
 # 新聞相關

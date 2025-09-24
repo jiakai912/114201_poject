@@ -6,13 +6,13 @@
                 "enableSsl": "Disabled"
             },
             "previewLimit": 50,
-            "server": "localhost",
+            "server": "140.131.114.242",
             "port": 3306,
             "driver": "MariaDB",
             "name": "11336034",
-            "database": "DreamEcho",
-            "username": "root",
-            "password": "123456"
+            "database": "114-DreamEchoAI",
+            "username": "114201",
+            "password": "@Ll336034"
         }
     ]
 }

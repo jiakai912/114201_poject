@@ -1,0 +1,56 @@
+# Django 核心
+Django==5.1.7
+django-allauth==65.11.2
+django-crontab==0.7.1
+
+# 資料庫
+PyMySQL==1.1.1
+
+# 加密 / JWT
+cryptography==46.0.1
+PyJWT==2.10.1
+
+# 環境 / API
+python-dotenv==1.0.1
+load-dotenv==0.1.0
+requests==2.32.3
+httpx==0.28.1
+
+# AI / NLP / 中文斷詞
+openai==1.68.2
+jieba==0.42.1
+nltk==3.9.0
+scikit-learn==1.3.2
+beautifulsoup4==4.12.2
+speechrecognition==3.8.1
+pydub==0.25.1
+bleach==6.0.0
+tqdm==4.67.1
+pydantic==2.10.6
+pydantic_core==2.27.2
+
+# openai 相關依賴
+aiohappyeyeballs==2.6.1
+aiohttp==3.11.14
+aiosignal==1.3.2
+annotated-types==0.7.0
+anyio==4.9.0
+asgiref==3.8.1
+attrs==25.3.0
+certifi==2025.1.31
+cffi==2.0.0
+charset-normalizer==3.4.1
+distro==1.9.0
+frozenlist==1.5.0
+h11==0.14.0
+httpcore==1.0.7
+idna==3.10
+jiter==0.9.0
+multidict==6.2.0
+propcache==0.3.0
+pycparser==2.23
+sniffio==1.3.1
+typing_extensions==4.12.2
+urllib3==2.3.0
+yarl==1.18.3
+sqlparse==0.5.3
